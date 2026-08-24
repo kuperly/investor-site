@@ -33,4 +33,14 @@ describe('contactFormSchema', () => {
     const result = contactFormSchema.safeParse({ ...validPayload, message: 'hi' })
     expect(result.success).toBe(false)
   })
+
+  it('rejects a payload with a non-empty honeypot field', () => {
+    const result = contactFormSchema.safeParse({ ...validPayload, honeypot: 'im a bot' })
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts a payload with an omitted or empty honeypot field', () => {
+    expect(contactFormSchema.safeParse(validPayload).success).toBe(true)
+    expect(contactFormSchema.safeParse({ ...validPayload, honeypot: '' }).success).toBe(true)
+  })
 })

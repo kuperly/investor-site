@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { contactFormSchema, type ContactFormValues } from '@/lib/contact-schema'
 
 type FieldErrors = Partial<Record<keyof ContactFormValues, string>>
@@ -11,6 +11,7 @@ const initialValues: ContactFormValues = {
   name: '',
   email: '',
   message: '',
+  honeypot: '',
 }
 
 export function ContactForm() {
@@ -18,6 +19,13 @@ export function ContactForm() {
   const [errors, setErrors] = useState<FieldErrors>({})
   const [status, setStatus] = useState<Status>('idle')
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const successHeadingRef = useRef<HTMLParagraphElement>(null)
+
+  useEffect(() => {
+    if (status === 'success') {
+      successHeadingRef.current?.focus()
+    }
+  }, [status])
 
   function validateField(field: keyof ContactFormValues, nextValues: ContactFormValues) {
     const result = contactFormSchema.safeParse(nextValues)
@@ -77,7 +85,9 @@ export function ContactForm() {
   if (status === 'success') {
     return (
       <div role="status" className="rounded-lg border border-border bg-card p-6 text-foreground">
-        <p className="font-heading text-xl">Thank you — your message is on its way.</p>
+        <p ref={successHeadingRef} tabIndex={-1} className="font-heading text-xl">
+          Thank you — your message is on its way.
+        </p>
         <p className="mt-2 text-muted-foreground">We read every message and will follow up directly.</p>
       </div>
     )
@@ -85,6 +95,17 @@ export function ContactForm() {
 
   return (
     <form noValidate onSubmit={handleSubmit} className="space-y-6">
+      <input
+        type="text"
+        name="honeypot"
+        value={values.honeypot}
+        onChange={(e) => handleChange('honeypot', e.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        style={{ position: 'absolute', left: '-9999px' }}
+      />
+
       <fieldset>
         <legend className="mb-2 font-medium text-foreground">I am reaching out as a...</legend>
         <div className="flex gap-4">
@@ -182,7 +203,7 @@ export function ContactForm() {
       </div>
 
       {status === 'error' && submitError && (
-        <p role="alert" aria-live="polite" className="text-sm text-destructive">
+        <p role="alert" className="text-sm text-destructive">
           {submitError}
         </p>
       )}
