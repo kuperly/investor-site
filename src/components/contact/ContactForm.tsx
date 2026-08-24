@@ -88,7 +88,7 @@ export function ContactForm() {
       <fieldset>
         <legend className="mb-2 font-medium text-foreground">I am reaching out as a...</legend>
         <div className="flex gap-4">
-          <label className="flex items-center gap-2">
+          <label className="flex min-h-[44px] items-center gap-2">
             <input
               type="radio"
               name="intent"
@@ -99,7 +99,7 @@ export function ContactForm() {
             />
             Investor
           </label>
-          <label className="flex items-center gap-2">
+          <label className="flex min-h-[44px] items-center gap-2">
             <input
               type="radio"
               name="intent"

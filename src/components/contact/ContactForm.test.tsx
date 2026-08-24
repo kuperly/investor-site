@@ -39,6 +39,7 @@ describe('ContactForm', () => {
     })
 
     resolveFetch({ ok: true, json: async () => ({ message: 'Sent' }) })
+    await screen.findByRole('status')
   })
 
   it('shows a success message after a successful submit', async () => {
