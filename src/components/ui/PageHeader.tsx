@@ -18,7 +18,7 @@ export function PageHeader({
   intro?: ReactNode
 }) {
   return (
-    <div className="pt-20 sm:pt-24">
+    <div className="pt-12">
       <Reveal>
         <Eyebrow>{eyebrow}</Eyebrow>
         <h1 className="mt-6 max-w-3xl text-balance font-heading text-4xl font-semibold leading-tight tracking-display text-foreground sm:text-5xl">

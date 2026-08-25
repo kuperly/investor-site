@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { siteConfig } from '@/lib/site-config'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { Logo } from '@/components/ui/Logo'
+import { pageGutter } from '@/components/ui/PageContainer'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -59,7 +60,7 @@ export function Header() {
         isScrolled ? 'border-border bg-background/80 backdrop-blur-md' : 'border-transparent bg-background'
       }`}
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+      <div className={`flex items-center justify-between py-4 ${pageGutter}`}>
         <Link href="/" className="transition-opacity duration-200 hover:opacity-80">
           <Logo className="text-xl" />
         </Link>

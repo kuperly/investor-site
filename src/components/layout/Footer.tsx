@@ -1,12 +1,13 @@
 import { siteConfig } from '@/lib/site-config'
 import { Logo } from '@/components/ui/Logo'
+import { pageGutter } from '@/components/ui/PageContainer'
 
 export function Footer() {
   const year = new Date().getFullYear()
 
   return (
     <footer className="border-t border-border bg-background">
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+      <div className={`py-10 ${pageGutter}`}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <Logo className="text-lg" />
