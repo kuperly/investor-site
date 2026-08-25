@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { siteConfig } from '@/lib/site-config'
 import { Logo } from '@/components/ui/Logo'
 import { pageGutter } from '@/components/ui/PageContainer'
@@ -9,18 +8,9 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-background">
       <div className={`py-10 ${pageGutter}`}>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <Logo className="text-lg" />
-            <p className="mt-1 text-muted-foreground">{siteConfig.marketFocus}</p>
-          </div>
-
-          <Link
-            href="/contact"
-            className="text-muted-foreground transition-colors duration-200 hover:text-primary"
-          >
-            Contact
-          </Link>
+        <div>
+          <Logo className="text-lg" />
+          <p className="mt-1 text-muted-foreground">{siteConfig.marketFocus}</p>
         </div>
 
         <div className="mt-8 space-y-2 border-t border-border pt-6 text-sm text-muted-foreground">
