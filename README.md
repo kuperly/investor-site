@@ -1,11 +1,12 @@
-# Larkspur Capital Partners — Investor Site
+# G&B Capital — Investor Site
 
 Marketing site for a real estate investment company. Four pages — Home,
 Approach, About, Contact — built to establish credibility with investors
 and real estate professionals ahead of an active launch.
 
-> **Note:** "Larkspur Capital Partners" is a placeholder company name. See
-> [CLAUDE.md](CLAUDE.md) for what needs to be swapped before this goes live.
+> **Note:** "G&B Capital" is a provisional company name, set in
+> `src/lib/site-config.ts`. See [CLAUDE.md](CLAUDE.md) for what else needs
+> swapping before this goes live.
 
 ## Stack
 

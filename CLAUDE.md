@@ -1,4 +1,4 @@
-# Larkspur Capital Partners — Investor Site
+# G&B Capital — Investor Site
 
 A 4-page Next.js marketing site for a pre-launch real estate investment
 company, built for credibility with investors and real estate professionals

@@ -4,10 +4,10 @@
  * is finalized. Nothing else in the codebase should hardcode it.
  */
 export const siteConfig = {
-  name: 'Larkspur Capital Partners',
+  name: 'G&B Capital',
   tagline: 'Disciplined real estate investment.',
   description:
-    'Larkspur Capital Partners acquires and manages real estate for long-term capital appreciation, with a select number of disciplined renovation projects.',
+    'G&B Capital acquires and manages real estate for long-term capital appreciation, with a select number of disciplined renovation projects.',
   marketFocus: 'Texas and select U.S. markets',
   contactEmail: 'hello@example.com',
   nav: [

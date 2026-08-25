@@ -1,4 +1,4 @@
-# Design system — Larkspur Capital Partners
+# Design system — G&B Capital
 
 The visual language of the site and the reasoning behind it. The site's job
 is **credibility with investors and deal partners**, not property listings —
