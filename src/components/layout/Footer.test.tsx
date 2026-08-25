@@ -4,12 +4,12 @@ import { Footer } from './Footer'
 import { siteConfig } from '@/lib/site-config'
 
 describe('Footer', () => {
-  it('renders brand name, market focus, and a mailto contact link', () => {
+  it('renders brand name, market focus, and a contact link', () => {
     render(<Footer />)
     expect(screen.getByRole('contentinfo')).toHaveTextContent(siteConfig.name)
     expect(screen.getByText(siteConfig.marketFocus)).toBeInTheDocument()
-    const contactLink = screen.getByRole('link', { name: siteConfig.contactEmail })
-    expect(contactLink).toHaveAttribute('href', `mailto:${siteConfig.contactEmail}`)
+    const contactLink = screen.getByRole('link', { name: 'Contact' })
+    expect(contactLink).toHaveAttribute('href', '/contact')
   })
 
   it('does not duplicate the header navigation', () => {

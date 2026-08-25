@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { siteConfig } from '@/lib/site-config'
 import { Logo } from '@/components/ui/Logo'
 import { pageGutter } from '@/components/ui/PageContainer'
@@ -14,17 +15,24 @@ export function Footer() {
             <p className="mt-1 text-muted-foreground">{siteConfig.marketFocus}</p>
           </div>
 
-          <a
-            href={`mailto:${siteConfig.contactEmail}`}
+          <Link
+            href="/contact"
             className="text-muted-foreground transition-colors duration-200 hover:text-primary"
           >
-            {siteConfig.contactEmail}
-          </a>
+            Contact
+          </Link>
         </div>
 
-        <p className="mt-8 border-t border-border pt-6 text-sm text-muted-foreground">
-          © <span className="tabular-nums">{year}</span> {siteConfig.name}. All rights reserved.
-        </p>
+        <div className="mt-8 space-y-2 border-t border-border pt-6 text-sm text-muted-foreground">
+          <p>
+            © <span className="tabular-nums">{year}</span> {siteConfig.name}. All rights reserved.
+          </p>
+          {/* PLACEHOLDER legal disclaimer — standard boilerplate; have counsel review before launch. */}
+          <p className="max-w-3xl">
+            For informational purposes only. Nothing on this website constitutes an offer to sell or a
+            solicitation of an offer to buy any security, or investment, legal, or tax advice.
+          </p>
+        </div>
       </div>
     </footer>
   )
