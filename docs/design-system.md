@@ -60,11 +60,32 @@ institutional). Every animation collapses to its final frame under
 - **Hover** — quiet: a gold hairline grows in + a small lift. No
   attention-grabbing "dim the siblings" effects.
 
+## Layout primitives (what keeps pages aligned)
+
+Every page is built from these so alignment and section styling are identical
+by construction — not by each page re-implementing them:
+
+- `PageContainer` — the one page-width wrapper (`max-w-6xl` + gutter). The
+  header, footer, and **every** page use it, so all content shares one left
+  edge and lines up vertically as you move between pages. Constrain text
+  inside with `max-w-2xl`/`max-w-3xl`; never center a page in a narrower
+  container (that breaks the shared left edge).
+- `PageHeader` — the one masthead for content pages (Approach/About/Contact):
+  eyebrow → h1 → optional intro, at a fixed type scale and spacing. The home
+  page uses its own larger hero by design.
+- `Card` — the one "section item" surface (rounded border + `bg-card/40` +
+  quiet hover lift/brass border). Home pillars, home audiences, and approach
+  criteria all use it, so those sections look identical everywhere.
+
 ## Components
 
+- `Logo` — the G&B Capital wordmark (Space Grotesk, ampersand in brass),
+  derived from `siteConfig.name`. Used in header + footer. Favicon is the
+  matching "GB" monogram at `src/app/icon.svg`.
+- `ThemeToggle` — light/dark switch (sets `data-theme`, persists, no-flash).
 - `Eyebrow` — section label; use above every page `<h1>` and section head.
 - `HeroBackground` — decorative, `aria-hidden`; skyline + trendline + faint
-  grid + brass radial wash.
+  grid + brass radial wash. Home hero only.
 - `Reveal` — wrap blocks to reveal on scroll; `delay` prop for stagger.
 
 ## Accessibility guardrails
@@ -76,6 +97,8 @@ against all four pages — extend it when adding pages.
 
 ## When extending
 
-Reuse the tokens and the three `ui/` primitives. Keep to the type scale and
-the 4/8px spacing rhythm. Do not introduce hardcoded colours, emoji icons, or
+Build every new page from `PageContainer` + `PageHeader`, and every section
+item from `Card` — do not hand-roll a page's width, masthead, or card, or it
+will drift out of alignment. Reuse the tokens; keep to the type scale and the
+4/8px spacing rhythm. Do not introduce hardcoded colours, emoji icons, or
 photography. If a new visual pattern is needed, add it here.

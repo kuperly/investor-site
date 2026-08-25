@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { siteConfig } from '@/lib/site-config'
 import { Reveal } from '@/components/ui/Reveal'
-import { Eyebrow } from '@/components/ui/Eyebrow'
+import { PageContainer } from '@/components/ui/PageContainer'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Card } from '@/components/ui/Card'
 
 export const metadata: Metadata = {
   title: 'Approach',
@@ -24,47 +26,37 @@ const criteria = [
 
 export default function ApproachPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6">
-      <div className="pt-20 sm:pt-24">
-        <Reveal>
-          <Eyebrow>Approach</Eyebrow>
-          <h1 className="mt-6 text-balance font-heading text-4xl font-semibold leading-tight tracking-display text-foreground sm:text-5xl">
-            How we evaluate every deal
-          </h1>
-          <p className="mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
-            {siteConfig.name} runs two related strategies from one underwriting discipline: buy-and-hold
-            acquisitions for long-term capital appreciation, and a smaller book of fix-and-flip projects
-            where the margin of safety is clear before we commit capital.
-          </p>
-        </Reveal>
-      </div>
+    <PageContainer>
+      <PageHeader
+        eyebrow="Approach"
+        title="How we evaluate every deal"
+        intro={`${siteConfig.name} runs two related strategies from one underwriting discipline: buy-and-hold acquisitions for long-term capital appreciation, and a smaller book of fix-and-flip projects where the margin of safety is clear before we commit capital.`}
+      />
 
       <div className="pb-24">
-        <div className="mt-16 space-y-12">
+        <div className="mt-14 grid gap-6 md:grid-cols-3">
           {criteria.map((item, index) => (
-            <Reveal key={item.title} delay={index * 90}>
-              <div className="group">
-                <h2 className="font-heading text-2xl text-foreground transition-colors duration-200 group-hover:text-primary">
-                  {item.title}
-                </h2>
-                <p className="mt-3 max-w-2xl leading-relaxed text-muted-foreground">{item.body}</p>
-              </div>
+            <Reveal key={item.title} delay={index * 90} className="h-full">
+              <Card>
+                <h2 className="font-heading text-2xl text-foreground">{item.title}</h2>
+                <p className="mt-3 leading-relaxed text-muted-foreground">{item.body}</p>
+              </Card>
             </Reveal>
           ))}
         </div>
 
         <Reveal delay={criteria.length * 90}>
-          <div className="mt-16 border-t border-border pt-10">
+          <Card className="mt-6">
             <h2 className="font-heading text-2xl text-foreground">Buy-and-hold vs. flips</h2>
-            <p className="mt-3 max-w-2xl leading-relaxed text-muted-foreground">
+            <p className="mt-3 max-w-3xl leading-relaxed text-muted-foreground">
               The default is to hold: assets that compound through appreciation and rent growth stay in
               the portfolio. We take on a flip only when a property has a clear value-add path — a
               renovation or repositioning — and the exit math holds up even if the market softens before
               we sell.
             </p>
-          </div>
+          </Card>
         </Reveal>
       </div>
-    </div>
+    </PageContainer>
   )
 }

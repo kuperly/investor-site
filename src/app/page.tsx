@@ -4,6 +4,8 @@ import { siteConfig } from '@/lib/site-config'
 import { Reveal } from '@/components/ui/Reveal'
 import { HeroBackground } from '@/components/ui/HeroBackground'
 import { Eyebrow } from '@/components/ui/Eyebrow'
+import { PageContainer } from '@/components/ui/PageContainer'
+import { Card } from '@/components/ui/Card'
 
 export const metadata: Metadata = {
   title: 'Home',
@@ -45,7 +47,7 @@ export default function HomePage() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <HeroBackground />
-        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32">
+        <PageContainer className="py-24 sm:py-32">
           <Reveal>
             <Eyebrow>{siteConfig.name}</Eyebrow>
             <h1 className="mt-6 max-w-4xl text-balance font-heading text-5xl font-semibold leading-[1.05] tracking-display text-foreground sm:text-6xl lg:text-7xl">
@@ -69,31 +71,31 @@ export default function HomePage() {
               </Link>
             </div>
           </Reveal>
-        </div>
+        </PageContainer>
       </section>
 
       {/* What we do — three pillars */}
       <section>
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+        <PageContainer className="py-20 sm:py-24">
           <Reveal>
             <Eyebrow>What we do</Eyebrow>
           </Reveal>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {pillars.map((pillar, index) => (
               <Reveal key={pillar.title} delay={index * 90} className="h-full">
-                <div className="h-full rounded-xl border border-border bg-card/40 p-7">
+                <Card>
                   <h2 className="font-heading text-2xl text-foreground">{pillar.title}</h2>
                   <p className="mt-3 leading-relaxed text-muted-foreground">{pillar.body}</p>
-                </div>
+                </Card>
               </Reveal>
             ))}
           </div>
-        </div>
+        </PageContainer>
       </section>
 
       {/* Who we work with */}
       <section>
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+        <PageContainer className="py-20 sm:py-24">
           <Reveal>
             <Eyebrow>Who we work with</Eyebrow>
             <h2 className="mt-6 max-w-3xl text-balance font-heading text-3xl font-semibold text-foreground sm:text-4xl">
@@ -107,19 +109,19 @@ export default function HomePage() {
           <div className="mt-10 grid gap-6 sm:grid-cols-3">
             {audiences.map((audience, index) => (
               <Reveal key={audience.label} delay={index * 90} className="h-full">
-                <div className="h-full rounded-xl border border-border bg-card/40 p-7">
+                <Card>
                   <h3 className="font-heading text-xl text-foreground">{audience.label}</h3>
                   <p className="mt-3 leading-relaxed text-muted-foreground">{audience.body}</p>
-                </div>
+                </Card>
               </Reveal>
             ))}
           </div>
-        </div>
+        </PageContainer>
       </section>
 
       {/* Closing CTA */}
       <section>
-        <div className="mx-auto max-w-6xl px-4 pb-24 pt-4 sm:px-6">
+        <PageContainer className="pb-24 pt-4">
           <Reveal>
             <div className="flex flex-col items-start gap-8 rounded-2xl border border-border bg-card/40 p-8 sm:p-12 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -139,7 +141,7 @@ export default function HomePage() {
               </Link>
             </div>
           </Reveal>
-        </div>
+        </PageContainer>
       </section>
     </>
   )
