@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { siteConfig } from '@/lib/site-config'
 import { Reveal } from '@/components/ui/Reveal'
 import { HeroBackground } from '@/components/ui/HeroBackground'
+import { Eyebrow } from '@/components/ui/Eyebrow'
 
 export const metadata: Metadata = {
   title: 'About',
@@ -10,17 +11,17 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6">
-      <div className="relative overflow-hidden pb-8 pt-20">
+      <div className="relative overflow-hidden pb-8 pt-24 sm:pt-28">
         <HeroBackground />
         <Reveal>
-          <p className="font-body text-sm uppercase tracking-wide text-primary">About</p>
-          <h1 className="mt-4 font-heading text-4xl font-semibold text-foreground">
+          <Eyebrow>About</Eyebrow>
+          <h1 className="mt-6 text-balance font-heading text-4xl font-semibold leading-tight tracking-display text-foreground sm:text-5xl">
             Why {siteConfig.name} exists
           </h1>
         </Reveal>
       </div>
 
-      <div className="mt-8 space-y-6 pb-20 text-lg text-muted-foreground">
+      <div className="mt-8 space-y-6 pb-24 text-lg leading-relaxed text-muted-foreground">
         <Reveal>
           <p>
             {siteConfig.name} was founded on a simple premise: real estate rewards patience and

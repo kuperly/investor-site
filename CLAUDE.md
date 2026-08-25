@@ -2,8 +2,8 @@
 
 A 4-page Next.js marketing site for a pre-launch real estate investment
 company, built for credibility with investors and real estate professionals
-(not active fundraising). Full background: [docs/superpowers/specs/2026-08-24-investor-site-design.md](docs/superpowers/specs/2026-08-24-investor-site-design.md).
-Task-by-task build history: [docs/superpowers/plans/2026-08-24-investor-site.md](docs/superpowers/plans/2026-08-24-investor-site.md).
+(not active fundraising). Visual system and its rationale:
+[docs/design-system.md](docs/design-system.md).
 
 ## Before launch — placeholder values to swap
 
@@ -41,21 +41,36 @@ npm run lint     # eslint
 
 - `src/app/` — routes: `/` (home), `/approach`, `/about`, `/contact`,
   `/api/contact` (route handler)
-- `src/components/layout/` — `Header.tsx`, `Footer.tsx`
+- `src/components/layout/` — `Header.tsx` (sticky nav, active-page
+  indicator, mobile drawer), `Footer.tsx`
 - `src/components/contact/` — `ContactForm.tsx` (client component, intent
   selector + inline validation + submit states)
+- `src/components/ui/` — presentational primitives: `Eyebrow.tsx` (tracked
+  label + gold rule, used on every page masthead), `HeroBackground.tsx`
+  (decorative skyline + appreciation trendline, client component for
+  parallax/draw-in), `Reveal.tsx` (IntersectionObserver scroll reveal)
 - `src/lib/site-config.ts` — brand config (see above)
 - `src/lib/contact-schema.ts` — Zod schema shared by the form and the API
   route (includes an empty-only `honeypot` field for spam deterrence)
 
 ## Design tokens
 
-Navy/gold dark theme by default, with a light-mode variant driven by
-`prefers-color-scheme` (no toggle — see `src/app/globals.css` CSS custom
-properties, mapped into Tailwind via `tailwind.config.ts`). Typography:
-EB Garamond (headings) + Lato (body), loaded via `next/font/google` in
-`src/app/layout.tsx`. No stock photography anywhere by design — the site
-is typography-led.
+Institutional **champagne-brass-on-deep-ink** dark theme by default, with a
+warm-paper/dark-bronze light variant driven by `prefers-color-scheme` (no
+toggle — see `src/app/globals.css` CSS custom properties, mapped into
+Tailwind via `tailwind.config.ts`). Every foreground/background pair meets
+≥4.5:1 in both modes. Typography: EB Garamond (headings, weights 400–700 +
+italic) + Source Sans 3 (body), loaded via `next/font/google` in
+`src/app/layout.tsx`. No stock photography anywhere by design — the site is
+**typography-led** (deliberately reaffirmed; a listings-style photo direction
+was considered and rejected as off-brief for an investment firm).
+
+Full visual system — palette, type scale, motion, components, and the
+reasoning behind them — lives in
+[docs/design-system.md](docs/design-system.md). Motion (hero trendline
+draw-in, subtle scroll parallax in `HeroBackground.tsx`, spring-eased scroll
+reveals in `Reveal.tsx`) is intentionally restrained and always collapses to
+its final frame under `prefers-reduced-motion`.
 
 ## Known gotchas
 

@@ -2,13 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { siteConfig } from '@/lib/site-config'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const pathname = usePathname()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
+
+  function isActive(href: string) {
+    return href === '/' ? pathname === '/' : pathname?.startsWith(href)
+  }
 
   useEffect(() => {
     function handleScroll() {
@@ -52,20 +58,29 @@ export function Header() {
       }`}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <Link href="/" className="font-heading text-xl font-semibold text-foreground">
+        <Link
+          href="/"
+          className="font-heading text-xl font-semibold tracking-tight text-foreground transition-colors duration-200 hover:text-primary"
+        >
           {siteConfig.name}
         </Link>
 
         <nav aria-label="Primary" className="hidden gap-8 sm:flex">
-          {siteConfig.nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-foreground transition-colors duration-200 hover:text-primary"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {siteConfig.nav.map((item) => {
+            const active = isActive(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? 'page' : undefined}
+                className={`relative py-1 text-sm transition-colors duration-200 after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-left after:scale-x-0 after:bg-primary after:transition-transform after:duration-200 hover:text-primary hover:after:scale-x-100 ${
+                  active ? 'font-medium text-primary after:scale-x-100' : 'text-foreground'
+                }`}
+              >
+                {item.label}
+              </Link>
+            )
+          })}
         </nav>
 
         <button
@@ -117,16 +132,26 @@ export function Header() {
         </div>
 
         <nav aria-label="Mobile" className="flex flex-col gap-1 px-4 pt-2">
-          {siteConfig.nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="block min-h-[44px] rounded-md px-2 py-3 text-foreground transition-colors duration-200 hover:bg-card hover:text-primary"
-              onClick={closeMenu}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {siteConfig.nav.map((item) => {
+            const active = isActive(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? 'page' : undefined}
+                className={`flex min-h-[44px] items-center gap-3 rounded-md px-2 py-3 transition-colors duration-200 hover:bg-card hover:text-primary ${
+                  active ? 'font-medium text-primary' : 'text-foreground'
+                }`}
+                onClick={closeMenu}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`h-4 w-px transition-colors ${active ? 'bg-primary' : 'bg-transparent'}`}
+                />
+                {item.label}
+              </Link>
+            )
+          })}
         </nav>
       </div>
     </header>

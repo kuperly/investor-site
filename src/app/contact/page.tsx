@@ -3,6 +3,7 @@ import { ContactForm } from '@/components/contact/ContactForm'
 import { siteConfig } from '@/lib/site-config'
 import { Reveal } from '@/components/ui/Reveal'
 import { HeroBackground } from '@/components/ui/HeroBackground'
+import { Eyebrow } from '@/components/ui/Eyebrow'
 
 export const metadata: Metadata = {
   title: 'Contact',
@@ -11,12 +12,14 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6">
-      <div className="relative overflow-hidden pt-20">
+      <div className="relative overflow-hidden pt-24 sm:pt-28">
         <HeroBackground />
         <Reveal>
-          <p className="font-body text-sm uppercase tracking-wide text-primary">Contact</p>
-          <h1 className="mt-4 font-heading text-4xl font-semibold text-foreground">Let&apos;s talk</h1>
-          <p className="mt-6 text-lg text-muted-foreground">
+          <Eyebrow>Contact</Eyebrow>
+          <h1 className="mt-6 text-balance font-heading text-4xl font-semibold leading-tight tracking-display text-foreground sm:text-5xl">
+            Let&apos;s talk
+          </h1>
+          <p className="mt-6 text-pretty text-lg leading-relaxed text-muted-foreground">
             Whether you are exploring an investment or have a deal you think fits {siteConfig.name}, tell
             us a bit about it below.
           </p>

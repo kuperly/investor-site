@@ -107,30 +107,36 @@ export function ContactForm() {
       />
 
       <fieldset>
-        <legend className="mb-2 font-medium text-foreground">I am reaching out as a...</legend>
-        <div className="flex gap-4">
-          <label className="flex min-h-[44px] items-center gap-2">
-            <input
-              type="radio"
-              name="intent"
-              value="investor"
-              checked={values.intent === 'investor'}
-              onChange={() => handleChange('intent', 'investor')}
-              className="h-5 w-5 accent-primary"
-            />
-            Investor
-          </label>
-          <label className="flex min-h-[44px] items-center gap-2">
-            <input
-              type="radio"
-              name="intent"
-              value="deal"
-              checked={values.intent === 'deal'}
-              onChange={() => handleChange('intent', 'deal')}
-              className="h-5 w-5 accent-primary"
-            />
-            I have a deal or listing
-          </label>
+        <legend className="mb-3 font-medium text-foreground">I am reaching out as a...</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(
+            [
+              { value: 'investor', label: 'Investor' },
+              { value: 'deal', label: 'I have a deal or listing' },
+            ] as const
+          ).map((option) => {
+            const selected = values.intent === option.value
+            return (
+              <label
+                key={option.value}
+                className={`flex min-h-[44px] cursor-pointer items-center gap-3 rounded-md border px-4 py-3 transition-colors duration-200 ${
+                  selected
+                    ? 'border-primary bg-primary/10 text-foreground'
+                    : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="intent"
+                  value={option.value}
+                  checked={selected}
+                  onChange={() => handleChange('intent', option.value)}
+                  className="h-5 w-5 accent-primary"
+                />
+                <span className="font-medium">{option.label}</span>
+              </label>
+            )
+          })}
         </div>
       </fieldset>
 
@@ -148,7 +154,7 @@ export function ContactForm() {
           onBlur={() => handleBlur('name')}
           aria-invalid={Boolean(errors.name)}
           aria-describedby={errors.name ? 'name-error' : undefined}
-          className="min-h-[44px] w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+          className="min-h-[44px] w-full rounded-md border border-border bg-card px-4 py-2.5 text-foreground transition-colors duration-200 placeholder:text-muted-foreground focus:border-primary"
         />
         {errors.name && (
           <p id="name-error" role="alert" className="mt-1 text-sm text-destructive">
@@ -171,7 +177,7 @@ export function ContactForm() {
           onBlur={() => handleBlur('email')}
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'email-error' : undefined}
-          className="min-h-[44px] w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+          className="min-h-[44px] w-full rounded-md border border-border bg-card px-4 py-2.5 text-foreground transition-colors duration-200 placeholder:text-muted-foreground focus:border-primary"
         />
         {errors.email && (
           <p id="email-error" role="alert" className="mt-1 text-sm text-destructive">
@@ -193,7 +199,7 @@ export function ContactForm() {
           onBlur={() => handleBlur('message')}
           aria-invalid={Boolean(errors.message)}
           aria-describedby={errors.message ? 'message-error' : undefined}
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+          className="w-full rounded-md border border-border bg-card px-4 py-2.5 leading-relaxed text-foreground transition-colors duration-200 placeholder:text-muted-foreground focus:border-primary"
         />
         {errors.message && (
           <p id="message-error" role="alert" className="mt-1 text-sm text-destructive">
@@ -211,7 +217,7 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={status === 'submitting'}
-        className="min-h-[44px] rounded-md bg-primary px-6 py-2 font-medium text-primary-foreground transition-colors duration-200 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex min-h-[44px] items-center rounded-md bg-primary px-7 py-2.5 font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-secondary hover:shadow-lg hover:shadow-primary/25 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
       >
         {status === 'submitting' ? 'Sending…' : 'Send message'}
       </button>

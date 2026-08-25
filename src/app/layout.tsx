@@ -7,14 +7,15 @@ import './globals.css'
 
 const ebGaramond = EB_Garamond({
   subsets: ['latin'],
-  weight: ['400', '600'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
   variable: '--font-heading',
   display: 'swap',
 })
 
 const sourceSans3 = Source_Sans_3({
   subsets: ['latin'],
-  weight: ['400', '500'],
+  weight: ['400', '500', '600'],
   variable: '--font-body',
   display: 'swap',
 })

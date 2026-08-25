@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { siteConfig } from '@/lib/site-config'
 import { Reveal } from '@/components/ui/Reveal'
 import { HeroBackground } from '@/components/ui/HeroBackground'
+import { Eyebrow } from '@/components/ui/Eyebrow'
 
 export const metadata: Metadata = {
   title: 'Home',
@@ -23,28 +24,46 @@ const pillars = [
   },
 ]
 
+const audiences = [
+  {
+    label: 'Investors',
+    body: 'Partners who want their capital treated with the discipline we would demand of our own — clear underwriting, honest reporting, and no surprises.',
+  },
+  {
+    label: 'Wholesalers & sellers',
+    body: 'Bring us a deal. When the numbers clear our bar we move quickly and close cleanly — and we tell you plainly when they do not.',
+  },
+  {
+    label: 'Real estate professionals',
+    body: 'Agents and operators we work alongside on sourcing, diligence, and management — relationships built to outlast any single transaction.',
+  },
+]
+
 export default function HomePage() {
   return (
     <>
+      {/* Hero */}
       <section className="relative overflow-hidden">
         <HeroBackground />
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32">
           <Reveal>
-            <p className="font-body text-sm uppercase tracking-wide text-primary">{siteConfig.name}</p>
-            <h1 className="mt-4 max-w-3xl font-heading text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
+            <Eyebrow>{siteConfig.name}</Eyebrow>
+            <h1 className="mt-6 max-w-4xl text-balance font-heading text-5xl font-semibold leading-[1.05] tracking-display text-foreground sm:text-6xl lg:text-7xl">
               {siteConfig.tagline}
             </h1>
-            <p className="mt-6 max-w-2xl text-lg text-muted-foreground">{siteConfig.description}</p>
+            <p className="mt-7 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
+              {siteConfig.description}
+            </p>
             <div className="mt-10 flex flex-wrap gap-4">
               <Link
                 href="/approach"
-                className="min-h-[44px] rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-secondary hover:shadow-lg hover:shadow-primary/25 active:translate-y-0"
+                className="inline-flex min-h-[44px] items-center rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-secondary hover:shadow-lg hover:shadow-primary/25 active:translate-y-0"
               >
                 See our approach
               </Link>
               <Link
                 href="/contact"
-                className="min-h-[44px] rounded-md border border-border px-6 py-3 font-medium text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
+                className="inline-flex min-h-[44px] items-center rounded-md border border-border px-6 py-3 font-medium text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
               >
                 Get in touch
               </Link>
@@ -53,18 +72,82 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="border-t border-border bg-card">
-        <div className="group/cards mx-auto grid max-w-6xl gap-6 px-4 py-16 sm:px-6 md:grid-cols-3">
-          {pillars.map((pillar, index) => (
-            <Reveal key={pillar.title} delay={index * 100}>
-              <div className="group h-full rounded-lg border border-transparent p-6 transition-all duration-200 hover:!translate-y-[-4px] hover:!opacity-100 hover:!saturate-100 hover:border-primary hover:bg-background hover:shadow-lg group-hover/cards:opacity-45 group-hover/cards:saturate-[0.7]">
-                <h2 className="font-heading text-xl text-foreground transition-colors duration-200 group-hover:text-primary">
-                  {pillar.title}
+      {/* What we do — three pillars */}
+      <section className="border-t border-border bg-card/40">
+        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+          <Reveal>
+            <Eyebrow>What we do</Eyebrow>
+          </Reveal>
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {pillars.map((pillar, index) => (
+              <Reveal key={pillar.title} delay={index * 90}>
+                <div className="group relative h-full overflow-hidden rounded-lg border border-border/70 bg-background/40 p-7 transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-background hover:shadow-xl hover:shadow-black/20">
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-px origin-left scale-x-0 bg-primary transition-transform duration-300 group-hover:scale-x-100"
+                  />
+                  <span className="font-heading text-sm tabular-nums text-primary/80">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <h2 className="mt-4 font-heading text-2xl text-foreground transition-colors duration-200 group-hover:text-primary">
+                    {pillar.title}
+                  </h2>
+                  <p className="mt-3 leading-relaxed text-muted-foreground">{pillar.body}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Who we work with */}
+      <section className="border-t border-border">
+        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+          <Reveal>
+            <Eyebrow>Who we work with</Eyebrow>
+            <h2 className="mt-6 max-w-3xl text-balance font-heading text-3xl font-semibold text-foreground sm:text-4xl">
+              Built for both sides of the table.
+            </h2>
+            <p className="mt-4 max-w-2xl text-pretty text-lg text-muted-foreground">
+              {siteConfig.name} sits between the people with capital and the people with deals — and
+              takes both relationships seriously.
+            </p>
+          </Reveal>
+          <div className="mt-12 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3">
+            {audiences.map((audience, index) => (
+              <Reveal key={audience.label} delay={index * 90} className="h-full">
+                <div className="group flex h-full flex-col bg-background p-7 transition-colors duration-200 hover:bg-card">
+                  <h3 className="font-heading text-xl text-foreground">{audience.label}</h3>
+                  <p className="mt-3 leading-relaxed text-muted-foreground">{audience.body}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Closing CTA band */}
+      <section className="border-t border-border bg-card/40">
+        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+          <Reveal>
+            <div className="flex flex-col items-start gap-8 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="max-w-2xl text-balance font-heading text-3xl font-semibold leading-tight text-foreground sm:text-4xl">
+                  Let&apos;s talk about the opportunity in front of you.
                 </h2>
-                <p className="mt-3 text-muted-foreground">{pillar.body}</p>
+                <p className="mt-4 max-w-xl text-pretty text-lg text-muted-foreground">
+                  Whether you are placing capital or bringing a deal, start a conversation — we read
+                  every message and follow up directly.
+                </p>
               </div>
-            </Reveal>
-          ))}
+              <Link
+                href="/contact"
+                className="inline-flex min-h-[44px] shrink-0 items-center rounded-md bg-primary px-7 py-3 font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-secondary hover:shadow-lg hover:shadow-primary/25 active:translate-y-0"
+              >
+                Get in touch
+              </Link>
+            </div>
+          </Reveal>
         </div>
       </section>
     </>

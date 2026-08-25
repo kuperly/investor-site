@@ -8,11 +8,22 @@ describe('HomePage', () => {
     render(<HomePage />)
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(siteConfig.tagline)
     expect(screen.getByRole('link', { name: 'See our approach' })).toHaveAttribute('href', '/approach')
-    expect(screen.getByRole('link', { name: 'Get in touch' })).toHaveAttribute('href', '/contact')
+    expect(screen.getAllByRole('link', { name: 'Get in touch' })[0]).toHaveAttribute('href', '/contact')
   })
 
-  it('renders three pillar headings', () => {
+  it('renders the three strategy pillars', () => {
     render(<HomePage />)
-    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(3)
+    expect(screen.getByRole('heading', { name: 'Buy-and-hold appreciation' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Disciplined flips' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: `Focused on ${siteConfig.marketFocus}` }),
+    ).toBeInTheDocument()
+  })
+
+  it('renders the audiences the firm works with', () => {
+    render(<HomePage />)
+    expect(screen.getByRole('heading', { name: 'Investors' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Wholesalers & sellers' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Real estate professionals' })).toBeInTheDocument()
   })
 })

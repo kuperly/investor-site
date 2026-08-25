@@ -3,37 +3,108 @@
 @tailwind utilities;
 
 :root {
-  --color-background: 15 23 42; /* #0F172A */
-  --color-foreground: 248 250 252; /* #F8FAFC */
-  --color-primary: 245 158 11; /* #F59E0B */
-  --color-primary-foreground: 15 23 42; /* #0F172A */
-  --color-secondary: 251 191 36; /* #FBBF24 */
-  --color-card: 34 39 53; /* #222735 */
-  --color-muted: 39 47 66; /* #272F42 */
-  --color-muted-foreground: 148 163 184; /* #94A3B8 */
-  --color-border: 51 65 85; /* #334155 */
-  --color-destructive: 239 68 68; /* #EF4444 */
-  --color-destructive-foreground: 255 255 255;
+  /* Dark (default): deep ink navy + champagne brass — permanence, not flash */
+  --color-background: 10 15 28; /* #0A0F1C */
+  --color-foreground: 244 242 236; /* #F4F2EC - warm paper white */
+  --color-primary: 197 162 83; /* #C5A253 - champagne brass */
+  --color-primary-foreground: 10 15 28; /* #0A0F1C */
+  --color-secondary: 217 190 126; /* #D9BE7E - lighter brass for hover */
+  --color-card: 19 26 44; /* #131A2C */
+  --color-muted: 27 35 57; /* #1B2339 */
+  --color-muted-foreground: 155 166 189; /* #9BA6BD */
+  --color-border: 41 52 79; /* #29344F */
+  --color-ring: 197 162 83; /* #C5A253 */
+  --color-destructive: 248 113 113; /* #F87171 */
+  --color-destructive-foreground: 10 15 28;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --color-background: 248 250 252; /* #F8FAFC */
-    --color-foreground: 15 23 42; /* #0F172A */
-    --color-primary: 146 64 14; /* #92400E - darkened for 4.5:1 on white */
+    /* Light: warm paper + deep bronze — the same identity, inverted */
+    --color-background: 250 248 243; /* #FAF8F3 - warm paper */
+    --color-foreground: 20 25 43; /* #14192B - deep ink */
+    --color-primary: 138 109 31; /* #8A6D1F - dark bronze, ≥4.5:1 on paper */
     --color-primary-foreground: 255 255 255;
-    --color-secondary: 180 83 9; /* #B45309 */
+    --color-secondary: 110 85 24; /* #6E5518 */
     --color-card: 255 255 255;
-    --color-muted: 241 245 249;
-    --color-muted-foreground: 71 85 105;
-    --color-border: 226 232 240;
-    --color-destructive: 220 38 38;
+    --color-muted: 241 238 231; /* #F1EEE7 */
+    --color-muted-foreground: 84 94 118; /* #545E76 */
+    --color-border: 229 224 213; /* #E5E0D5 */
+    --color-ring: 138 109 31; /* #8A6D1F */
+    --color-destructive: 190 30 30; /* #BE1E1E */
     --color-destructive-foreground: 255 255 255;
   }
 }
 
 html {
   scroll-behavior: smooth;
+}
+
+body {
+  /* Slightly relaxed body measure for editorial calm */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A single, consistent focus ring for every interactive element */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid rgb(var(--color-ring));
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+::selection {
+  background: rgb(var(--color-primary) / 0.28);
+  color: rgb(var(--color-foreground));
+}
+
+/* Hero motion: the appreciation trendline draws itself in, then its
+   endpoint settles. Reduced-motion collapses these to their final frame
+   via the global rule below, so the line renders fully drawn. */
+@keyframes hero-draw {
+  from {
+    stroke-dashoffset: 560;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+
+@layer utilities {
+  .hero-trendline {
+    stroke-dasharray: 560;
+    animation: hero-draw 1.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+  }
+  .hero-endpoint {
+    opacity: 0;
+    animation: hero-fade 0.5s ease-out 1.5s both;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  /* Tracked, small-caps-style eyebrow rhythm */
+  .tracking-eyebrow {
+    letter-spacing: 0.22em;
+  }
+  /* Tighten large display headings so they read as one confident mark */
+  .tracking-display {
+    letter-spacing: -0.02em;
+  }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

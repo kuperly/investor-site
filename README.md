@@ -37,5 +37,5 @@ and fill in a Resend API key and the two email addresses.
 
 - [CLAUDE.md](CLAUDE.md) — project reference for AI-assisted development:
   structure, conventions, known gotchas, pre-launch checklist
-- [docs/superpowers/specs/2026-08-24-investor-site-design.md](docs/superpowers/specs/2026-08-24-investor-site-design.md) — design spec
-- [docs/superpowers/plans/2026-08-24-investor-site.md](docs/superpowers/plans/2026-08-24-investor-site.md) — implementation plan
+- [docs/design-system.md](docs/design-system.md) — visual system: palette,
+  typography, motion, components, and the reasoning behind them
