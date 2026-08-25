@@ -22,4 +22,16 @@ describe('Header', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
     expect(container.querySelector('#mobile-nav')).not.toBeNull()
   })
+
+  it('applies a frosted background once the page is scrolled', () => {
+    const { container } = render(<Header />)
+    const header = container.querySelector('header')
+    expect(header).toHaveClass('bg-background')
+    expect(header).not.toHaveClass('backdrop-blur-md')
+
+    Object.defineProperty(window, 'scrollY', { value: 100, configurable: true })
+    fireEvent.scroll(window)
+
+    expect(header).toHaveClass('backdrop-blur-md')
+  })
 })

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { siteConfig } from '@/lib/site-config'
+import { Reveal } from '@/components/ui/Reveal'
 
 export const metadata: Metadata = {
   title: 'Home',
@@ -24,35 +25,52 @@ const pillars = [
 export default function HomePage() {
   return (
     <>
-      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-        <p className="font-body text-sm uppercase tracking-wide text-primary">{siteConfig.name}</p>
-        <h1 className="mt-4 max-w-3xl font-heading text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
-          {siteConfig.tagline}
-        </h1>
-        <p className="mt-6 max-w-2xl text-lg text-muted-foreground">{siteConfig.description}</p>
-        <div className="mt-10 flex flex-wrap gap-4">
-          <Link
-            href="/approach"
-            className="min-h-[44px] rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors duration-200 hover:bg-secondary"
-          >
-            See our approach
-          </Link>
-          <Link
-            href="/contact"
-            className="min-h-[44px] rounded-md border border-border px-6 py-3 font-medium text-foreground transition-colors duration-200 hover:border-primary hover:text-primary"
-          >
-            Get in touch
-          </Link>
+      <section className="relative overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              'radial-gradient(650px circle at 15% 10%, rgb(var(--color-primary) / 0.14), transparent 60%), ' +
+              'radial-gradient(500px circle at 85% 40%, rgb(var(--color-secondary) / 0.10), transparent 55%)',
+          }}
+        />
+        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+          <Reveal>
+            <p className="font-body text-sm uppercase tracking-wide text-primary">{siteConfig.name}</p>
+            <h1 className="mt-4 max-w-3xl font-heading text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
+              {siteConfig.tagline}
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg text-muted-foreground">{siteConfig.description}</p>
+            <div className="mt-10 flex flex-wrap gap-4">
+              <Link
+                href="/approach"
+                className="min-h-[44px] rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-secondary hover:shadow-lg hover:shadow-primary/25 active:translate-y-0"
+              >
+                See our approach
+              </Link>
+              <Link
+                href="/contact"
+                className="min-h-[44px] rounded-md border border-border px-6 py-3 font-medium text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
+              >
+                Get in touch
+              </Link>
+            </div>
+          </Reveal>
         </div>
       </section>
 
       <section className="border-t border-border bg-card">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-3">
-          {pillars.map((pillar) => (
-            <div key={pillar.title}>
-              <h2 className="font-heading text-xl text-foreground">{pillar.title}</h2>
-              <p className="mt-3 text-muted-foreground">{pillar.body}</p>
-            </div>
+        <div className="mx-auto grid max-w-6xl gap-6 px-4 py-16 sm:px-6 md:grid-cols-3">
+          {pillars.map((pillar, index) => (
+            <Reveal key={pillar.title} delay={index * 100}>
+              <div className="group h-full rounded-lg border border-transparent p-6 transition-all duration-200 hover:-translate-y-1 hover:border-border hover:bg-background hover:shadow-lg">
+                <h2 className="font-heading text-xl text-foreground transition-colors duration-200 group-hover:text-primary">
+                  {pillar.title}
+                </h2>
+                <p className="mt-3 text-muted-foreground">{pillar.body}</p>
+              </div>
+            </Reveal>
           ))}
         </div>
       </section>
