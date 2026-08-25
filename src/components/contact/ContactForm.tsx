@@ -107,7 +107,7 @@ export function ContactForm() {
       />
 
       <fieldset>
-        <legend className="mb-2 font-bold text-foreground">I am reaching out as a...</legend>
+        <legend className="mb-2 font-medium text-foreground">I am reaching out as a...</legend>
         <div className="flex gap-4">
           <label className="flex min-h-[44px] items-center gap-2">
             <input
@@ -135,7 +135,7 @@ export function ContactForm() {
       </fieldset>
 
       <div>
-        <label htmlFor="name" className="mb-1 block font-bold text-foreground">
+        <label htmlFor="name" className="mb-1 block font-medium text-foreground">
           Full name
         </label>
         <input
@@ -158,7 +158,7 @@ export function ContactForm() {
       </div>
 
       <div>
-        <label htmlFor="email" className="mb-1 block font-bold text-foreground">
+        <label htmlFor="email" className="mb-1 block font-medium text-foreground">
           Email
         </label>
         <input
@@ -181,7 +181,7 @@ export function ContactForm() {
       </div>
 
       <div>
-        <label htmlFor="message" className="mb-1 block font-bold text-foreground">
+        <label htmlFor="message" className="mb-1 block font-medium text-foreground">
           Message
         </label>
         <textarea
@@ -211,7 +211,7 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={status === 'submitting'}
-        className="min-h-[44px] rounded-md bg-primary px-6 py-2 font-bold text-primary-foreground transition-colors duration-200 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+        className="min-h-[44px] rounded-md bg-primary px-6 py-2 font-medium text-primary-foreground transition-colors duration-200 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
       >
         {status === 'submitting' ? 'Sending…' : 'Send message'}
       </button>

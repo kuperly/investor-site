@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { EB_Garamond, Lato } from 'next/font/google'
+import { EB_Garamond, Source_Sans_3 } from 'next/font/google'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { siteConfig } from '@/lib/site-config'
@@ -12,9 +12,9 @@ const ebGaramond = EB_Garamond({
   display: 'swap',
 })
 
-const lato = Lato({
+const sourceSans3 = Source_Sans_3({
   subsets: ['latin'],
-  weight: ['400', '700'],
+  weight: ['400', '500'],
   variable: '--font-body',
   display: 'swap',
 })
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${ebGaramond.variable} ${lato.variable}`}>
+    <html lang="en" className={`${ebGaramond.variable} ${sourceSans3.variable}`}>
       <body className="min-h-dvh bg-background font-body text-foreground antialiased">
         <a
           href="#main-content"

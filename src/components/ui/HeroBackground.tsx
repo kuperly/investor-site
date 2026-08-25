@@ -17,15 +17,23 @@ export function HeroBackground() {
         preserveAspectRatio="xMidYMid slice"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <g style={{ stroke: 'rgb(var(--color-primary))' }} fill="none" strokeWidth={1}>
-          <path d="M480 40 C 620 10, 780 60, 980 20" opacity={0.15} />
-          <path d="M460 90 C 610 55, 790 115, 990 70" opacity={0.22} />
-          <path d="M440 145 C 600 105, 800 170, 1000 125" opacity={0.3} />
-          <path d="M430 200 C 600 160, 810 225, 1000 180" opacity={0.38} />
-          <path d="M430 255 C 610 215, 820 275, 1000 235" opacity={0.3} />
-          <path d="M450 305 C 620 270, 810 325, 1000 290" opacity={0.22} />
-          <path d="M480 355 C 630 325, 800 370, 1000 340" opacity={0.15} />
+        <g style={{ stroke: 'rgb(var(--color-primary))' }} fill="none" strokeWidth={1} opacity={0.4}>
+          <rect x="540" y="160" width="65" height="240" />
+          <path d="M625 400 V130 L672 90 L719 130 V400" />
+          <rect x="745" y="220" width="50" height="180" />
+          <rect x="815" y="95" width="95" height="305" />
+          <rect x="930" y="250" width="55" height="150" />
         </g>
+        <path
+          d="M520 330 L640 270 L730 300 L830 160 L1000 90"
+          style={{ stroke: 'rgb(var(--color-secondary))' }}
+          strokeWidth={2.5}
+          fill="none"
+          opacity={0.85}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="1000" cy="90" r="4" style={{ fill: 'rgb(var(--color-secondary))' }} opacity={0.85} />
       </svg>
     </>
   )

@@ -38,13 +38,13 @@ export default function HomePage() {
             <div className="mt-10 flex flex-wrap gap-4">
               <Link
                 href="/approach"
-                className="min-h-[44px] rounded-md bg-primary px-6 py-3 font-bold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-secondary hover:shadow-lg hover:shadow-primary/25 active:translate-y-0"
+                className="min-h-[44px] rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-secondary hover:shadow-lg hover:shadow-primary/25 active:translate-y-0"
               >
                 See our approach
               </Link>
               <Link
                 href="/contact"
-                className="min-h-[44px] rounded-md border border-border px-6 py-3 font-bold text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
+                className="min-h-[44px] rounded-md border border-border px-6 py-3 font-medium text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
               >
                 Get in touch
               </Link>
