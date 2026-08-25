@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6">
-      <div className="relative overflow-hidden pt-20">
+      <div className="relative overflow-hidden pb-8 pt-20">
         <HeroBackground />
         <Reveal>
           <p className="font-body text-sm uppercase tracking-wide text-primary">About</p>

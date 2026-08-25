@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import { Header } from './Header'
 import { siteConfig } from '@/lib/site-config'
 
@@ -12,15 +12,51 @@ describe('Header', () => {
     }
   })
 
-  it('toggles the mobile menu open and closed', () => {
-    const { container } = render(<Header />)
-    const toggle = screen.getByRole('button', { name: /open menu/i })
-    expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    expect(container.querySelector('#mobile-nav')).toBeNull()
+  it('opens the mobile drawer via the hamburger trigger and closes it via the close button', () => {
+    render(<Header />)
+    const trigger = screen.getByRole('button', { name: 'Open menu' })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
 
-    fireEvent.click(toggle)
-    expect(toggle).toHaveAttribute('aria-expanded', 'true')
-    expect(container.querySelector('#mobile-nav')).not.toBeNull()
+    fireEvent.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+
+    const dialog = screen.getByRole('dialog', { name: 'Mobile navigation' })
+    const closeButton = within(dialog).getByRole('button', { name: 'Close menu' })
+    fireEvent.click(closeButton)
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('closes the drawer when Escape is pressed', () => {
+    render(<Header />)
+    const trigger = screen.getByRole('button', { name: 'Open menu' })
+    fireEvent.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('closes the drawer when the scrim is clicked', () => {
+    render(<Header />)
+    const trigger = screen.getByRole('button', { name: 'Open menu' })
+    fireEvent.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+
+    fireEvent.click(screen.getByTestId('mobile-nav-scrim'))
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('moves focus into the drawer on open and back to the trigger on close', () => {
+    render(<Header />)
+    const trigger = screen.getByRole('button', { name: 'Open menu' })
+    fireEvent.click(trigger)
+
+    const closeButton = screen.getByRole('button', { name: 'Close menu' })
+    expect(closeButton).toHaveFocus()
+
+    fireEvent.click(closeButton)
+    expect(trigger).toHaveFocus()
   })
 
   it('applies a frosted background once the page is scrolled', () => {

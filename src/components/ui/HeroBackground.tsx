@@ -12,7 +12,7 @@ export function HeroBackground() {
       />
       <svg
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 h-full w-full"
+        className="pointer-events-none absolute inset-0 -z-10 hidden h-full w-full sm:block"
         viewBox="0 0 1000 400"
         preserveAspectRatio="xMidYMid slice"
         xmlns="http://www.w3.org/2000/svg"

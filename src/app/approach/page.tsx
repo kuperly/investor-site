@@ -40,11 +40,11 @@ export default function ApproachPage() {
         </Reveal>
       </div>
 
-      <div className="pb-20">
+      <div className="group/cards pb-20">
         <div className="mt-14 space-y-10">
           {criteria.map((item, index) => (
             <Reveal key={item.title} delay={index * 100}>
-              <div className="group rounded-lg border-t border-border pt-8 transition-colors duration-200 hover:border-primary">
+              <div className="group rounded-lg border-t border-border pt-8 opacity-100 transition-all duration-200 hover:!opacity-100 hover:!saturate-100 hover:border-primary group-hover/cards:opacity-45 group-hover/cards:saturate-[0.7]">
                 <h2 className="font-heading text-2xl text-foreground transition-colors duration-200 group-hover:text-primary">
                   {item.title}
                 </h2>
@@ -55,7 +55,7 @@ export default function ApproachPage() {
         </div>
 
         <Reveal delay={criteria.length * 100}>
-          <div className="mt-14 border-t border-border pt-8">
+          <div className="rounded-lg border-t border-border pt-8 opacity-100 transition-all duration-200 hover:!opacity-100 hover:!saturate-100 group-hover/cards:opacity-45 group-hover/cards:saturate-[0.7] mt-14">
             <h2 className="font-heading text-2xl text-foreground">Buy-and-hold vs. flips</h2>
             <p className="mt-3 text-muted-foreground">
               The default is to hold: assets that compound through appreciation and rent growth stay in

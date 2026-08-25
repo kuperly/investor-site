@@ -54,10 +54,10 @@ export default function HomePage() {
       </section>
 
       <section className="border-t border-border bg-card">
-        <div className="mx-auto grid max-w-6xl gap-6 px-4 py-16 sm:px-6 md:grid-cols-3">
+        <div className="group/cards mx-auto grid max-w-6xl gap-6 px-4 py-16 sm:px-6 md:grid-cols-3">
           {pillars.map((pillar, index) => (
             <Reveal key={pillar.title} delay={index * 100}>
-              <div className="group h-full rounded-lg border border-transparent p-6 transition-all duration-200 hover:-translate-y-1 hover:border-border hover:bg-background hover:shadow-lg">
+              <div className="group h-full rounded-lg border border-transparent p-6 transition-all duration-200 hover:!translate-y-[-4px] hover:!opacity-100 hover:!saturate-100 hover:border-primary hover:bg-background hover:shadow-lg group-hover/cards:opacity-45 group-hover/cards:saturate-[0.7]">
                 <h2 className="font-heading text-xl text-foreground transition-colors duration-200 group-hover:text-primary">
                   {pillar.title}
                 </h2>
