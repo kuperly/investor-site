@@ -7,14 +7,14 @@ import './globals.css'
 
 const ebGaramond = EB_Garamond({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '600'],
   variable: '--font-heading',
   display: 'swap',
 })
 
 const lato = Lato({
   subsets: ['latin'],
-  weight: ['300', '400', '700'],
+  weight: ['400', '700'],
   variable: '--font-body',
   display: 'swap',
 })
