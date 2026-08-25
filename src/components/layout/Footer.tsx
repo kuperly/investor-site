@@ -12,7 +12,7 @@ export function Footer() {
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <Logo className="text-lg" />
             <span aria-hidden="true" className="hidden text-muted-foreground sm:inline">
-              ·
+              |
             </span>
             <span className="text-sm text-muted-foreground">{siteConfig.marketFocus}</span>
           </div>
