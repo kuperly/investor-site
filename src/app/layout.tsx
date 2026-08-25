@@ -1,17 +1,20 @@
 import type { Metadata } from 'next'
-import { EB_Garamond, Source_Sans_3 } from 'next/font/google'
+import { Fraunces, Source_Sans_3 } from 'next/font/google'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { siteConfig } from '@/lib/site-config'
 import './globals.css'
 
-const ebGaramond = EB_Garamond({
+// Fraunces is a variable font — load the full range and control weight in CSS.
+const fraunces = Fraunces({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
   style: ['normal', 'italic'],
   variable: '--font-heading',
   display: 'swap',
 })
+
+// Applies the visitor's saved theme choice before first paint (no flash).
+const themeInitScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`
 
 const sourceSans3 = Source_Sans_3({
   subsets: ['latin'],
@@ -30,8 +33,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${ebGaramond.variable} ${sourceSans3.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${fraunces.variable} ${sourceSans3.variable}`}>
       <body className="min-h-dvh bg-background font-body text-foreground antialiased">
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"

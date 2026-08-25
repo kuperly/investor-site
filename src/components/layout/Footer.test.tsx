@@ -12,10 +12,9 @@ describe('Footer', () => {
     expect(contactLink).toHaveAttribute('href', `mailto:${siteConfig.contactEmail}`)
   })
 
-  it('renders all nav links', () => {
+  it('does not duplicate the header navigation', () => {
     render(<Footer />)
-    for (const item of siteConfig.nav) {
-      expect(screen.getByRole('link', { name: item.label })).toBeInTheDocument()
-    }
+    // Footer is intentionally minimal on a 4-page site — nav lives only in the header.
+    expect(screen.queryByRole('link', { name: 'Approach' })).not.toBeInTheDocument()
   })
 })

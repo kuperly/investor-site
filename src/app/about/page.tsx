@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { siteConfig } from '@/lib/site-config'
 import { Reveal } from '@/components/ui/Reveal'
-import { HeroBackground } from '@/components/ui/HeroBackground'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 
 export const metadata: Metadata = {
@@ -11,8 +10,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6">
-      <div className="relative overflow-hidden pb-8 pt-24 sm:pt-28">
-        <HeroBackground />
+      <div className="pb-8 pt-20 sm:pt-24">
         <Reveal>
           <Eyebrow>About</Eyebrow>
           <h1 className="mt-6 text-balance font-heading text-4xl font-semibold leading-tight tracking-display text-foreground sm:text-5xl">

@@ -18,9 +18,12 @@
   --color-destructive-foreground: 10 15 28;
 }
 
+/* Light palette (warm paper + deep bronze — the same identity, inverted).
+   Applied when the OS prefers light AND the visitor hasn't forced dark, or
+   when the visitor explicitly picks light via the header toggle. Keep the two
+   blocks below in sync. */
 @media (prefers-color-scheme: light) {
-  :root {
-    /* Light: warm paper + deep bronze — the same identity, inverted */
+  :root:not([data-theme='dark']) {
     --color-background: 250 248 243; /* #FAF8F3 - warm paper */
     --color-foreground: 20 25 43; /* #14192B - deep ink */
     --color-primary: 138 109 31; /* #8A6D1F - dark bronze, ≥4.5:1 on paper */
@@ -36,6 +39,21 @@
   }
 }
 
+:root[data-theme='light'] {
+  --color-background: 250 248 243;
+  --color-foreground: 20 25 43;
+  --color-primary: 138 109 31;
+  --color-primary-foreground: 255 255 255;
+  --color-secondary: 110 85 24;
+  --color-card: 255 255 255;
+  --color-muted: 241 238 231;
+  --color-muted-foreground: 84 94 118;
+  --color-border: 229 224 213;
+  --color-ring: 138 109 31;
+  --color-destructive: 190 30 30;
+  --color-destructive-foreground: 255 255 255;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -44,6 +62,9 @@ body {
   /* Slightly relaxed body measure for editorial calm */
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  /* Belt-and-suspenders against horizontal scroll; `clip` (not `hidden`)
+     does not create a scroll container, so it won't break sticky. */
+  overflow-x: clip;
 }
 
 /* A single, consistent focus ring for every interactive element */

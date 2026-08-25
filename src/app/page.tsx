@@ -73,25 +73,16 @@ export default function HomePage() {
       </section>
 
       {/* What we do — three pillars */}
-      <section className="border-t border-border bg-card/40">
+      <section>
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
           <Reveal>
             <Eyebrow>What we do</Eyebrow>
           </Reveal>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {pillars.map((pillar, index) => (
-              <Reveal key={pillar.title} delay={index * 90}>
-                <div className="group relative h-full overflow-hidden rounded-lg border border-border/70 bg-background/40 p-7 transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-background hover:shadow-xl hover:shadow-black/20">
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-x-0 top-0 h-px origin-left scale-x-0 bg-primary transition-transform duration-300 group-hover:scale-x-100"
-                  />
-                  <span className="font-heading text-sm tabular-nums text-primary/80">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <h2 className="mt-4 font-heading text-2xl text-foreground transition-colors duration-200 group-hover:text-primary">
-                    {pillar.title}
-                  </h2>
+              <Reveal key={pillar.title} delay={index * 90} className="h-full">
+                <div className="h-full rounded-xl border border-border bg-card/40 p-7">
+                  <h2 className="font-heading text-2xl text-foreground">{pillar.title}</h2>
                   <p className="mt-3 leading-relaxed text-muted-foreground">{pillar.body}</p>
                 </div>
               </Reveal>
@@ -101,7 +92,7 @@ export default function HomePage() {
       </section>
 
       {/* Who we work with */}
-      <section className="border-t border-border">
+      <section>
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
           <Reveal>
             <Eyebrow>Who we work with</Eyebrow>
@@ -113,10 +104,10 @@ export default function HomePage() {
               takes both relationships seriously.
             </p>
           </Reveal>
-          <div className="mt-12 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3">
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
             {audiences.map((audience, index) => (
               <Reveal key={audience.label} delay={index * 90} className="h-full">
-                <div className="group flex h-full flex-col bg-background p-7 transition-colors duration-200 hover:bg-card">
+                <div className="h-full rounded-xl border border-border bg-card/40 p-7">
                   <h3 className="font-heading text-xl text-foreground">{audience.label}</h3>
                   <p className="mt-3 leading-relaxed text-muted-foreground">{audience.body}</p>
                 </div>
@@ -126,11 +117,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Closing CTA band */}
-      <section className="border-t border-border bg-card/40">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+      {/* Closing CTA */}
+      <section>
+        <div className="mx-auto max-w-6xl px-4 pb-24 pt-4 sm:px-6">
           <Reveal>
-            <div className="flex flex-col items-start gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col items-start gap-8 rounded-2xl border border-border bg-card/40 p-8 sm:p-12 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="max-w-2xl text-balance font-heading text-3xl font-semibold leading-tight text-foreground sm:text-4xl">
                   Let&apos;s talk about the opportunity in front of you.

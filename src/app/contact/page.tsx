@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { ContactForm } from '@/components/contact/ContactForm'
 import { siteConfig } from '@/lib/site-config'
 import { Reveal } from '@/components/ui/Reveal'
-import { HeroBackground } from '@/components/ui/HeroBackground'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 
 export const metadata: Metadata = {
@@ -12,8 +11,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6">
-      <div className="relative overflow-hidden pt-24 sm:pt-28">
-        <HeroBackground />
+      <div className="pt-20 sm:pt-24">
         <Reveal>
           <Eyebrow>Contact</Eyebrow>
           <h1 className="mt-6 text-balance font-heading text-4xl font-semibold leading-tight tracking-display text-foreground sm:text-5xl">
