@@ -17,7 +17,9 @@ export default function ContactPage() {
           Whether you are exploring an investment or have a deal you think fits {siteConfig.name}, tell
           us a bit about it below.
         </p>
+      </Reveal>
 
+      <Reveal delay={100}>
         <div className="mt-12">
           <ContactForm />
         </div>
