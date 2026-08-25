@@ -6,7 +6,7 @@ import { siteConfig } from '@/lib/site-config'
 describe('Footer', () => {
   it('renders brand name, market focus, and a mailto contact link', () => {
     render(<Footer />)
-    expect(screen.getByText(siteConfig.name)).toBeInTheDocument()
+    expect(screen.getByRole('contentinfo')).toHaveTextContent(siteConfig.name)
     expect(screen.getByText(siteConfig.marketFocus)).toBeInTheDocument()
     const contactLink = screen.getByRole('link', { name: siteConfig.contactEmail })
     expect(contactLink).toHaveAttribute('href', `mailto:${siteConfig.contactEmail}`)

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { siteConfig } from '@/lib/site-config'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { Logo } from '@/components/ui/Logo'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -59,11 +60,8 @@ export function Header() {
       }`}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <Link
-          href="/"
-          className="font-heading text-xl font-semibold tracking-tight text-foreground transition-colors duration-200 hover:text-primary"
-        >
-          {siteConfig.name}
+        <Link href="/" className="transition-opacity duration-200 hover:opacity-80">
+          <Logo className="text-xl" />
         </Link>
 
         <div className="flex items-center gap-1 sm:gap-6">

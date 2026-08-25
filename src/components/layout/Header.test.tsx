@@ -6,7 +6,7 @@ import { siteConfig } from '@/lib/site-config'
 describe('Header', () => {
   it('renders the brand name and all nav links', () => {
     render(<Header />)
-    expect(screen.getAllByText(siteConfig.name).length).toBeGreaterThan(0)
+    expect(screen.getByRole('banner')).toHaveTextContent(siteConfig.name)
     for (const item of siteConfig.nav) {
       expect(screen.getAllByRole('link', { name: item.label }).length).toBeGreaterThan(0)
     }

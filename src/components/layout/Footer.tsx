@@ -1,4 +1,5 @@
 import { siteConfig } from '@/lib/site-config'
+import { Logo } from '@/components/ui/Logo'
 
 export function Footer() {
   const year = new Date().getFullYear()
@@ -8,9 +9,7 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="font-heading text-lg font-semibold tracking-tight text-foreground">
-              {siteConfig.name}
-            </p>
+            <Logo className="text-lg" />
             <p className="mt-1 text-muted-foreground">{siteConfig.marketFocus}</p>
           </div>
 
