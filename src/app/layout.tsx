@@ -46,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
       className={`${fraunces.variable} ${sourceSans3.variable} ${spaceGrotesk.variable}`}
     >
-      <body className="min-h-dvh bg-background font-body text-foreground antialiased">
+      <body className="flex min-h-dvh flex-col bg-background font-body text-foreground antialiased">
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <a
           href="#main-content"
@@ -55,7 +55,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to main content
         </a>
         <Header />
-        <main id="main-content">{children}</main>
+        <main id="main-content" className="flex-1">
+          {children}
+        </main>
         <Footer />
       </body>
     </html>
