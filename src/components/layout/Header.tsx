@@ -109,7 +109,7 @@ export function Header() {
         aria-hidden={!isMenuOpen}
         data-testid="mobile-nav-scrim"
         onClick={closeMenu}
-        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 sm:hidden ${
+        className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300 sm:hidden ${
           isMenuOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
       />
