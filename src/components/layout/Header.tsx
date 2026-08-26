@@ -123,7 +123,7 @@ export function Header() {
           role="dialog"
           aria-modal="true"
           aria-label="Mobile navigation"
-          className={`absolute inset-y-0 right-0 flex w-72 max-w-[85vw] transform-gpu flex-col border-l border-border bg-background transition-transform duration-300 ${
+          className={`absolute inset-y-0 right-0 flex w-72 max-w-[85vw] flex-col border-l border-border bg-background transition-transform duration-300 ${
             isMenuOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
