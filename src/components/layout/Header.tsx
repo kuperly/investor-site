@@ -102,32 +102,28 @@ export function Header() {
         </div>
       </div>
 
-      {/* Off-canvas overlay. The fixed, overflow-hidden wrapper clips the
-          parked drawer so it can't create horizontal scroll on mobile. */}
+      {/* Mobile drawer + scrim: plain fixed elements (no clipping wrapper) so
+          the drawer stays anchored to the viewport and slides smoothly. The
+          body's `overflow-x: clip` keeps the parked drawer from scrolling. */}
       <div
-        className={`fixed inset-0 z-40 overflow-hidden sm:hidden ${
-          isMenuOpen ? '' : 'pointer-events-none'
+        aria-hidden={!isMenuOpen}
+        data-testid="mobile-nav-scrim"
+        onClick={closeMenu}
+        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 sm:hidden ${
+          isMenuOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+      />
+
+      <div
+        id="mobile-nav"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mobile navigation"
+        className={`fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85vw] flex-col border-l border-border bg-background transition-transform duration-300 sm:hidden ${
+          isMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div
-          aria-hidden={!isMenuOpen}
-          data-testid="mobile-nav-scrim"
-          onClick={closeMenu}
-          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
-            isMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
-          }`}
-        />
-
-        <div
-          id="mobile-nav"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Mobile navigation"
-          className={`absolute inset-y-0 right-0 flex w-72 max-w-[85vw] flex-col border-l border-border bg-background transition-transform duration-300 ${
-            isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          <div className="flex items-center justify-between px-4 py-4">
+        <div className="flex items-center justify-between px-4 py-4">
           <span className="font-heading text-lg font-semibold text-foreground">Menu</span>
           <button
             ref={closeRef}
@@ -164,7 +160,6 @@ export function Header() {
             )
           })}
         </nav>
-        </div>
       </div>
     </header>
   )
