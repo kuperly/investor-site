@@ -204,6 +204,7 @@ All captured from the running production build during the E2E run.
 | Comps page: stats, list, add form, deal summary comparison | [10-comps-page.png](docs/screenshots/10-comps-page.png) |
 | Comp changes in the audit trail | [11-comps-audit.png](docs/screenshots/11-comps-audit.png) |
 | Comps on mobile | [12-comps-mobile.png](docs/screenshots/12-comps-mobile.png) |
+| Comp-supported ARV: weights, shares, Apply | [13-comp-arv.png](docs/screenshots/13-comp-arv.png) |
 
 ## ⚠️ Decisions that need Guy/Ben approval
 
@@ -241,7 +242,15 @@ approved.**
    `[DEMO] 7 Flip Only Ln` deal: $53k flip profit, PASS). That is
    implemented literally. Should this gate apply only when BRRRR/Hold is the
    intended strategy?
-10. **Smaller interpretations.**
+10. **Comp-ARV weighting numbers.** The method and criteria are approved;
+    these numbers are placeholders:
+    - Tiers: Standard 1× / Best fit 2× / Super comp 3×.
+    - Each factor runs from 1 down to a 0.25 floor: recency floors at 12
+      months, distance at 2 mi, sqft at a 30% size difference, beds and
+      baths at 2 apart.
+    - Status: Sold 1 / Pending 0.75 / Active 0.5.
+    - An unknown comp fact scores at the floor.
+11. **Smaller interpretations.**
     - Closing $ is used only when Closing % is blank.
     - Inspection, attorney, title and other acquisition costs go into "Other
       Project Costs."
@@ -265,7 +274,18 @@ Deal page → **Manage comps** (`/deals/[id]/comps`):
   list's values (mismatches highlighted). One click copies them over, and
   every field change is audited. Distance = farthest comp; recency = oldest
   sale.
-- **ARV is never set from comps.**
+- **Comp-supported ARV** (approved method):
+  - Weighted average $/sqft of the included **renovated** comps × the
+    subject's sqft.
+  - Each comp's weight comes from time, distance and similarity (sqft,
+    beds, baths, status), multiplied by its tier: Standard / **Best fit** /
+    **Super comp**.
+  - The page shows each comp's factors and its % share of the ARV, plus an
+    unweighted median cross-check.
+  - It's a **suggestion**: Base ARV changes only when you click "Apply"
+    (audited). Conservative and Upside stay manual.
+- **"Why?" panel.** It notes when your Base ARV is above the comp-supported
+  ARV (with the % gap) or at/below it.
 - Every comp change goes to the audit trail with before/after values, and
   comps appear in the PDF export.
 

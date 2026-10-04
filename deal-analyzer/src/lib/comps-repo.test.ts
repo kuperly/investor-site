@@ -21,6 +21,11 @@ describe('parseComp', () => {
     expect(comp.renovation).toBeNull()
     expect(comp.included).toBe(true)
   })
+  it('unknown tier falls back to standard; unknown status stays null', () => {
+    const { comp } = parseComp(form({ address: 'x', tier: 'hacked', saleStatus: 'closed??' }), today)
+    expect(comp.tier).toBe('standard')
+    expect(comp.saleStatus).toBeNull()
+  })
   it('validates address, numbers, dates and URLs', () => {
     const { errors } = parseComp(
       form({ salePrice: 'abc', sqft: '1200.5', saleDate: '2027-01-01', sourceUrl: 'javascript:alert(1)', distanceMiles: '-1' }),
@@ -49,7 +54,7 @@ describe('comps repository', () => {
       dealId,
       c({
         address: '2 New St', salePrice: '210000', saleDate: '2026-08-02', sqft: '1400', beds: '3', baths: '1.5',
-        distanceMiles: '0.4', condition: 'Fully renovated', renovation: 'renovated', source: 'MLS',
+        distanceMiles: '0.4', condition: 'Fully renovated', renovation: 'renovated', saleStatus: 'sold', tier: 'superComp', source: 'MLS',
         sourceUrl: 'https://example.com/listing', notes: 'n',
       }),
       'Ben',
@@ -58,9 +63,10 @@ describe('comps repository', () => {
     expect(list.map((x) => x.address)).toEqual(['2 New St', '1 Old St'])
     expect(list[0]).toMatchObject({
       id, saleDate: '2026-08-02', salePrice: 210_000, sqft: 1_400, baths: 1.5, distanceMiles: 0.4,
-      renovation: 'renovated', source: 'MLS', origin: 'manual', createdBy: 'Ben',
+      renovation: 'renovated', saleStatus: 'sold', tier: 'superComp', source: 'MLS', origin: 'manual', createdBy: 'Ben',
     })
     expect(list[1].sqft).toBeNull()
+    expect(list[1]).toMatchObject({ saleStatus: null, tier: 'standard' }) // defaults: status UNKNOWN, tier Standard
   })
 
   it('update and delete are audited with before/after snapshots', async () => {

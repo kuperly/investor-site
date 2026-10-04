@@ -5,7 +5,8 @@ import { CompForm } from '@/components/CompForm'
 import { CompsList } from '@/components/CompsList'
 import { CompsStats } from '@/components/CompsStats'
 import { Val } from '@/components/Val'
-import { compStats, summaryFromComps, type CompSummaryKey } from '@/engine/comps'
+import { compArv, compStats, summaryFromComps, type CompSummaryKey } from '@/engine/comps'
+import { CompArvPanel } from '@/components/CompArvPanel'
 import { fieldLabel } from '@/engine/fields'
 import { compsRepo } from '@/lib/comps-repo'
 import { compToForm } from '@/lib/comps/parse-comp'
@@ -41,7 +42,9 @@ export default async function CompsPage({
   const repo = compsRepo(db)
   const [comps, user] = await Promise.all([repo.list(id), currentUser()])
   const editing = edit ? comps.find((c) => c.id === edit) : undefined
-  const stats = compStats(comps, new Date())
+  const now = new Date()
+  const stats = compStats(comps, now)
+  const arvResult = compArv(comps, { sqft: deal.inputs.sqft, beds: deal.inputs.beds, baths: deal.inputs.baths }, now)
   const summary = summaryFromComps(stats)
   const keys = Object.keys(summary) as CompSummaryKey[]
   const differs = keys.filter((k) => summary[k] !== deal.inputs[k])
@@ -59,10 +62,15 @@ export default async function CompsPage({
       </div>
 
       <section className="card">
+        <h2 className="h2">Comp-supported ARV</h2>
+        <CompArvPanel r={arvResult} baseArv={i.arvBase} dealId={id} canApply={Boolean(user)} />
+      </section>
+
+      <section className="card">
         <h2 className="h2">Comp statistics</h2>
         <CompsStats s={stats} />
         <p className="mt-2 text-xs text-ink-muted">
-          Statistics summarise the comps only — the ARVs remain your decision and are never set from this list.
+          Statistics summarise the comps only. Base ARV changes only when you click “Apply” above.
         </p>
       </section>
 

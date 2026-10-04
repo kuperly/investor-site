@@ -9,7 +9,7 @@ import { NOTE_CATEGORIES } from '@/lib/notes'
 import { repo } from '@/lib/repo'
 import { CompsList } from '@/components/CompsList'
 import { CompsStats } from '@/components/CompsStats'
-import { compStats } from '@/engine/comps'
+import { compArv, compStats, TIER_LABELS } from '@/engine/comps'
 import { compsRepo } from '@/lib/comps-repo'
 import { getDb } from '@/lib/db'
 
@@ -20,9 +20,10 @@ export default async function ExportPage({ params }: { params: Promise<{ id: str
   const { id } = await params
   const deal = await (await repo()).get(id)
   if (!deal) notFound()
-  const a = analyzeDeal(deal.inputs)
   const i = deal.inputs
   const comps = await compsRepo(await getDb()).list(id)
+  const arvResult = compArv(comps, { sqft: i.sqft, beds: i.beds, baths: i.baths }, new Date())
+  const a = analyzeDeal(deal.inputs, { compArv: arvResult.arv })
 
   return (
     <article className="space-y-4">
@@ -43,6 +44,13 @@ export default async function ExportPage({ params }: { params: Promise<{ id: str
 
       <section className="card">
         <h2 className="h2">Comparable properties ({comps.length})</h2>
+        {comps.length > 0 && (
+          <p className="mb-3 text-sm">
+            Comp-supported ARV: <strong>{arvResult.arv === null ? 'UNKNOWN' : `$${arvResult.arv.toLocaleString('en-US')}`}</strong>
+            {arvResult.weightedPpsf !== null && ` (weighted $${arvResult.weightedPpsf.toFixed(2)}/sqft × ${i.sqft ?? '?'} sqft; `}
+            {arvResult.used.length > 0 && `${arvResult.used.map((u) => `${u.comp.address} ${TIER_LABELS[u.comp.tier]} ${(u.share * 100).toFixed(0)}%`).join(', ')})`}
+          </p>
+        )}
         {comps.length > 0 && <CompsStats s={compStats(comps, new Date())} />}
         <div className="mt-3"><CompsList comps={comps} /></div>
       </section>

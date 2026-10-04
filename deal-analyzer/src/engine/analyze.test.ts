@@ -133,3 +133,16 @@ describe('seasoning notice', () => {
     expect(a.notices.join(' ')).toMatch(/seasoning requirement is 6 months/)
   })
 })
+
+describe('comp-supported ARV in "Why?"', () => {
+  it('flags a Base ARV above the comp ARV with the exact gap; never changes the numbers', () => {
+    const a = analyzeDeal(sampleInputs({ arvBase: 210_000 }), { compArv: 200_000 })
+    expect(a.why.risks).toContain('Base ARV is 5% above the comp-supported ARV ($200,000)')
+    expect(a.base.arv).toBe(210_000) // comps never overwrite ARV inside the engine
+  })
+  it('notes support when Base ARV is at or below comps; silent without a comp ARV', () => {
+    expect(analyzeDeal(sampleInputs(), { compArv: 200_000 }).why.strengths).toContain('Base ARV is at or below the comp-supported ARV')
+    const plain = analyzeDeal(sampleInputs())
+    expect([...plain.why.strengths, ...plain.why.risks].some((s) => s.includes('comp-supported'))).toBe(false)
+  })
+})

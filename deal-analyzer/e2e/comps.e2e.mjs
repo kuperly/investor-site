@@ -44,10 +44,25 @@ await row.getByRole('link', { name: 'Edit' }).click()
 await page.waitForSelector('text=Edit comp')
 ok((await page.inputValue('#c_salePrice')) === '212500', 'edit form pre-filled')
 await page.fill('#c_salePrice', '209000'); await page.fill('#c_sqft', '1400')
+await page.selectOption('#c_saleStatus', 'pending'); await page.selectOption('#c_tier', 'bestFit')
 await page.getByRole('button', { name: 'Save comp' }).click()
 await page.waitForSelector('text=Add comp')
 body = await page.locator('main').innerText()
 ok(/55 Manual Entry Ln[\s\S]*\$209,000[\s\S]*\$149/.test(body), 'edit saved; $/sqft computed (209,000/1,400 ≈ $149)')
+ok(/55 Manual Entry Ln\s*Best fit/.test(body) && body.includes('Pending'), 'tier badge + status shown')
+
+// Comp-supported ARV: weighted table + Apply as Base ARV
+const arvCard = page.locator('section', { has: page.locator('h2', { hasText: 'Comp-supported ARV' }) })
+const arvText = await arvCard.innerText()
+ok(/Super comp \(3×\)/.test(arvText) && /Best fit \(2×\)/.test(arvText), 'weights table shows tiers')
+const shares = [...arvText.matchAll(/(\d+\.\d)%\n/g)].map((m) => Number(m[1]))
+ok(Math.abs(shares.reduce((a, b) => a + b, 0) - 100) < 0.5, `shares add up to 100% (${shares.join(' + ')})`)
+const suggested = arvText.match(/Comp-supported ARV\s*\n\s*\$([\d,]+)/)[1]
+ok(arvText.includes('Fixture Ct (not marked renovated)'), 'unrenovated comp listed as not used for ARV')
+await arvCard.screenshot({ path: `${OUT}/13-comp-arv.png` })
+await arvCard.getByRole('button', { name: /Apply \$[\d,]+ as Base ARV/ }).click()
+await page.waitForFunction(() => !/Apply \$[\d,]+ as Base ARV/.test(document.body.innerText))
+ok((await page.locator('main').innerText()).includes(`(Conservative / Base / Upside): $185,000 / $${suggested} / $215,000`), `Base ARV now $${suggested}; Conservative/Upside unchanged`)
 
 // exclude unrenovated outlier, then delete one
 await page.locator('tr', { hasText: '9 Fixture Ct' }).getByRole('button', { name: 'Exclude' }).click()
@@ -71,6 +86,7 @@ ok(body.includes('Comp added') && body.includes('55 Manual Entry Ln · $212,500 
 ok(body.includes('sale price: $212,500 → $209,000'), 'audit: comp edit shows old → new')
 ok(body.includes('Comp removed'), 'audit: comp removed')
 ok(body.includes('Number of comps') && body.includes('Changed by Ben'), 'audit: applied summary fields, by Ben')
+ok(new RegExp(`Base ARV\\s*Old: \\$200,000 → New: \\$${suggested}`).test(body), 'audit: Base ARV old → new from comp ARV')
 await page.locator('h2:has-text("Audit trail")').locator('..').screenshot({ path: `${OUT}/11-comps-audit.png` })
 
 // export includes comps

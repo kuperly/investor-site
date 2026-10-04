@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { deleteComp, toggleCompIncluded } from '@/app/comps-actions'
-import { monthsSince, pricePerSqft } from '@/engine/comps'
+import { monthsSince, pricePerSqft, TIER_LABELS } from '@/engine/comps'
 import type { CompRecord } from '@/lib/comps-repo'
 import { money, num } from '@/lib/format'
 import { ConfirmButton } from './ConfirmButton'
@@ -12,6 +12,13 @@ const ppsfText = (c: CompRecord) => {
   return v === null ? 'UNKNOWN' : `$${num(v)}`
 }
 const bdba = (c: CompRecord) => `${c.beds ?? '?'} / ${c.baths ?? '?'}`
+const statusLabel = (s: CompRecord['saleStatus']) => (s ? s[0].toUpperCase() + s.slice(1) : 'Unknown')
+
+function TierBadge({ c }: { c: CompRecord }) {
+  if (c.tier === 'standard') return null
+  const cls = c.tier === 'superComp' ? 'bg-violet-100 text-violet-900' : 'bg-sky-100 text-sky-900'
+  return <span className={`ml-1 rounded px-1.5 py-0.5 text-[11px] font-semibold no-underline ${cls}`}>{TIER_LABELS[c.tier]}</span>
+}
 
 function Source({ c }: { c: CompRecord }) {
   const label = c.source ?? '—'
@@ -53,7 +60,7 @@ export function CompsList({ comps, editable = false }: { comps: CompRecord[]; ed
           <thead>
             <tr>
               <th>Address</th><th>Sale price</th><th>Sale date</th><th>Sqft</th><th>$/sqft</th><th>Bd / Ba</th>
-              <th>Distance</th><th>Condition</th><th>Renovated</th><th>Source</th>{editable && <th />}
+              <th>Distance</th><th>Condition</th><th>Renovated</th><th>Status</th><th>Source</th>{editable && <th />}
             </tr>
           </thead>
           <tbody>
@@ -61,6 +68,7 @@ export function CompsList({ comps, editable = false }: { comps: CompRecord[]; ed
               <tr key={c.id} className={c.included ? '' : 'text-ink-muted line-through decoration-slate-400'}>
                 <td className="min-w-[160px] max-w-[220px] whitespace-normal font-medium">
                   {c.address}
+                  <TierBadge c={c} />
                   {!c.included && <span className="ml-1 text-xs no-underline">(excluded)</span>}
                   {c.notes && <div className="text-xs font-normal text-ink-muted">{c.notes}</div>}
                 </td>
@@ -72,6 +80,7 @@ export function CompsList({ comps, editable = false }: { comps: CompRecord[]; ed
                 <td>{c.distanceMiles === null ? <Val v="UNKNOWN" /> : `${num(c.distanceMiles, 2)} mi`}</td>
                 <td className="max-w-[160px] whitespace-normal">{c.condition ?? '—'}</td>
                 <td>{renoLabel(c.renovation)}</td>
+                <td>{c.saleStatus ? statusLabel(c.saleStatus) : <Val v="UNKNOWN" />}</td>
                 <td><Source c={c} /></td>
                 {editable && <td><Actions c={c} editable /></td>}
               </tr>
@@ -83,12 +92,12 @@ export function CompsList({ comps, editable = false }: { comps: CompRecord[]; ed
         {comps.map((c) => (
           <li key={c.id} className={`rounded-md border border-slate-200 p-3 text-sm ${c.included ? '' : 'opacity-60'}`}>
             <div className="flex justify-between gap-2">
-              <div className="font-medium">{c.address}{!c.included && ' (excluded)'}</div>
+              <div className="font-medium">{c.address}<TierBadge c={c} />{!c.included && ' (excluded)'}</div>
               <div className="font-semibold"><Val v={money(c.salePrice)} /></div>
             </div>
             <div className="mt-1 text-xs text-ink-soft">
               {c.saleDate ?? 'Date unknown'} · {ppsfText(c)}/sqft · {num(c.sqft)} sqft · {bdba(c)} bd/ba ·{' '}
-              {c.distanceMiles === null ? '? mi' : `${num(c.distanceMiles, 2)} mi`} · {renoLabel(c.renovation)} · <Source c={c} />
+              {c.distanceMiles === null ? '? mi' : `${num(c.distanceMiles, 2)} mi`} · {renoLabel(c.renovation)} · {statusLabel(c.saleStatus)} · <Source c={c} />
             </div>
             {c.notes && <div className="mt-1 text-xs text-ink-muted">{c.notes}</div>}
             {editable && <div className="mt-2"><Actions c={c} editable /></div>}

@@ -68,9 +68,9 @@ async function main() {
     if (d === demos[0]) {
       // Illustrative comps only — fictitious addresses, not market data.
       const demoComps: Record<string, string>[] = [
-        { address: '[DEMO] 101 Sample Ave', salePrice: '205000', saleDate: '2026-07-15', sqft: '1380', beds: '3', baths: '2', distanceMiles: '0.3', condition: 'Full renovation', renovation: 'renovated', source: 'Manual' },
-        { address: '[DEMO] 77 Placeholder Rd', salePrice: '198000', saleDate: '2026-05-02', sqft: '1450', beds: '3', baths: '1.5', distanceMiles: '0.6', condition: 'Updated kitchen/baths', renovation: 'renovated', source: 'Manual' },
-        { address: '[DEMO] 9 Fixture Ct', salePrice: '118000', saleDate: '2026-03-20', sqft: '1350', beds: '3', baths: '1', distanceMiles: '0.5', condition: 'Original, dated', renovation: 'unrenovated', source: 'Manual' },
+        { address: '[DEMO] 101 Sample Ave', salePrice: '205000', saleDate: '2026-07-15', sqft: '1380', beds: '3', baths: '2', distanceMiles: '0.3', condition: 'Full renovation', renovation: 'renovated', saleStatus: 'sold', tier: 'superComp', source: 'Manual' },
+        { address: '[DEMO] 77 Placeholder Rd', salePrice: '198000', saleDate: '2026-05-02', sqft: '1450', beds: '3', baths: '1.5', distanceMiles: '0.6', condition: 'Updated kitchen/baths', renovation: 'renovated', saleStatus: 'sold', source: 'Manual' },
+        { address: '[DEMO] 9 Fixture Ct', salePrice: '118000', saleDate: '2026-03-20', sqft: '1350', beds: '3', baths: '1', distanceMiles: '0.5', condition: 'Original, dated', renovation: 'unrenovated', saleStatus: 'sold', source: 'Manual' },
       ]
       for (const c of demoComps) await comps.add(id, parseComp((k) => c[k] ?? null).comp, 'Guy')
     }

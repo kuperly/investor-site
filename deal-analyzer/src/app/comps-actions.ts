@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { compStats, summaryFromComps } from '@/engine/comps'
+import { compArv, compStats, summaryFromComps } from '@/engine/comps'
 import { compsRepo } from '@/lib/comps-repo'
 import { parseComp, type CompErrors } from '@/lib/comps/parse-comp'
 import { getDb } from '@/lib/db'
@@ -78,5 +78,20 @@ export async function applyCompSummary(formData: FormData) {
   if (!deal) return
   const summary = summaryFromComps(compStats(await comps.list(dealId), new Date()))
   await deals.update(dealId, { inputs: { ...deal.inputs, ...summary } }, user)
+  refresh(dealId)
+}
+
+/** Sets Base ARV to the comp-supported ARV (approved flow: suggest → user clicks Apply; audited). */
+export async function applyCompArv(formData: FormData) {
+  const user = await currentUser()
+  const dealId = String(formData.get('dealId') ?? '')
+  if (!user) return
+  const { comps, deals } = await repos()
+  const deal = await deals.get(dealId)
+  if (!deal) return
+  const i = deal.inputs
+  const r = compArv(await comps.list(dealId), { sqft: i.sqft, beds: i.beds, baths: i.baths }, new Date())
+  if (r.arv === null) return
+  await deals.update(dealId, { inputs: { ...i, arvBase: r.arv } }, user)
   refresh(dealId)
 }

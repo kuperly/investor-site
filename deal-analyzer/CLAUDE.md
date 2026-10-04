@@ -40,8 +40,11 @@ is evaluated as BRRRR, Hold, Flip and Hybrid.
 7. **Every change is audited (§33).** Deal inputs, notes, status and comps all
    write `deal_audit` rows through the repositories. Don't write to `deals`
    or `deal_comps` outside `deals-repo.ts` / `comps-repo.ts`.
-8. **Comps never set ARV.** Imports (§30) may fill property facts, never ARV
-   or rehab, without the user's explicit action.
+8. **Comps suggest ARV; only the user applies it.** The comp-supported Base
+   ARV (`compArv` in `comps.ts`: weighted $/sqft of renovated comps × subject
+   sqft) changes `arvBase` only via the audited "Apply" action. Imports (§30)
+   may fill property facts, never ARV or rehab, without that explicit step.
+   Weighting numbers in `PROVISIONAL.compArv` await confirmation.
 9. **Hard gates beat the score.** Never let a score path reach BUY with a
    FAIL or UNKNOWN gate.
 

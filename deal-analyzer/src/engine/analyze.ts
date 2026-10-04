@@ -68,7 +68,12 @@ export function missingMessage(key: InputKey): string {
 
 const pct = (x: number) => `${Math.round(x * 100)}%`
 
-export function analyzeDeal(inputs: DealInputs): DealAnalysis {
+export interface AnalyzeOptions {
+  /** Comp-supported ARV (see comps.ts compArv); informs the "Why?" text only. */
+  compArv?: Num
+}
+
+export function analyzeDeal(inputs: DealInputs, opts: AnalyzeOptions = {}): DealAnalysis {
   const reader = new InputReader(inputs)
   const base = underwriteCore(inputs, {}, reader)
   const conservativeCase = underwriteCore(inputs, { arvKey: 'arvConservative', rentKey: 'conservativeRent' }, reader)
@@ -190,7 +195,7 @@ export function analyzeDeal(inputs: DealInputs): DealAnalysis {
   }
 
   const recommendation = recommend(score, gates, missing.length === 0)
-  const why = explain({ base, conservativeCase, combined, strategies, gates, minDscr, inputs, missing })
+  const why = explain({ base, conservativeCase, combined, strategies, gates, minDscr, inputs, missing, compArv: opts.compArv ?? null })
 
   return {
     base,
@@ -218,6 +223,7 @@ function explain(a: {
   minDscr: Num
   inputs: DealInputs
   missing: DataWarning[]
+  compArv: Num
 }): { strengths: string[]; risks: string[] } {
   const S = SPEC.score
   const strengths: string[] = []
@@ -270,6 +276,12 @@ function explain(a: {
   if (sf !== null && sf <= 0) risks.push('Flip loses money under combined stress')
 
   for (const g of a.gates) if (g.status === 'FAIL') risks.push(`Hard gate: ${g.label}`)
+  if (a.compArv !== null && a.compArv > 0 && a.inputs.arvBase !== null) {
+    const gap = (a.inputs.arvBase - a.compArv) / a.compArv
+    if (gap > 0) risks.push(`Base ARV is ${pct(gap)} above the comp-supported ARV ($${Math.round(a.compArv).toLocaleString('en-US')})`)
+    else strengths.push('Base ARV is at or below the comp-supported ARV')
+  }
+
   if (a.missing.length > 0) risks.push(`Underwriting incomplete — ${a.missing.length} input(s) missing`)
 
   return { strengths, risks }

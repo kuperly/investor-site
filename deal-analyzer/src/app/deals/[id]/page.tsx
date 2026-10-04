@@ -11,7 +11,8 @@ import { repo } from '@/lib/repo'
 import { currentUser } from '@/lib/session'
 import { describeAuditValue, describeCompAudit } from '@/lib/audit-format'
 import { CompsStats } from '@/components/CompsStats'
-import { compStats } from '@/engine/comps'
+import { compArv, compStats } from '@/engine/comps'
+import { CompArvPanel } from '@/components/CompArvPanel'
 import { compsRepo } from '@/lib/comps-repo'
 import { getDb } from '@/lib/db'
 
@@ -23,8 +24,10 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
   const deal = await r.get(id)
   if (!deal) notFound()
   const [audit, user, comps] = await Promise.all([r.audit(id), currentUser(), compsRepo(await getDb()).list(id)])
-  const stats = compStats(comps, new Date())
-  const a = analyzeDeal(deal.inputs)
+  const now = new Date()
+  const stats = compStats(comps, now)
+  const arvResult = compArv(comps, { sqft: deal.inputs.sqft, beds: deal.inputs.beds, baths: deal.inputs.baths }, now)
+  const a = analyzeDeal(deal.inputs, { compArv: arvResult.arv })
   const i = deal.inputs
   const notes = NOTE_CATEGORIES.filter((n) => deal.notes[n.key])
 
@@ -69,7 +72,10 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
         {comps.length === 0 ? (
           <p className="text-sm text-ink-muted">No comps on file yet. Add them to back up the ARVs.</p>
         ) : (
-          <CompsStats s={stats} />
+          <div className="space-y-4">
+            <CompArvPanel r={arvResult} baseArv={deal.inputs.arvBase} dealId={deal.id} canApply={Boolean(user)} compact />
+            <CompsStats s={stats} />
+          </div>
         )}
       </section>
 

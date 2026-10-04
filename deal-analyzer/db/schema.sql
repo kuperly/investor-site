@@ -70,3 +70,8 @@ create table if not exists deal_comps (
 create index if not exists deal_comps_deal_idx on deal_comps (deal_id, sale_date desc);
 create unique index if not exists deal_comps_external_uq
   on deal_comps (deal_id, source, external_id) where external_id is not null;
+
+-- Comp-supported ARV weighting (added after initial release; idempotent for existing DBs).
+alter table deal_comps add column if not exists sale_status text check (sale_status in ('sold','pending','active'));
+alter table deal_comps add column if not exists tier text not null default 'standard'
+  check (tier in ('standard','bestFit','superComp'));

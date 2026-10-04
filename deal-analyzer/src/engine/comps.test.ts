@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { compStats, median, monthsSince, pricePerSqft, summaryFromComps, type Comp } from './comps'
+import { compArv, compStats, compWeight, decayFactor, median, monthsSince, pricePerSqft, summaryFromComps, type Comp } from './comps'
 
 const comp = (o: Partial<Comp>): Comp => ({
   address: 'x',
@@ -11,6 +11,8 @@ const comp = (o: Partial<Comp>): Comp => ({
   distanceMiles: null,
   condition: null,
   renovation: null,
+  saleStatus: null,
+  tier: 'standard',
   source: null,
   sourceUrl: null,
   notes: null,
@@ -87,5 +89,95 @@ describe('compStats', () => {
     expect(e.all.count).toBe(0)
     expect(e.all.medianPrice).toBeNull()
     expect(summaryFromComps(e).compAvgPrice).toBeNull()
+  })
+})
+
+describe('decayFactor', () => {
+  it('1 at zero, linear to the floor, then flat; unknown → floor', () => {
+    expect(decayFactor(0, 12)).toBe(1)
+    expect(decayFactor(6, 12)).toBeCloseTo(0.625) // 1 − 0.75 × 0.5
+    expect(decayFactor(12, 12)).toBeCloseTo(0.25)
+    expect(decayFactor(30, 12)).toBeCloseTo(0.25)
+    expect(decayFactor(-6, 12)).toBeCloseTo(0.625) // distance either side
+    expect(decayFactor(null, 12)).toBe(0.25)
+  })
+})
+
+describe('compWeight', () => {
+  const subject = { sqft: 1_400, beds: 3, baths: 2 }
+  it('perfect comp: same day, 0 mi, identical, sold → weight 1 (× tier)', () => {
+    const w = compWeight(comp({ saleDate: '2026-10-01', distanceMiles: 0, sqft: 1_400, beds: 3, baths: 2, saleStatus: 'sold' }), subject, asOf)
+    expect(w.weight).toBeCloseTo(1)
+    const sc = compWeight(comp({ saleDate: '2026-10-01', distanceMiles: 0, sqft: 1_400, beds: 3, baths: 2, saleStatus: 'sold', tier: 'superComp' }), subject, asOf)
+    expect(sc.weight).toBeCloseTo(3)
+  })
+  it('hand-calculated mixed comp', () => {
+    // age ≈ 6 mo → recency ≈ 0.625; 1 mi → 1 − 0.75×0.5 = 0.625
+    // sqft 1,540 = +10% → 1 − 0.75×(0.1/0.3) = 0.75; beds 4 (1 apart) → 0.625; baths 2 → 1; pending → 0.75
+    // similarity = (0.75 + 0.625 + 1 + 0.75) / 4 = 0.78125 ; tier best fit = 2
+    const w = compWeight(comp({ saleDate: '2026-04-01', distanceMiles: 1, sqft: 1_540, beds: 4, baths: 2, saleStatus: 'pending', tier: 'bestFit' }), subject, asOf)
+    expect(w.recency).toBeCloseTo(0.625, 2)
+    expect(w.distance).toBeCloseTo(0.625)
+    expect(w.similarityParts).toMatchObject({ beds: 0.625, baths: 1, status: 0.75 })
+    expect(w.similarityParts.sqft).toBeCloseTo(0.75)
+    expect(w.similarity).toBeCloseTo(0.78125)
+    expect(w.weight).toBeCloseTo(2 * w.recency * 0.625 * 0.78125)
+  })
+  it('unknown comp facts score at the floor and are listed; unknown subject facts are skipped', () => {
+    const w = compWeight(comp({ sqft: 1_400 }), { sqft: 1_400, beds: null, baths: null }, asOf)
+    expect(w.recency).toBe(0.25)
+    expect(w.distance).toBe(0.25)
+    expect(w.similarityParts).toEqual({ sqft: 1, beds: null, baths: null, status: 0.25 })
+    expect(w.similarity).toBeCloseTo((1 + 0.25) / 2)
+    expect(w.unknowns.sort()).toEqual(['distance', 'sale date', 'status'])
+  })
+})
+
+describe('compArv (weighted $/sqft × subject sqft)', () => {
+  const subject = { sqft: 1_400, beds: 3, baths: 2 }
+  const perfect = { saleDate: '2026-10-01', distanceMiles: 0, beds: 3, baths: 2, saleStatus: 'sold' as const, renovation: 'renovated' as const }
+  it('hand calculation: super comp at $200/sf (w 3) + standard at $150/sf (w 1)', () => {
+    const r = compArv(
+      [
+        comp({ ...perfect, address: 'A', salePrice: 280_000, sqft: 1_400, tier: 'superComp' }), // $200/sf
+        comp({ ...perfect, address: 'B', salePrice: 210_000, sqft: 1_400 }), // $150/sf
+      ],
+      subject,
+      asOf,
+    )
+    // weighted $/sf = (3×200 + 1×150) / 4 = 187.5 ; × 1,400 = 262,500
+    expect(r.weightedPpsf).toBeCloseTo(187.5)
+    expect(r.arv).toBe(262_500)
+    expect(r.used.map((u) => u.share)).toEqual([0.75, 0.25])
+    // unweighted median $/sf = 175 × 1,400 = 245,000
+    expect(r.medianPpsfArv).toBe(245_000)
+  })
+  it('uses only included, renovated comps with price and sqft; says why others were left out', () => {
+    const r = compArv(
+      [
+        comp({ ...perfect, address: 'ok', salePrice: 210_000, sqft: 1_400 }),
+        comp({ ...perfect, address: 'excl', salePrice: 900_000, sqft: 1_000, included: false }),
+        comp({ ...perfect, address: 'unreno', salePrice: 120_000, sqft: 1_400, renovation: 'unrenovated' }),
+        comp({ ...perfect, address: 'unknown-reno', salePrice: 120_000, sqft: 1_400, renovation: null }),
+        comp({ ...perfect, address: 'noprice', sqft: 1_400 }),
+        comp({ ...perfect, address: 'nosqft', salePrice: 200_000 }),
+      ],
+      subject,
+      asOf,
+    )
+    expect(r.arv).toBe(210_000)
+    expect(r.excluded.map((e) => [e.comp.address, e.reason])).toEqual([
+      ['excl', 'excluded by user'],
+      ['unreno', 'not marked renovated'],
+      ['unknown-reno', 'not marked renovated'],
+      ['noprice', 'no sale price'],
+      ['nosqft', 'no sqft'],
+    ])
+  })
+  it('UNKNOWN (null) when there are no usable comps or subject sqft is unknown — never $0', () => {
+    expect(compArv([], subject, asOf).arv).toBeNull()
+    const r = compArv([comp({ ...perfect, salePrice: 210_000, sqft: 1_400 })], { sqft: null, beds: 3, baths: 2 }, asOf)
+    expect(r.weightedPpsf).toBeCloseTo(150)
+    expect(r.arv).toBeNull()
   })
 })

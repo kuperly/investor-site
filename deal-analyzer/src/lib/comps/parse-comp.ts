@@ -3,7 +3,7 @@
  * automated imports, so both paths enforce the same rules.
  * Blank → null (UNKNOWN). Structural checks only — no valuation rules.
  */
-import { RENOVATIONS, type Comp } from '@/engine/comps'
+import { COMP_TIERS, RENOVATIONS, SALE_STATUSES, type Comp } from '@/engine/comps'
 import { parseNumber } from '@/lib/parse-inputs'
 
 export type CompErrors = Partial<Record<keyof Comp, string>>
@@ -50,6 +50,11 @@ export function parseComp(get: (key: string) => string | null, today = new Date(
   const ren = g('renovation')
   const renovation = (RENOVATIONS as readonly string[]).includes(ren) ? (ren as Comp['renovation']) : null
 
+  const st = g('saleStatus')
+  const saleStatus = (SALE_STATUSES as readonly string[]).includes(st) ? (st as Comp['saleStatus']) : null
+  const tr = g('tier')
+  const tier = (COMP_TIERS as readonly string[]).includes(tr) ? (tr as Comp['tier']) : 'standard'
+
   const comp: Comp = {
     address: text(g('address')) ?? '',
     salePrice: field('salePrice', num(g('salePrice'))),
@@ -60,6 +65,8 @@ export function parseComp(get: (key: string) => string | null, today = new Date(
     distanceMiles: field('distanceMiles', num(g('distanceMiles'))),
     condition: text(g('condition')),
     renovation,
+    saleStatus,
+    tier,
     source: text(g('source'), 100),
     sourceUrl,
     notes: text(g('notes'), 2000),
@@ -82,6 +89,8 @@ export function compToForm(c: Comp): Record<string, string> {
     distanceMiles: s(c.distanceMiles),
     condition: s(c.condition),
     renovation: s(c.renovation),
+    saleStatus: s(c.saleStatus),
+    tier: c.tier,
     source: s(c.source),
     sourceUrl: s(c.sourceUrl),
     notes: s(c.notes),

@@ -66,6 +66,23 @@ export function CompForm({ dealId, compId, initial }: Props) {
           </select>
         </div>
         <div>
+          <label className="label" htmlFor="c_saleStatus">Status</label>
+          <select id="c_saleStatus" name="saleStatus" defaultValue={initial.saleStatus ?? ''} className="input">
+            <option value="">Unknown</option>
+            <option value="sold">Sold</option>
+            <option value="pending">Pending</option>
+            <option value="active">Active (listing)</option>
+          </select>
+        </div>
+        <div>
+          <label className="label" htmlFor="c_tier">Tier</label>
+          <select id="c_tier" name="tier" defaultValue={initial.tier || 'standard'} className="input">
+            <option value="standard">Standard</option>
+            <option value="bestFit">Best fit</option>
+            <option value="superComp">Super comp</option>
+          </select>
+        </div>
+        <div>
           <label className="label" htmlFor="c_source">Source</label>
           <input id="c_source" name="source" list="comp-sources" defaultValue={initial.source || 'Manual'} className="input" />
           <datalist id="comp-sources">

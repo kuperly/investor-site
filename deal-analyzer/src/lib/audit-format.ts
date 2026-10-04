@@ -18,7 +18,7 @@ export function describeAuditValue(field: string, v: unknown): string {
 
 const COMP_LABELS: Record<string, string> = {
   address: 'address', salePrice: 'sale price', saleDate: 'sale date', sqft: 'sqft', beds: 'beds', baths: 'baths',
-  distanceMiles: 'distance', condition: 'condition', renovation: 'renovated', source: 'source', sourceUrl: 'link',
+  distanceMiles: 'distance', condition: 'condition', renovation: 'renovated', saleStatus: 'status', tier: 'tier', source: 'source', sourceUrl: 'link',
   notes: 'notes', included: 'included',
 }
 
@@ -26,6 +26,7 @@ function compValue(k: string, v: unknown): string {
   if (v === null || v === undefined || v === '') return 'Unknown'
   if (k === 'salePrice' && typeof v === 'number') return money(v)
   if (k === 'included') return v ? 'Yes' : 'No (excluded)'
+  if (k === 'tier') return ({ standard: 'Standard', bestFit: 'Best fit', superComp: 'Super comp' } as Record<string, string>)[String(v)] ?? String(v)
   return String(v)
 }
 

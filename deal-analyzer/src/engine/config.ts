@@ -60,13 +60,35 @@ export const PROVISIONAL = {
       confidencePoints: { High: 3, Medium: 1.5, Low: 0 },
     },
   },
+  /**
+   * Comp-supported ARV (approved method: weighted $/sqft × subject sqft, renovated
+   * comps only). Guy/Ben named the weighting criteria — time, distance, similarity
+   * (sqft, beds, baths, status) plus "Best fit" / "Super comp" — but not the numbers.
+   * Every number below is a placeholder awaiting their confirmation.
+   *
+   * Each factor falls linearly from 1 (perfect) to `floor` at `floorAt`, then stays
+   * at the floor. A comp's weight = tier × recency × distance × similarity.
+   */
+  compArv: {
+    floor: 0.25,
+    recency: { floorAtMonths: 12 },
+    distance: { floorAtMiles: 2 },
+    similarity: {
+      /** |comp sqft − subject sqft| / subject sqft */
+      sqftFloorAtPct: 0.3,
+      bedsFloorAtDiff: 2,
+      bathsFloorAtDiff: 2,
+      status: { sold: 1, pending: 0.75, active: 0.5 },
+    },
+    tiers: { standard: 1, bestFit: 2, superComp: 3 },
+  },
 } as const
 
 /** Human-readable methodology table, rendered on /methodology. */
 export interface MethodologyRule {
   area: string
   rule: string
-  source: 'SPEC' | 'PROVISIONAL' | 'INTERPRETATION'
+  source: 'SPEC' | 'APPROVED' | 'PROVISIONAL' | 'INTERPRETATION'
 }
 
 export const METHODOLOGY: MethodologyRule[] = [
@@ -129,6 +151,21 @@ export const METHODOLOGY: MethodologyRule[] = [
   {
     area: 'Comps → deal summary',
     rule: 'On "Apply": comp distance = farthest included comp, comp recency = oldest included sale (months)',
+    source: 'INTERPRETATION',
+  },
+  {
+    area: 'Comp ARV',
+    rule: 'Comp-supported ARV = weighted average $/sqft of included, renovated comps × subject sqft. Only Base ARV is suggested; it is applied only when the user clicks "Apply" (audited). Conservative / Upside stay manual (approved by Guy, Oct 2026)',
+    source: 'APPROVED',
+  },
+  {
+    area: 'Comp ARV · weights',
+    rule: 'Weight = tier × recency × distance × similarity. Tier: Standard 1× / Best fit 2× / Super comp 3×. Each factor falls linearly from 1 to a 0.25 floor: recency at 12 months, distance at 2 mi; similarity = average of sqft (floor at 30% size difference), beds (floor at 2 apart), baths (floor at 2 apart), status (Sold 1 / Pending 0.75 / Active 0.5)',
+    source: 'PROVISIONAL',
+  },
+  {
+    area: 'Comp ARV · unknowns',
+    rule: 'A comp without sale price or sqft cannot give $/sqft and is left out. An unknown sale date, distance, beds, baths or status on a comp counts as the floor (least similar), never as a perfect match. If the subject\'s beds/baths are unknown, that similarity item is skipped for every comp. Subject sqft unknown → comp ARV is UNKNOWN',
     source: 'INTERPRETATION',
   },
   { area: 'Refi', rule: 'Refi loan sized on Base ARV; debt service fully amortizing at the refi rate and term', source: 'INTERPRETATION' },

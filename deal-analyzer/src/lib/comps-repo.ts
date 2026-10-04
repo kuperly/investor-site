@@ -32,6 +32,8 @@ function toComp(r: Row): CompRecord {
     distanceMiles: n(r.distance_miles),
     condition: (r.condition as string | null) ?? null,
     renovation: (r.renovation as Comp['renovation']) ?? null,
+    saleStatus: (r.sale_status as Comp['saleStatus']) ?? null,
+    tier: ((r.tier as Comp['tier']) ?? 'standard'),
     source: (r.source as string | null) ?? null,
     sourceUrl: (r.source_url as string | null) ?? null,
     notes: (r.notes as string | null) ?? null,
@@ -47,15 +49,15 @@ function toComp(r: Row): CompRecord {
 
 /** Snapshot kept in the audit trail. */
 export function compSnapshot(c: Comp): Record<string, unknown> {
-  const { address, salePrice, saleDate, sqft, beds, baths, distanceMiles, condition, renovation, source, sourceUrl, notes, included } = c
-  return { address, salePrice, saleDate, sqft, beds, baths, distanceMiles, condition, renovation, source, sourceUrl, notes, included }
+  const { address, salePrice, saleDate, sqft, beds, baths, distanceMiles, condition, renovation, saleStatus, tier, source, sourceUrl, notes, included } = c
+  return { address, salePrice, saleDate, sqft, beds, baths, distanceMiles, condition, renovation, saleStatus, tier, source, sourceUrl, notes, included }
 }
 
 const isUuid = (s: string) => /^[0-9a-f-]{36}$/i.test(s)
 const SELECT = `select *, to_char(sale_date, 'YYYY-MM-DD') as sale_date_text from deal_comps`
 const values = (c: Comp) => [
   c.address, c.salePrice, c.saleDate, c.sqft, c.beds, c.baths, c.distanceMiles,
-  c.condition, c.renovation, c.source, c.sourceUrl, c.notes, c.included,
+  c.condition, c.renovation, c.source, c.sourceUrl, c.notes, c.included, c.saleStatus, c.tier,
 ]
 
 export function compsRepo(db: Db) {
@@ -70,8 +72,8 @@ export function compsRepo(db: Db) {
   async function insert(dealId: string, c: Comp, user: User, origin: 'manual' | 'import', externalId: string | null) {
     const rows = await db.query<{ id: string }>(
       `insert into deal_comps (deal_id, address, sale_price, sale_date, sqft, beds, baths, distance_miles,
-         condition, renovation, source, source_url, notes, included, origin, external_id, created_by, updated_by)
-       values ($1,$2,$3,$4::date,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$17) returning id`,
+         condition, renovation, source, source_url, notes, included, sale_status, tier, origin, external_id, created_by, updated_by)
+       values ($1,$2,$3,$4::date,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$19) returning id`,
       [dealId, ...values(c), origin, externalId, user],
     )
     await audit(dealId, null, compSnapshot(c), user)
@@ -105,7 +107,7 @@ export function compsRepo(db: Db) {
       await db.query(
         `update deal_comps set address=$3, sale_price=$4, sale_date=$5::date, sqft=$6, beds=$7, baths=$8,
            distance_miles=$9, condition=$10, renovation=$11, source=$12, source_url=$13, notes=$14, included=$15,
-           updated_by=$16, updated_at=now() where deal_id=$1 and id=$2`,
+           sale_status=$16, tier=$17, updated_by=$18, updated_at=now() where deal_id=$1 and id=$2`,
         [dealId, id, ...values(c), user],
       )
       await audit(dealId, oldSnap, newSnap, user)

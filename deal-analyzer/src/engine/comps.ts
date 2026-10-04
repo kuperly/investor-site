@@ -3,10 +3,19 @@
  * No valuation rules: the engine summarises comps, it never sets ARV.
  * Unknown values are skipped per statistic (and counted), never treated as 0.
  */
+import { PROVISIONAL } from './config'
 import type { DealInputs, Num } from './types'
 
 export const RENOVATIONS = ['renovated', 'unrenovated'] as const
 export type Renovation = (typeof RENOVATIONS)[number] | null
+
+/** User-assigned importance on top of the computed weight. */
+export const COMP_TIERS = ['standard', 'bestFit', 'superComp'] as const
+export type CompTier = (typeof COMP_TIERS)[number]
+export const TIER_LABELS: Record<CompTier, string> = { standard: 'Standard', bestFit: 'Best fit', superComp: 'Super comp' }
+
+export const SALE_STATUSES = ['sold', 'pending', 'active'] as const
+export type SaleStatus = (typeof SALE_STATUSES)[number] | null
 
 export interface Comp {
   address: string
@@ -19,6 +28,8 @@ export interface Comp {
   distanceMiles: Num
   condition: string | null
   renovation: Renovation
+  saleStatus: SaleStatus
+  tier: CompTier
   source: string | null
   sourceUrl: string | null
   notes: string | null
@@ -138,5 +149,130 @@ export function summaryFromComps(s: CompStats): Pick<DealInputs, CompSummaryKey>
     compRecencyMonths: round(s.all.oldestMonths, 1),
     compRenovatedCount: s.renovated.count,
     compUnrenovatedCount: s.unrenovated.count,
+  }
+}
+
+// ─── Comp-supported ARV ──────────────────────────────────────────────────────
+// Approved method: weighted average $/sqft of included renovated comps × subject sqft.
+// Weights (time, distance, similarity, tier) are PROVISIONAL — see config.ts.
+
+const W = PROVISIONAL.compArv
+
+/** Linear from 1 (x = 0) down to `floor` (x ≥ floorAt). Unknown x → floor (least similar). */
+export function decayFactor(x: Num, floorAt: number, floor: number = W.floor): number {
+  if (x === null) return floor
+  const t = Math.min(Math.abs(x) / floorAt, 1)
+  return 1 - (1 - floor) * t
+}
+
+export interface SubjectFacts {
+  sqft: Num
+  beds: Num
+  baths: Num
+}
+
+export interface CompWeight {
+  recency: number
+  distance: number
+  similarity: number
+  /** Sub-scores averaged into `similarity`; null = skipped (subject value unknown). */
+  similarityParts: { sqft: number | null; beds: number | null; baths: number | null; status: number }
+  tier: number
+  /** Raw weight = tier × recency × distance × similarity. */
+  weight: number
+  /** Comp inputs that were UNKNOWN and therefore scored at the floor. */
+  unknowns: string[]
+}
+
+export function compWeight(c: Comp, subject: SubjectFacts, asOf: Date): CompWeight {
+  const unknowns: string[] = []
+  const note = (label: string, v: unknown) => {
+    if (v === null || v === undefined) unknowns.push(label)
+  }
+  const age = monthsSince(c.saleDate, asOf)
+  note('sale date', age)
+  note('distance', c.distanceMiles)
+  const recency = decayFactor(age, W.recency.floorAtMonths)
+  const distance = decayFactor(c.distanceMiles, W.distance.floorAtMiles)
+
+  const S = W.similarity
+  const part = (subj: Num, comp: Num, label: string, f: (s: number, c: number) => number): number | null => {
+    if (subj === null) return null // subject unknown: same for every comp → skip
+    if (comp === null) {
+      unknowns.push(label)
+      return W.floor
+    }
+    return f(subj, comp)
+  }
+  const sqft = part(subject.sqft, c.sqft, 'sqft', (s, v) =>
+    s > 0 ? decayFactor((v - s) / s, S.sqftFloorAtPct) : W.floor,
+  )
+  const beds = part(subject.beds, c.beds, 'beds', (s, v) => decayFactor(v - s, S.bedsFloorAtDiff))
+  const baths = part(subject.baths, c.baths, 'baths', (s, v) => decayFactor(v - s, S.bathsFloorAtDiff))
+  note('status', c.saleStatus)
+  const status = c.saleStatus === null ? W.floor : S.status[c.saleStatus]
+  const parts = [sqft, beds, baths, status].filter((x): x is number => x !== null)
+  const similarity = parts.reduce((a, b) => a + b, 0) / parts.length
+
+  const tier = W.tiers[c.tier]
+  return {
+    recency,
+    distance,
+    similarity,
+    similarityParts: { sqft, beds, baths, status },
+    tier,
+    weight: tier * recency * distance * similarity,
+    unknowns,
+  }
+}
+
+export type CompArvExclusion =
+  | 'excluded by user'
+  | 'not marked renovated'
+  | 'no sale price'
+  | 'no sqft'
+
+export interface CompArvResult<T extends Comp> {
+  /** Suggested Base ARV; null = UNKNOWN (no usable comps or subject sqft unknown). */
+  arv: Num
+  subjectSqft: Num
+  weightedPpsf: Num
+  /** Cross-check: unweighted median $/sqft × subject sqft. */
+  medianPpsfArv: Num
+  used: { comp: T; ppsf: number; w: CompWeight; share: number }[]
+  excluded: { comp: T; reason: CompArvExclusion }[]
+}
+
+export function compArv<T extends Comp>(comps: T[], subject: SubjectFacts, asOf: Date): CompArvResult<T> {
+  const excluded: CompArvResult<T>['excluded'] = []
+  const candidates: { comp: T; ppsf: number; w: CompWeight }[] = []
+  for (const comp of comps) {
+    const reason: CompArvExclusion | null = !comp.included
+      ? 'excluded by user'
+      : comp.renovation !== 'renovated'
+        ? 'not marked renovated'
+        : comp.salePrice === null
+          ? 'no sale price'
+          : comp.sqft === null || comp.sqft <= 0
+            ? 'no sqft'
+            : null
+    if (reason) {
+      excluded.push({ comp, reason })
+      continue
+    }
+    candidates.push({ comp, ppsf: pricePerSqft(comp.salePrice, comp.sqft)!, w: compWeight(comp, subject, asOf) })
+  }
+  const total = candidates.reduce((a, c) => a + c.w.weight, 0)
+  const used = candidates.map((c) => ({ ...c, share: total > 0 ? c.w.weight / total : 0 }))
+  const weightedPpsf = total > 0 ? used.reduce((a, c) => a + c.ppsf * c.share, 0) : null
+  const medPpsf = median(used.map((c) => c.ppsf))
+  const sqft = subject.sqft !== null && subject.sqft > 0 ? subject.sqft : null
+  return {
+    arv: weightedPpsf === null || sqft === null ? null : Math.round(weightedPpsf * sqft),
+    subjectSqft: subject.sqft,
+    weightedPpsf,
+    medianPpsfArv: medPpsf === null || sqft === null ? null : Math.round(medPpsf * sqft),
+    used,
+    excluded,
   }
 }

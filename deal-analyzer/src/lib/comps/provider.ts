@@ -30,6 +30,7 @@ export interface RawComp {
   distanceMiles?: string
   condition?: string
   renovation?: '' | 'renovated' | 'unrenovated'
+  saleStatus?: '' | 'sold' | 'pending' | 'active'
   sourceUrl?: string
   notes?: string
 }
