@@ -48,7 +48,7 @@ export default async function ExportPage({ params }: { params: Promise<{ id: str
           <p className="mb-3 text-sm">
             Comp-supported ARV: <strong>{arvResult.arv === null ? 'UNKNOWN' : `$${arvResult.arv.toLocaleString('en-US')}`}</strong>
             {arvResult.weightedPpsf !== null && ` (weighted $${arvResult.weightedPpsf.toFixed(2)}/sqft × ${i.sqft ?? '?'} sqft; `}
-            {arvResult.used.length > 0 && `${arvResult.used.map((u) => `${u.comp.address} ${TIER_LABELS[u.comp.tier]} ${(u.share * 100).toFixed(0)}%`).join(', ')})`}
+            {arvResult.used.length > 0 && `${arvResult.used.map((u) => `${u.comp.address} ${TIER_LABELS[u.comp.tier]} ${(u.share * 100).toFixed(0)}%${u.overridden ? ' fixed' : ''}`).join(', ')})`}
           </p>
         )}
         {comps.length > 0 && <CompsStats s={compStats(comps, new Date())} />}

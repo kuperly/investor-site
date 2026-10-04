@@ -13,6 +13,7 @@ const comp = (o: Partial<Comp>): Comp => ({
   renovation: null,
   saleStatus: null,
   tier: 'standard',
+  shareOverride: null,
   source: null,
   sourceUrl: null,
   notes: null,
@@ -179,5 +180,70 @@ describe('compArv (weighted $/sqft × subject sqft)', () => {
     const r = compArv([comp({ ...perfect, salePrice: 210_000, sqft: 1_400 })], { sqft: null, beds: 3, baths: 2 }, asOf)
     expect(r.weightedPpsf).toBeCloseTo(150)
     expect(r.arv).toBeNull()
+  })
+})
+
+describe('compArv — % override on Super comps', () => {
+  const subject = { sqft: 1_400, beds: 3, baths: 2 }
+  const perfect = { saleDate: '2026-10-01', distanceMiles: 0, beds: 3, baths: 2, saleStatus: 'sold' as const, renovation: 'renovated' as const, sqft: 1_400 }
+  const sup = (o: Partial<Comp>) => comp({ ...perfect, tier: 'superComp', ...o })
+  const std = (o: Partial<Comp>) => comp({ ...perfect, ...o })
+
+  it('hand calculation: super comp fixed at 50%, two equal standard comps split the other 50%', () => {
+    const r = compArv(
+      [
+        sup({ address: 'S', salePrice: 280_000, shareOverride: 0.5 }), // $200/sf
+        std({ address: 'A', salePrice: 210_000 }), // $150/sf
+        std({ address: 'B', salePrice: 238_000 }), // $170/sf
+      ],
+      subject,
+      asOf,
+    )
+    // 0.5×200 + 0.25×150 + 0.25×170 = 100 + 37.5 + 42.5 = 180 $/sf × 1,400 = 252,000
+    expect(r.used.map((u) => [u.comp.address, u.share, u.overridden])).toEqual([
+      ['S', 0.5, true],
+      ['A', 0.25, false],
+      ['B', 0.25, false],
+    ])
+    expect(r.weightedPpsf).toBeCloseTo(180)
+    expect(r.arv).toBe(252_000)
+    expect(r.issues).toEqual([])
+  })
+  it('override replaces the tier multiplier for that comp (without it the super comp would get 3/5)', () => {
+    const base = [sup({ address: 'S', salePrice: 280_000 }), std({ address: 'A', salePrice: 210_000 }), std({ address: 'B', salePrice: 238_000 })]
+    expect(compArv(base, subject, asOf).used[0].share).toBeCloseTo(0.6)
+    expect(compArv([{ ...base[0], shareOverride: 0.4 }, base[1], base[2]], subject, asOf).used[0].share).toBeCloseTo(0.4)
+  })
+  it('several overridden super comps share the fixed part; 100% fixed leaves others at 0%', () => {
+    const r = compArv([sup({ address: 'S1', salePrice: 280_000, shareOverride: 0.7 }), sup({ address: 'S2', salePrice: 210_000, shareOverride: 0.3 }), std({ address: 'A', salePrice: 100_000 })], subject, asOf)
+    expect(r.used.map((u) => u.share)).toEqual([0.7, 0.3, 0])
+    expect(r.weightedPpsf).toBeCloseTo(0.7 * 200 + 0.3 * 150)
+  })
+  it('overrides above 100% → ARV UNKNOWN with an explanation (never a silently wrong number)', () => {
+    const r = compArv([sup({ address: 'S1', salePrice: 280_000, shareOverride: 0.7 }), sup({ address: 'S2', salePrice: 210_000, shareOverride: 0.5 })], subject, asOf)
+    expect(r.arv).toBeNull()
+    expect(r.issues[0]).toMatch(/total 120.0% — must be 100% or less/)
+  })
+  it('no other comp to take the remainder → overrides scaled to 100% and flagged', () => {
+    const r = compArv([sup({ address: 'S', salePrice: 280_000, shareOverride: 0.6 })], subject, asOf)
+    expect(r.used[0].share).toBeCloseTo(1)
+    expect(r.arv).toBe(280_000)
+    expect(r.issues[0]).toMatch(/scaled up to 100%/)
+  })
+  it('override on a non-super comp, or on a comp not used for ARV, is ignored and reported', () => {
+    const r = compArv(
+      [
+        std({ address: 'A', salePrice: 210_000, shareOverride: 0.9 }),
+        std({ address: 'B', salePrice: 238_000 }),
+        sup({ address: 'U', salePrice: 120_000, renovation: 'unrenovated', shareOverride: 0.5 }),
+      ],
+      subject,
+      asOf,
+    )
+    expect(r.used.map((u) => u.share)).toEqual([0.5, 0.5])
+    expect(r.issues).toEqual([
+      '% override on U not applied — comp not used (not marked renovated)',
+      '% override on A ignored — only Super comps can have one',
+    ])
   })
 })

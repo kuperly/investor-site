@@ -46,6 +46,14 @@ export function CompArvPanel({
         </div>
       </div>
 
+      {r.issues.length > 0 && (
+        <ul role="alert" className="list-disc space-y-0.5 rounded-md border border-amber-300 bg-amber-50 py-2 pl-7 pr-3 text-xs text-amber-950">
+          {r.issues.map((m) => (
+            <li key={m}>{m}</li>
+          ))}
+        </ul>
+      )}
+
       {canApply && r.arv !== null && r.arv !== baseArv && (
         <form action={applyCompArv} className="flex flex-wrap items-center gap-2">
           <input type="hidden" name="dealId" value={dealId} />
@@ -84,13 +92,17 @@ export function CompArvPanel({
                     {f2(u.w.similarity)}
                   </td>
                   <td>{f2(u.w.weight)}</td>
-                  <td className="font-semibold">{pct(u.share)}</td>
+                  <td className="font-semibold">
+                    {pct(u.share)}
+                    {u.overridden && <span className="ml-1 rounded bg-violet-100 px-1 py-0.5 text-[10px] font-semibold text-violet-900">fixed</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
           <p className="mt-1 text-xs text-ink-muted">
             Weight = tier × recency × distance × similarity (each 0.25–1; hover similarity for sqft / beds / baths / status).
+            A <em>fixed</em> share is a Super comp % override; the rest is split by weight.
             Weighting numbers are provisional — see <Link href="/methodology" className="underline">Methodology</Link>.
           </p>
         </div>

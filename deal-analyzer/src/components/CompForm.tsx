@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import Link from 'next/link'
 import { saveComp, type CompSaveState } from '@/app/comps-actions'
 import { COMP_SOURCES } from '@/lib/comps/parse-comp'
@@ -24,6 +24,7 @@ const FIELDS: { key: string; label: string; kind: 'text' | 'money' | 'num' | 'da
 
 export function CompForm({ dealId, compId, initial }: Props) {
   const [state, action, pending] = useActionState<CompSaveState, FormData>(saveComp, {})
+  const [tier, setTier] = useState(initial.tier || 'standard')
   const errors = state.errors ?? {}
   const err = (k: string) => errors[k as keyof typeof errors]
 
@@ -76,11 +77,31 @@ export function CompForm({ dealId, compId, initial }: Props) {
         </div>
         <div>
           <label className="label" htmlFor="c_tier">Tier</label>
-          <select id="c_tier" name="tier" defaultValue={initial.tier || 'standard'} className="input">
+          <select id="c_tier" name="tier" value={tier} onChange={(e) => setTier(e.target.value)} className="input">
             <option value="standard">Standard</option>
             <option value="bestFit">Best fit</option>
             <option value="superComp">Super comp</option>
           </select>
+        </div>
+        <div>
+          <label className="label" htmlFor="c_shareOverridePct">% override</label>
+          <div className="relative">
+            <input
+              id="c_shareOverridePct"
+              name="shareOverridePct"
+              inputMode="decimal"
+              defaultValue={initial.shareOverridePct ?? ''}
+              disabled={tier !== 'superComp'}
+              placeholder={tier === 'superComp' ? 'Auto (weights)' : 'Super comps only'}
+              aria-describedby="c_shareOverridePct_d"
+              aria-invalid={err('shareOverride') ? true : undefined}
+              className={`input pr-7 disabled:bg-slate-50 ${err('shareOverride') ? 'border-rose-500' : ''}`}
+            />
+            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-muted">%</span>
+          </div>
+          <p id="c_shareOverridePct_d" className={`mt-0.5 text-[11px] ${err('shareOverride') ? 'text-rose-700' : 'text-ink-muted'}`}>
+            {err('shareOverride') ?? 'Fixed share of the comp ARV. Blank = use computed weight.'}
+          </p>
         </div>
         <div>
           <label className="label" htmlFor="c_source">Source</label>

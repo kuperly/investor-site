@@ -17,7 +17,8 @@ const statusLabel = (s: CompRecord['saleStatus']) => (s ? s[0].toUpperCase() + s
 function TierBadge({ c }: { c: CompRecord }) {
   if (c.tier === 'standard') return null
   const cls = c.tier === 'superComp' ? 'bg-violet-100 text-violet-900' : 'bg-sky-100 text-sky-900'
-  return <span className={`ml-1 rounded px-1.5 py-0.5 text-[11px] font-semibold no-underline ${cls}`}>{TIER_LABELS[c.tier]}</span>
+  const fixed = c.shareOverride !== null ? ` · ${Number((c.shareOverride * 100).toPrecision(12))}%` : ''
+  return <span className={`ml-1 rounded px-1.5 py-0.5 text-[11px] font-semibold no-underline ${cls}`}>{TIER_LABELS[c.tier]}{fixed}</span>
 }
 
 function Source({ c }: { c: CompRecord }) {

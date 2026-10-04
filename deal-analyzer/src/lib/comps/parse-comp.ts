@@ -55,6 +55,16 @@ export function parseComp(get: (key: string) => string | null, today = new Date(
   const tr = g('tier')
   const tier = (COMP_TIERS as readonly string[]).includes(tr) ? (tr as Comp['tier']) : 'standard'
 
+  // Optional fixed share of the comp ARV, entered as a percent; Super comps only.
+  let shareOverride: number | null = null
+  const so = num(g('shareOverridePct'))
+  if (so.e) errors.shareOverride = so.e
+  else if (so.v !== null) {
+    if (tier !== 'superComp') errors.shareOverride = 'Only Super comps can have a % override'
+    else if (so.v <= 0 || so.v > 100) errors.shareOverride = 'Enter a percentage above 0 and up to 100'
+    else shareOverride = Number((so.v / 100).toPrecision(12))
+  }
+
   const comp: Comp = {
     address: text(g('address')) ?? '',
     salePrice: field('salePrice', num(g('salePrice'))),
@@ -67,6 +77,7 @@ export function parseComp(get: (key: string) => string | null, today = new Date(
     renovation,
     saleStatus,
     tier,
+    shareOverride,
     source: text(g('source'), 100),
     sourceUrl,
     notes: text(g('notes'), 2000),
@@ -91,6 +102,7 @@ export function compToForm(c: Comp): Record<string, string> {
     renovation: s(c.renovation),
     saleStatus: s(c.saleStatus),
     tier: c.tier,
+    shareOverridePct: c.shareOverride === null ? '' : String(Number((c.shareOverride * 100).toPrecision(12))),
     source: s(c.source),
     sourceUrl: s(c.sourceUrl),
     notes: s(c.notes),

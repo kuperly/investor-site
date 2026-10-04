@@ -111,6 +111,8 @@ e2e/          run.sh + app.e2e.mjs + comps.e2e.mjs
 - **Numeric columns are `double precision` / `integer`** so drivers return JS
   numbers. Dates are read via `to_char(... 'YYYY-MM-DD')` to avoid timezone
   shifts.
+- **No `;` inside comments in `db/schema.sql`.** The schema is split into
+  statements on `;`, so a semicolon in a `--` comment breaks startup.
 - **Schema setup runs in one transaction behind an advisory lock**
   (`db.migrate`), because concurrent cold starts race otherwise. Schema
   changes must stay idempotent (`if not exists`).

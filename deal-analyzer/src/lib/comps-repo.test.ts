@@ -26,6 +26,13 @@ describe('parseComp', () => {
     expect(comp.tier).toBe('standard')
     expect(comp.saleStatus).toBeNull()
   })
+  it('% override: Super comps only, 0 < % ≤ 100, stored as a fraction', () => {
+    expect(parseComp(form({ address: 'x', tier: 'superComp', shareOverridePct: '35' }), today).comp.shareOverride).toBe(0.35)
+    expect(parseComp(form({ address: 'x', tier: 'bestFit', shareOverridePct: '35' }), today).errors.shareOverride).toMatch(/Only Super comps/)
+    expect(parseComp(form({ address: 'x', tier: 'superComp', shareOverridePct: '120' }), today).errors.shareOverride).toMatch(/up to 100/)
+    expect(parseComp(form({ address: 'x', tier: 'superComp', shareOverridePct: '0' }), today).errors.shareOverride).toMatch(/above 0/)
+    expect(parseComp(form({ address: 'x', tier: 'superComp', shareOverridePct: '' }), today).comp.shareOverride).toBeNull()
+  })
   it('validates address, numbers, dates and URLs', () => {
     const { errors } = parseComp(
       form({ salePrice: 'abc', sqft: '1200.5', saleDate: '2027-01-01', sourceUrl: 'javascript:alert(1)', distanceMiles: '-1' }),
@@ -54,7 +61,7 @@ describe('comps repository', () => {
       dealId,
       c({
         address: '2 New St', salePrice: '210000', saleDate: '2026-08-02', sqft: '1400', beds: '3', baths: '1.5',
-        distanceMiles: '0.4', condition: 'Fully renovated', renovation: 'renovated', saleStatus: 'sold', tier: 'superComp', source: 'MLS',
+        distanceMiles: '0.4', condition: 'Fully renovated', renovation: 'renovated', saleStatus: 'sold', tier: 'superComp', shareOverridePct: '40', source: 'MLS',
         sourceUrl: 'https://example.com/listing', notes: 'n',
       }),
       'Ben',
@@ -63,10 +70,10 @@ describe('comps repository', () => {
     expect(list.map((x) => x.address)).toEqual(['2 New St', '1 Old St'])
     expect(list[0]).toMatchObject({
       id, saleDate: '2026-08-02', salePrice: 210_000, sqft: 1_400, baths: 1.5, distanceMiles: 0.4,
-      renovation: 'renovated', saleStatus: 'sold', tier: 'superComp', source: 'MLS', origin: 'manual', createdBy: 'Ben',
+      renovation: 'renovated', saleStatus: 'sold', tier: 'superComp', shareOverride: 0.4, source: 'MLS', origin: 'manual', createdBy: 'Ben',
     })
     expect(list[1].sqft).toBeNull()
-    expect(list[1]).toMatchObject({ saleStatus: null, tier: 'standard' }) // defaults: status UNKNOWN, tier Standard
+    expect(list[1]).toMatchObject({ saleStatus: null, tier: 'standard', shareOverride: null }) // defaults: status UNKNOWN, tier Standard
   })
 
   it('update and delete are audited with before/after snapshots', async () => {

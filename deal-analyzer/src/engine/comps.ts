@@ -31,6 +31,11 @@ export interface Comp {
   renovation: Renovation
   saleStatus: SaleStatus
   tier: CompTier
+  /**
+   * Fixed share of the comp ARV (0–1), Super comps only. null = use the computed weight.
+   * The rest of the share is split among the other used comps by their weights.
+   */
+  shareOverride: Num
   source: string | null
   sourceUrl: string | null
   notes: string | null
@@ -234,13 +239,15 @@ export type CompArvExclusion =
   | 'no sqft'
 
 export interface CompArvResult<T extends Comp> {
-  /** Suggested Base ARV; null = UNKNOWN (no usable comps or subject sqft unknown). */
+  /** Suggested Base ARV; null = UNKNOWN (no usable comps, subject sqft unknown, or overrides > 100%). */
   arv: Num
+  /** Problems with % overrides, shown to the user. */
+  issues: string[]
   subjectSqft: Num
   weightedPpsf: Num
   /** Cross-check: unweighted median $/sqft × subject sqft. */
   medianPpsfArv: Num
-  used: { comp: T; ppsf: number; w: CompWeight; share: number }[]
+  used: { comp: T; ppsf: number; w: CompWeight; share: number; overridden: boolean }[]
   excluded: { comp: T; reason: CompArvExclusion }[]
 }
 
@@ -263,9 +270,43 @@ export function compArv<T extends Comp>(comps: T[], subject: SubjectFacts, asOf:
     }
     candidates.push({ comp, ppsf: pricePerSqft(comp.salePrice, comp.sqft)!, w: compWeight(comp, subject, asOf) })
   }
-  const total = candidates.reduce((a, c) => a + c.w.weight, 0)
-  const used = candidates.map((c) => ({ ...c, share: total > 0 ? c.w.weight / total : 0 }))
-  const weightedPpsf = total > 0 ? used.reduce((a, c) => a + c.ppsf * c.share, 0) : null
+  const issues: string[] = []
+  for (const e of excluded) {
+    if (e.comp.shareOverride !== null) issues.push(`% override on ${e.comp.address} not applied — comp not used (${e.reason})`)
+  }
+  // Fixed shares (Super comps only — anything else is ignored and reported).
+  const isFixed = (c: Comp) => c.shareOverride !== null && c.tier === 'superComp'
+  for (const c of candidates) {
+    if (c.comp.shareOverride !== null && c.comp.tier !== 'superComp')
+      issues.push(`% override on ${c.comp.address} ignored — only Super comps can have one`)
+  }
+  const fixed = candidates.filter((c) => isFixed(c.comp))
+  const free = candidates.filter((c) => !isFixed(c.comp))
+  let fixedTotal = fixed.reduce((a, c) => a + c.comp.shareOverride!, 0)
+  const freeWeight = free.reduce((a, c) => a + c.w.weight, 0)
+  let invalid = false
+  if (fixedTotal > 1 + 1e-9) {
+    issues.push(`% overrides total ${(fixedTotal * 100).toFixed(1)}% — must be 100% or less. Comp ARV is UNKNOWN until fixed.`)
+    invalid = true
+  } else if (fixed.length > 0 && fixedTotal < 1 - 1e-9 && freeWeight === 0) {
+    issues.push(
+      `% overrides total ${(fixedTotal * 100).toFixed(1)}% and no other comp can take the remaining ${((1 - fixedTotal) * 100).toFixed(1)}% — overrides scaled up to 100%.`,
+    )
+  }
+  const scale = fixed.length > 0 && freeWeight === 0 && fixedTotal > 0 && !invalid ? 1 / fixedTotal : 1
+  if (scale !== 1) fixedTotal = 1
+  const remaining = Math.max(0, 1 - fixedTotal)
+  const used = candidates.map((c) => {
+    const overridden = isFixed(c.comp)
+    const share = overridden
+      ? c.comp.shareOverride! * scale
+      : freeWeight > 0
+        ? (c.w.weight / freeWeight) * remaining
+        : 0
+    return { ...c, share, overridden }
+  })
+  const shareSum = used.reduce((a, c) => a + c.share, 0)
+  const weightedPpsf = invalid || shareSum <= 0 ? null : used.reduce((a, c) => a + c.ppsf * c.share, 0) / shareSum
   const medPpsf = median(used.map((c) => c.ppsf))
   const sqft = subject.sqft !== null && subject.sqft > 0 ? subject.sqft : null
   return {
@@ -273,6 +314,7 @@ export function compArv<T extends Comp>(comps: T[], subject: SubjectFacts, asOf:
     subjectSqft: subject.sqft,
     weightedPpsf,
     medianPpsfArv: medPpsf === null || sqft === null ? null : Math.round(medPpsf * sqft),
+    issues,
     used,
     excluded,
   }

@@ -75,3 +75,5 @@ create unique index if not exists deal_comps_external_uq
 alter table deal_comps add column if not exists sale_status text check (sale_status in ('sold','pending','active'));
 alter table deal_comps add column if not exists tier text not null default 'standard'
   check (tier in ('standard','bestFit','superComp'));
+alter table deal_comps add column if not exists share_override double precision
+  check (share_override is null or (share_override > 0 and share_override <= 1));  -- fraction, Super comps only

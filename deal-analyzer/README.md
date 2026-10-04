@@ -113,7 +113,7 @@ Design points:
 |---|---|
 | `deals` | `id uuid pk`, `address`, `city`, `state`, `zip`, `market`, `status` (CHECK: the 9 spec statuses), `inputs jsonb` (all `DealInputs`; unknown = JSON `null`), `notes jsonb` (§31 categories), `created_by`, `updated_by`, `created_at`, `updated_at` |
 | `deal_audit` | `id`, `deal_id → deals`, `field`, `old_value jsonb`, `new_value jsonb`, `changed_by`, `changed_at` (comp changes use `field = 'comps'` with before/after snapshots) |
-| `deal_comps` | `id`, `deal_id → deals` (cascade), `address`, `sale_price`, `sale_date`, `sqft`, `beds`, `baths`, `distance_miles`, `condition`, `renovation` (`renovated` / `unrenovated` / null = unknown), `source`, `source_url`, `notes`, `included`, `origin` (`manual` / `import`), `external_id` (unique per deal + source, so re-imports never duplicate), created/updated by/at |
+| `deal_comps` | `id`, `deal_id → deals` (cascade), `address`, `sale_price`, `sale_date`, `sqft`, `beds`, `baths`, `distance_miles`, `condition`, `renovation` (`renovated` / `unrenovated` / null = unknown), `sale_status` (`sold` / `pending` / `active` / null), `tier` (`standard` / `bestFit` / `superComp`), `share_override` (fraction 0–1, Super comps only, null = computed weight), `source`, `source_url`, `notes`, `included`, `origin` (`manual` / `import`), `external_id` (unique per deal + source, so re-imports never duplicate), created/updated by/at |
 
 The identity columns are copied out of `inputs` so the dashboard can filter in
 SQL by market, ZIP, status and created date. Filters on computed values
@@ -166,7 +166,7 @@ SQL by market, ZIP, status and created date. Filters on computed values
 
 ## Formula / unit tests
 
-`npm test`: **143 tests, 10 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 42 browser checks.
+`npm test`: **152 tests, 11 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 46 browser checks.
 
 | File | Tests | Covers |
 |---|---|---|
@@ -178,8 +178,9 @@ SQL by market, ZIP, status and created date. Filters on computed values
 | `engine/analyze.test.ts` | 24 | end-to-end BUY deal; strategies; Max Offer ×3; stress; every computed gate; spec warning text; empty deal; Base-vs-comp-ARV "Why?" text |
 | `lib/parse-inputs.test.ts` | 6 | blank → null; explicit 0 kept; `$125,000` and `7.5%` parsing; validation; round-trip |
 | `lib/deals-repo.test.ts` | 6 | create/read; audit Old $125,000 → New $115,000 by Ben; no-op saves; filters; real `jsonb` storage |
-| `engine/comps.test.ts` | 16 | $/sqft guard; median; sale age; included-only stats; unknown prices skipped (not $0); renovated vs unrenovated; summary fields; weight decay; hand-calculated comp weight; comp ARV ($187.50/sf × 1,400 = $262,500); exclusions with reasons; UNKNOWN ARV |
-| `lib/comps-repo.test.ts` | 7 | validation (incl. unsafe links); tier/status defaults; add/list/round-trip; audited edit/delete; cross-deal protection; import de-duplication |
+| `engine/comps.test.ts` | 22 | $/sqft guard; median; sale age; included-only stats; unknown prices skipped (not $0); renovated vs unrenovated; summary fields; weight decay; hand-calculated comp weight; comp ARV ($187.50/sf × 1,400 = $262,500); exclusions with reasons; UNKNOWN ARV; Super comp % override (50% fixed → $180/sf × 1,400 = $252,000), multiple overrides, > 100% → UNKNOWN, scale-up when alone, ignored on non-Super / unused comps |
+| `lib/comps-repo.test.ts` | 8 | validation (incl. unsafe links); tier/status defaults; % override validation (Super comps only, 0–100%); add/list/round-trip; audited edit/delete; cross-deal protection; import de-duplication |
+| `lib/db.test.ts` | 2 | schema file splits cleanly into statements (no `;` in inline comments) |
 
 Worked example (`engine/fixtures.ts`; illustrative inputs, not market data):
 $100k purchase · 3% closing · $40k rehab + 10% · 80% LTV IO @ 12%, 2 pts,
@@ -280,8 +281,17 @@ Deal page → **Manage comps** (`/deals/[id]/comps`):
   - Each comp's weight comes from time, distance and similarity (sqft,
     beds, baths, status), multiplied by its tier: Standard / **Best fit** /
     **Super comp**.
-  - The page shows each comp's factors and its % share of the ARV, plus an
-    unweighted median cross-check.
+  - **% override (Super comps only):** give a Super comp a fixed share of
+    the ARV, e.g. 50%. That replaces its computed weight, and the remaining %
+    is split among the other comps by weight.
+    - Overrides must total 100% or less; above that, the comp ARV shows
+      UNKNOWN with an explanation.
+    - If no other comp can take the remainder, the overrides are scaled up
+      to 100%, and the page says so.
+    - An override on a comp that isn't used (e.g. not renovated) is ignored
+      and reported.
+  - The page shows each comp's factors and its % share of the ARV ("fixed"
+    marks an override), plus an unweighted median cross-check.
   - It's a **suggestion**: Base ARV changes only when you click "Apply"
     (audited). Conservative and Upside stay manual.
 - **"Why?" panel.** It notes when your Base ARV is above the comp-supported

@@ -56,6 +56,8 @@ export function splitSql(sql: string): string[] {
   return sql
     .split('\n')
     .filter((l) => !l.trim().startsWith('--'))
+    // Strip trailing "-- comment" (the schema has no string literals containing "--").
+    .map((l) => l.replace(/\s--.*$/, ''))
     .join('\n')
     .split(';')
     .map((s) => s.trim())

@@ -164,6 +164,16 @@ export const METHODOLOGY: MethodologyRule[] = [
     source: 'PROVISIONAL',
   },
   {
+    area: 'Comp ARV · % override',
+    rule: 'A Super comp may carry a fixed % share of the comp ARV (replaces its computed weight). The remaining % is split among the other used comps by their weights. Overrides must total 100% or less (otherwise comp ARV is UNKNOWN); an override on a comp not used for ARV is ignored and reported (requested by Guy, Oct 2026)',
+    source: 'APPROVED',
+  },
+  {
+    area: 'Comp ARV · % override edge case',
+    rule: 'If overrides total under 100% and no other comp can take the remainder, the overrides are scaled up to 100% and the page says so',
+    source: 'INTERPRETATION',
+  },
+  {
     area: 'Comp ARV · unknowns',
     rule: 'A comp without sale price or sqft cannot give $/sqft and is left out. An unknown sale date, distance, beds, baths or status on a comp counts as the floor (least similar), never as a perfect match. If the subject\'s beds/baths are unknown, that similarity item is skipped for every comp. Subject sqft unknown → comp ARV is UNKNOWN',
     source: 'INTERPRETATION',
