@@ -1,5 +1,13 @@
 # G&B Capital — Investor Site
 
+> **Repo-wide rule: docs are always kept current.** Every change updates the
+> documentation it affects **in the same commit**. Add what's new, update
+> what changed, and remove what's no longer true. This covers this file, the
+> READMEs, `docs/`, `deal-analyzer/CLAUDE.md`, and the skills in
+> `.claude/skills/`. A change with stale docs is not done. (Analyzer-specific
+> checklist: `deal-analyzer/CLAUDE.md` → "Documentation is part of every
+> change".)
+
 A 4-page Next.js marketing site for a pre-launch real estate investment
 company, built for credibility with investors and real estate professionals
 (not active fundraising). Visual system and its rationale:

@@ -83,7 +83,23 @@ When you add a feature, **extend `e2e/*.e2e.mjs`** with assertions for it
 - Comps: unknown sqft → $/sqft UNKNOWN and excluded from $/sqft stats;
   excluded comp kept but out of stats; "Apply to deal" audited.
 
-## 6. Regression guard for the marketing site
+## 6. Documentation check (always: stale docs fail QA)
+
+Compare the diff against every doc in the `deal-analyzer/CLAUDE.md`
+"Documentation is part of every change" table:
+
+- New feature, command, field, rule, screen or test file → documented.
+- Renamed or removed things → grep the docs (`grep -rn "<old name>" --include=*.md .`)
+  and `METHODOLOGY` in `config.ts` and fix every hit.
+- README test table: per-file counts match `npx vitest run` output exactly.
+- Any rule change is reflected in `/methodology` with the right tag
+  (SPEC / APPROVED / PROVISIONAL / INTERPRETATION).
+- UI changed visibly → screenshots refreshed
+  (`E2E_OUT=docs/screenshots npm run e2e`).
+
+Report missing or stale docs as **FAIL** items, not suggestions.
+
+## 7. Regression guard for the marketing site
 
 The repo root is a separate site. If root files (`tsconfig.json`,
 `vitest.config.ts`, `CLAUDE.md`) changed:
@@ -94,7 +110,7 @@ cd .. && npm ci && npm test && npm run build && npm run lint
 
 ## Report format
 
-1. Summary line: overall PASS / FAIL.
+1. Summary line: overall PASS / FAIL (stale docs = FAIL).
 2. Table of commands run with result (counts, durations).
 3. AC1–AC20 table.
 4. Bugs found: steps to reproduce, expected vs actual, suspected file:line.

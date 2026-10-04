@@ -19,8 +19,9 @@ is evaluated as BRRRR, Hold, Flip and Hybrid.
 2. **Changing any SPEC value or formula needs explicit approval.** Stop and ask
    before touching `SPEC` in `config.ts` or the formulas in
    `src/engine/formulas.ts`, `underwrite.ts`, `score.ts`, `recommendation.ts`
-   or `gates.ts`. When something is approved, retag it from PROVISIONAL to SPEC
-   and note who approved it.
+   or `gates.ts`. When something is approved, retag it from PROVISIONAL to APPROVED,
+   note who approved it and when, and remove it from the README's open
+   decisions.
 3. **UNKNOWN is never $0 (AC18).** Missing numeric input = `null`.
    - Compose with `lift()` / `sumKnown()` in `underwrite.ts`; never `?? 0` on
      an input.
@@ -53,7 +54,7 @@ is evaluated as BRRRR, Hold, Flip and Hybrid.
 ```bash
 npm run dev          # http://localhost:3100 (PGlite in .data/pglite unless DATABASE_URL is set)
 npm run check        # typecheck + lint + unit/integration tests — run before every commit
-npm test             # vitest (133+ tests)
+npm test             # vitest (unit + integration)
 TEST_DATABASE_URL=postgres://… npm test   # repo tests against real PostgreSQL too
 npm run e2e          # isolated DB + prod build + Playwright suites (e2e/*.e2e.mjs)
 E2E_OUT=docs/screenshots npm run e2e      # refresh the README screenshots
@@ -133,13 +134,35 @@ Persona skills (investor, inspector, analyst) **produce findings and
 questions for Guy/Ben**. They never change thresholds or formulas on their
 own.
 
+## Documentation is part of every change (mandatory)
+
+Docs are updated **in the same commit** as the code they describe: never
+"later", never in a follow-up. Before every commit, check each doc below
+against the change. **Add** what's new, **update** what changed, and
+**remove** what's no longer true (stale docs are worse than missing ones).
+
+| Doc | Update when |
+|---|---|
+| `README.md` | Features, commands, architecture map, DB schema, test table (file / count / covers), screenshots list, open decisions, known limitations, deploy steps |
+| `CLAUDE.md` (this file) | Rules, commands, code map, gotchas, skills, definition of done |
+| `src/engine/config.ts` → `METHODOLOGY` | Any rule added or changed, tagged SPEC / APPROVED / PROVISIONAL / INTERPRETATION. When Guy/Ben approve a provisional rule, retag it and remove it from README "Decisions that need approval" |
+| `docs/SPEC.md` | Never edited, except to add a new spec version from Guy/Ben verbatim |
+| `docs/screenshots/` | UI changed visibly: `E2E_OUT=docs/screenshots npm run e2e` |
+| `../CLAUDE.md` (repo root) | The analyzer's location, skills list or isolation from the site changes |
+| `../.claude/skills/vf-*` | A skill's commands, checklist, file paths or rules no longer match the code |
+
+Prefer facts that can't go stale: no hardcoded counts or versions in prose
+unless the doc owns that number (the README test table does; keep it
+exact). Before committing, grep the docs for names you renamed or removed.
+
 ## Definition of done
 
 1. `npm run check` is green.
 2. `npm run e2e` is green for any UI or flow change.
 3. New logic has hand-calculated tests.
-4. README.md and `/methodology` are updated for any new rule, tagged
-   SPEC / PROVISIONAL / INTERPRETATION.
+4. **All affected docs are updated in the same commit** (see "Documentation
+   is part of every change"): README, this file, `METHODOLOGY`, screenshots,
+   skills, and the root CLAUDE.md. Stale statements are removed.
 5. No new UNKNOWN-to-0 paths.
 6. The marketing site at the repo root still builds. It excludes
    `deal-analyzer/`; don't import across the boundary.

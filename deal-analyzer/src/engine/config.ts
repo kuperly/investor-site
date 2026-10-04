@@ -145,7 +145,7 @@ export const METHODOLOGY: MethodologyRule[] = [
   },
   {
     area: 'Comps',
-    rule: 'Statistics use included comps only; unknown values are skipped per statistic. $/sqft = sale price / sqft. Comps never set ARV',
+    rule: 'Statistics use included comps only; unknown values are skipped per statistic. $/sqft = sale price / sqft. Statistics never change ARV; only the comp-ARV suggestion can, and only via the user\'s Apply',
     source: 'INTERPRETATION',
   },
   {

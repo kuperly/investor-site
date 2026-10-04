@@ -1,6 +1,7 @@
 /**
  * §32 Comparable properties — pure statistics over a comp list.
- * No valuation rules: the engine summarises comps, it never sets ARV.
+ * Statistics + the comp-supported ARV suggestion (compArv, below). The engine never
+ * writes ARV: Base ARV changes only when the user applies the suggestion (audited).
  * Unknown values are skipped per statistic (and counted), never treated as 0.
  */
 import { PROVISIONAL } from './config'

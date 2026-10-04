@@ -40,7 +40,7 @@ npm run dev
 
 | Command | What it does |
 |---|---|
-| `npm test` | 133 unit + integration tests (vitest) |
+| `npm test` | Unit + integration tests (vitest) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint (next/core-web-vitals) |
 | `npm run build` / `npm start` | Production build / server on :3100 |
@@ -166,7 +166,7 @@ SQL by market, ZIP, status and created date. Filters on computed values
 
 ## Formula / unit tests
 
-`npm test`: **133 tests, 10 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`).
+`npm test`: **143 tests, 10 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 42 browser checks.
 
 | File | Tests | Covers |
 |---|---|---|
@@ -175,11 +175,11 @@ SQL by market, ZIP, status and created date. Filters on computed values
 | `engine/underwrite.test.ts` | 20 | full worked example; amortizing acquisition; all-cash; released equity; Max Offer exactness (×4 financing modes); UNKNOWN propagation; no NaN/∞ |
 | `engine/score.test.ts` | 7 | each component's scaling and clamps; risk factor unknowns; total / max achievable |
 | `engine/recommendation.test.ts` | 12 | threshold boundaries; gate FAIL overrides; UNKNOWN blocks BUY; "can't reach 65" → PASS |
-| `engine/analyze.test.ts` | 22 | end-to-end BUY deal; strategies; Max Offer ×3; stress; every computed gate; spec warning text; empty deal |
+| `engine/analyze.test.ts` | 24 | end-to-end BUY deal; strategies; Max Offer ×3; stress; every computed gate; spec warning text; empty deal; Base-vs-comp-ARV "Why?" text |
 | `lib/parse-inputs.test.ts` | 6 | blank → null; explicit 0 kept; `$125,000` and `7.5%` parsing; validation; round-trip |
 | `lib/deals-repo.test.ts` | 6 | create/read; audit Old $125,000 → New $115,000 by Ben; no-op saves; filters; real `jsonb` storage |
-| `engine/comps.test.ts` | 9 | $/sqft guard; median; sale age; included-only stats; unknown prices skipped (not $0); renovated vs unrenovated; summary fields |
-| `lib/comps-repo.test.ts` | 6 | validation (incl. unsafe links); add/list/round-trip; audited edit/delete; cross-deal protection; import de-duplication |
+| `engine/comps.test.ts` | 16 | $/sqft guard; median; sale age; included-only stats; unknown prices skipped (not $0); renovated vs unrenovated; summary fields; weight decay; hand-calculated comp weight; comp ARV ($187.50/sf × 1,400 = $262,500); exclusions with reasons; UNKNOWN ARV |
+| `lib/comps-repo.test.ts` | 7 | validation (incl. unsafe links); tier/status defaults; add/list/round-trip; audited edit/delete; cross-deal protection; import de-duplication |
 
 Worked example (`engine/fixtures.ts`; illustrative inputs, not market data):
 $100k purchase · 3% closing · $40k rehab + 10% · 80% LTV IO @ 12%, 2 pts,
@@ -304,9 +304,9 @@ go through the same validation as manual entry, are stored with
 - **Comps are manual for now.** Automated import is wired at the code level
   (`importComps()` + `CompProvider`) but no data source is connected yet.
   Other data integrations and the listing parser (§30) are not built.
-- **Comps inform, they don't score.** Comp statistics don't feed the score
-  or the ARVs. Suggesting an ARV or flagging a weak comp set would be new
-  rules needing approval.
+- **Comps don't score directly.** Comps affect the score only through the
+  Base ARV, and only after you apply the comp ARV. Flagging a weak comp set
+  (e.g. too few or too old comps) would be a new rule needing approval.
 - **Deleting deals.** There is no delete; use the `Archived` status.
 - **Rehab duration** is captured but not used in calculations: interest
   runs on **project months** (purchase → refi or sale), which is a separate

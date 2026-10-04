@@ -50,8 +50,9 @@ Apply the ones relevant to the request.
 4. **ARV discipline.** Do the comps support the Base ARV?
    - Renovated vs unrenovated split, recency, distance, $/sqft vs the
      subject's sqft, outliers.
-   - The app must never set ARV from comps automatically (spec §30). It may
-     *show* evidence.
+   - The app suggests a comp-weighted Base ARV (tiers: Best fit / Super
+     comp). It must never apply it automatically (spec §30); the user clicks
+     Apply. Challenge the weights and the comp selection.
 5. **Cost completeness.** Is anything that commonly kills deals missing as
    an input?
    - Holding-period utilities, insurance (builder's risk vs landlord policy).
