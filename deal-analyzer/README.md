@@ -45,6 +45,8 @@ npm run dev
 | `npm run lint` | ESLint (next/core-web-vitals) |
 | `npm run build` / `npm start` | Production build / server on :3100 |
 | `TEST_DATABASE_URL=postgres://… npm test` | Also runs the repository tests against real PostgreSQL |
+| `npm run check` | typecheck + lint + tests |
+| `npm run e2e` | Isolated DB → seed → production build → Playwright acceptance suites (`e2e/`) |
 
 Pick **Guy** or **Ben** in the header before editing; the name is recorded on
 every audit entry. Set `BASIC_AUTH_USER` and `BASIC_AUTH_PASSWORD` to put the

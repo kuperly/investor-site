@@ -5,3 +5,4 @@ node_modules
 .env*.local
 !.env.example
 *.tsbuildinfo
+e2e/.out

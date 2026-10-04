@@ -98,9 +98,14 @@ its final frame under `prefers-reduced-motion`.
 A separate internal Next.js app (own `package.json`, tests, and README) for
 real-estate deal underwriting. It is excluded from this site's `tsconfig.json`
 and `vitest.config.ts`, so it never affects the marketing site's build or
-deploy. See [deal-analyzer/README.md](deal-analyzer/README.md). Business rules
-live only in `deal-analyzer/src/engine/`; thresholds there change only with
-Guy/Ben approval.
+deploy. See [deal-analyzer/README.md](deal-analyzer/README.md) and its own
+[deal-analyzer/CLAUDE.md](deal-analyzer/CLAUDE.md). Business rules live only
+in `deal-analyzer/src/engine/`; thresholds there change only with Guy/Ben
+approval.
+
+Project skills for the analyzer live in `.claude/skills/`: `vf-qa`,
+`vf-security`, `vf-underwriting-analyst`, `vf-real-estate-investor` and
+`vf-property-inspector`.
 
 ## Testing
 
