@@ -5,9 +5,13 @@
 import { sampleInputs } from '../src/engine/fixtures'
 import { getDb } from '../src/lib/db'
 import { dealsRepo } from '../src/lib/deals-repo'
+import { compsRepo } from '../src/lib/comps-repo'
+import { parseComp } from '../src/lib/comps/parse-comp'
 
 async function main() {
-  const repo = dealsRepo(await getDb())
+  const db = await getDb()
+  const repo = dealsRepo(db)
+  const comps = compsRepo(db)
   const demos = [
     {
       status: 'Analyzing' as const,
@@ -61,6 +65,15 @@ async function main() {
   ]
   for (const d of demos) {
     const id = await repo.create(d.inputs, d.notes, d.status, 'Guy')
+    if (d === demos[0]) {
+      // Illustrative comps only — fictitious addresses, not market data.
+      const demoComps: Record<string, string>[] = [
+        { address: '[DEMO] 101 Sample Ave', salePrice: '205000', saleDate: '2026-07-15', sqft: '1380', beds: '3', baths: '2', distanceMiles: '0.3', condition: 'Full renovation', renovation: 'renovated', source: 'Manual' },
+        { address: '[DEMO] 77 Placeholder Rd', salePrice: '198000', saleDate: '2026-05-02', sqft: '1450', beds: '3', baths: '1.5', distanceMiles: '0.6', condition: 'Updated kitchen/baths', renovation: 'renovated', source: 'Manual' },
+        { address: '[DEMO] 9 Fixture Ct', salePrice: '118000', saleDate: '2026-03-20', sqft: '1350', beds: '3', baths: '1', distanceMiles: '0.5', condition: 'Original, dated', renovation: 'unrenovated', source: 'Manual' },
+      ]
+      for (const c of demoComps) await comps.add(id, parseComp((k) => c[k] ?? null).comp, 'Guy')
+    }
     console.log(`Seeded ${d.inputs.address} → /deals/${id}`)
   }
   process.exit(0)

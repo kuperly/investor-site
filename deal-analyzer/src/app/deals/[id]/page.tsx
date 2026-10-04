@@ -9,7 +9,11 @@ import { dateTime } from '@/lib/format'
 import { NOTE_CATEGORIES } from '@/lib/notes'
 import { repo } from '@/lib/repo'
 import { currentUser } from '@/lib/session'
-import { describeAuditValue } from '@/lib/audit-format'
+import { describeAuditValue, describeCompAudit } from '@/lib/audit-format'
+import { CompsStats } from '@/components/CompsStats'
+import { compStats } from '@/engine/comps'
+import { compsRepo } from '@/lib/comps-repo'
+import { getDb } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,7 +22,8 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
   const r = await repo()
   const deal = await r.get(id)
   if (!deal) notFound()
-  const [audit, user] = await Promise.all([r.audit(id), currentUser()])
+  const [audit, user, comps] = await Promise.all([r.audit(id), currentUser(), compsRepo(await getDb()).list(id)])
+  const stats = compStats(comps, new Date())
   const a = analyzeDeal(deal.inputs)
   const i = deal.inputs
   const notes = NOTE_CATEGORIES.filter((n) => deal.notes[n.key])
@@ -56,6 +61,18 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
 
       <AnalysisView a={a} inputs={deal.inputs} />
 
+      <section className="card">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base font-semibold">Comparable properties ({comps.length})</h2>
+          <Link href={`/deals/${deal.id}/comps`} className="btn-secondary no-print">Manage comps</Link>
+        </div>
+        {comps.length === 0 ? (
+          <p className="text-sm text-ink-muted">No comps on file yet. Add them to back up the ARVs.</p>
+        ) : (
+          <CompsStats s={stats} />
+        )}
+      </section>
+
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="card">
           <h2 className="h2">Deal notes</h2>
@@ -80,6 +97,16 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
               <li key={e.id} className="border-b border-slate-100 pb-2">
                 {e.field === 'created' ? (
                   <div className="font-medium">Deal created</div>
+                ) : e.field === 'comps' ? (
+                  (() => {
+                    const d = describeCompAudit(e.oldValue, e.newValue)
+                    return (
+                      <>
+                        <div className="font-medium">{d.title}</div>
+                        <div className="text-ink-soft">{d.detail}</div>
+                      </>
+                    )
+                  })()
                 ) : (
                   <>
                     <div className="font-medium">{labelFor(e.field)}</div>

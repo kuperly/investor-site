@@ -121,5 +121,15 @@ export const METHODOLOGY: MethodologyRule[] = [
     rule: 'Among viable strategies, highest annual return on the capital that stays in: BRRRR CoC on Cash Left, Hold CoC on cash invested, Flip ROI × 12 / project months',
     source: 'PROVISIONAL',
   },
+  {
+    area: 'Comps',
+    rule: 'Statistics use included comps only; unknown values are skipped per statistic. $/sqft = sale price / sqft. Comps never set ARV',
+    source: 'INTERPRETATION',
+  },
+  {
+    area: 'Comps → deal summary',
+    rule: 'On "Apply": comp distance = farthest included comp, comp recency = oldest included sale (months)',
+    source: 'INTERPRETATION',
+  },
   { area: 'Refi', rule: 'Refi loan sized on Base ARV; debt service fully amortizing at the refi rate and term', source: 'INTERPRETATION' },
 ]

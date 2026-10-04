@@ -45,11 +45,14 @@ describe(`deals repository (${process.env.DATABASE_URL ? 'PostgreSQL' : 'PGlite'
   })
 
   it('filters by market / zip / status', async () => {
-    await repo.create(sampleInputs({ address: 'A', market: 'Filter Market', zip: '11111' }), {}, 'Analyzing', 'Guy')
-    expect((await repo.list({ market: 'Filter Market' })).map((d) => d.inputs.address)).toEqual(['A'])
-    expect((await repo.list({ zip: '11111', status: 'Analyzing' })).length).toBe(1)
-    expect((await repo.list({ status: 'Closed' })).length).toBe(0)
-    expect(await repo.distinct('market')).toContain('Filter Market')
+    // Unique per run so the test is safe against a persistent TEST_DATABASE_URL.
+    const tag = `Filter ${Date.now()}`
+    const zip = String(Date.now()).slice(-5)
+    await repo.create(sampleInputs({ address: 'A', market: tag, zip }), {}, 'Analyzing', 'Guy')
+    expect((await repo.list({ market: tag })).map((d) => d.inputs.address)).toEqual(['A'])
+    expect((await repo.list({ market: tag, zip, status: 'Analyzing' })).length).toBe(1)
+    expect((await repo.list({ market: tag, status: 'Closed' })).length).toBe(0)
+    expect(await repo.distinct('market')).toContain(tag)
   })
 
   it('stores inputs/notes/audit values as real jsonb (queryable in SQL)', async () => {

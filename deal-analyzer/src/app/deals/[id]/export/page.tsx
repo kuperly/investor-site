@@ -7,6 +7,11 @@ import { describeAuditValue } from '@/lib/audit-format'
 import { dateTime } from '@/lib/format'
 import { NOTE_CATEGORIES } from '@/lib/notes'
 import { repo } from '@/lib/repo'
+import { CompsList } from '@/components/CompsList'
+import { CompsStats } from '@/components/CompsStats'
+import { compStats } from '@/engine/comps'
+import { compsRepo } from '@/lib/comps-repo'
+import { getDb } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +22,7 @@ export default async function ExportPage({ params }: { params: Promise<{ id: str
   if (!deal) notFound()
   const a = analyzeDeal(deal.inputs)
   const i = deal.inputs
+  const comps = await compsRepo(await getDb()).list(id)
 
   return (
     <article className="space-y-4">
@@ -34,6 +40,12 @@ export default async function ExportPage({ params }: { params: Promise<{ id: str
       </header>
 
       <AnalysisView a={a} inputs={deal.inputs} />
+
+      <section className="card">
+        <h2 className="h2">Comparable properties ({comps.length})</h2>
+        {comps.length > 0 && <CompsStats s={compStats(comps, new Date())} />}
+        <div className="mt-3"><CompsList comps={comps} /></div>
+      </section>
 
       <section className="card">
         <h2 className="h2">Inputs</h2>

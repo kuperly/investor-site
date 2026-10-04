@@ -40,3 +40,33 @@ create table if not exists deal_audit (
 );
 
 create index if not exists deal_audit_deal_idx on deal_audit (deal_id, changed_at desc);
+
+-- §32 Comparable properties. One row per comp; stats are computed by the engine.
+create table if not exists deal_comps (
+  id              uuid primary key default gen_random_uuid(),
+  deal_id         uuid not null references deals(id) on delete cascade,
+  address         text not null,
+  sale_price      double precision,
+  sale_date       date,
+  sqft            integer,
+  beds            double precision,
+  baths           double precision,
+  distance_miles  double precision,
+  condition       text,
+  renovation      text check (renovation in ('renovated','unrenovated')),  -- null = not classified
+  source          text,
+  source_url      text,
+  notes           text,
+  included        boolean not null default true,   -- excluded comps stay on file but are left out of stats
+  -- Automation hooks: imported comps carry their provider id so re-imports don't duplicate.
+  origin          text not null default 'manual' check (origin in ('manual','import')),
+  external_id     text,
+  created_by      text not null,
+  updated_by      text not null,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
+create index if not exists deal_comps_deal_idx on deal_comps (deal_id, sale_date desc);
+create unique index if not exists deal_comps_external_uq
+  on deal_comps (deal_id, source, external_id) where external_id is not null;

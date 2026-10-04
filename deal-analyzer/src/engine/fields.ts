@@ -139,6 +139,7 @@ export const FIELD_SECTIONS: FieldSection[] = [
   {
     id: 'value',
     title: 'Value (ARV & comps)',
+    description: 'Comp summary fields can be filled from the comp list (deal page → Manage comps → Apply).',
     fields: [
       { key: 'arvConservative', label: 'Conservative ARV', kind: 'money' },
       { key: 'arvBase', label: 'Base ARV', kind: 'money' },

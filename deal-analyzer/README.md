@@ -40,7 +40,7 @@ npm run dev
 
 | Command | What it does |
 |---|---|
-| `npm test` | 118 unit + integration tests (vitest) |
+| `npm test` | 133 unit + integration tests (vitest) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint (next/core-web-vitals) |
 | `npm run build` / `npm start` | Production build / server on :3100 |
@@ -64,6 +64,7 @@ src/
     formulas.ts        §10–§21 as one small pure function each, with guarded division
     underwrite.ts      composes formulas over nullable inputs → CoreResult; Max Offer solver
     stress.ts          §22 scenarios
+    comps.ts           §32 comp statistics (renovated / unrenovated / all, $/sqft, distance, sale age)
     strategies.ts      §26 BRRRR / Hold / Flip / Hybrid + best use of capital
     gates.ts           §25 hard gates (computed + checklist)
     score.ts           §23 point functions
@@ -72,6 +73,9 @@ src/
   lib/               ← infrastructure (no business rules)
     db.ts              driver-agnostic Db: postgres.js (DATABASE_URL) or PGlite
     deals-repo.ts      CRUD + per-field audit rows
+    comps-repo.ts      §32 comps: manual add/edit/delete + importComps() for automation, all audited
+    comps/parse-comp.ts  one validator for manual entry AND imports (blank → UNKNOWN, http(s) links only)
+    comps/provider.ts  CompProvider interface — where an automated data source plugs in
     audit.ts           diff of inputs / notes / status
     parse-inputs.ts    FormData → DealInputs (blank → null, % → decimal, type/range checks only)
     format.ts          display helpers ("UNKNOWN", "∞ (no cash left)", "N/A (no debt)")
@@ -106,7 +110,8 @@ Design points:
 | Table | Columns |
 |---|---|
 | `deals` | `id uuid pk`, `address`, `city`, `state`, `zip`, `market`, `status` (CHECK: the 9 spec statuses), `inputs jsonb` (all `DealInputs`; unknown = JSON `null`), `notes jsonb` (§31 categories), `created_by`, `updated_by`, `created_at`, `updated_at` |
-| `deal_audit` | `id`, `deal_id → deals`, `field`, `old_value jsonb`, `new_value jsonb`, `changed_by`, `changed_at` |
+| `deal_audit` | `id`, `deal_id → deals`, `field`, `old_value jsonb`, `new_value jsonb`, `changed_by`, `changed_at` (comp changes use `field = 'comps'` with before/after snapshots) |
+| `deal_comps` | `id`, `deal_id → deals` (cascade), `address`, `sale_price`, `sale_date`, `sqft`, `beds`, `baths`, `distance_miles`, `condition`, `renovation` (`renovated` / `unrenovated` / null = unknown), `source`, `source_url`, `notes`, `included`, `origin` (`manual` / `import`), `external_id` (unique per deal + source, so re-imports never duplicate), created/updated by/at |
 
 The identity columns are copied out of `inputs` so the dashboard can filter in
 SQL by market, ZIP, status and created date. Filters on computed values
@@ -159,7 +164,7 @@ SQL by market, ZIP, status and created date. Filters on computed values
 
 ## Formula / unit tests
 
-`npm test`: **118 tests, 8 files**, all passing.
+`npm test`: **133 tests, 10 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`).
 
 | File | Tests | Covers |
 |---|---|---|
@@ -171,6 +176,8 @@ SQL by market, ZIP, status and created date. Filters on computed values
 | `engine/analyze.test.ts` | 22 | end-to-end BUY deal; strategies; Max Offer ×3; stress; every computed gate; spec warning text; empty deal |
 | `lib/parse-inputs.test.ts` | 6 | blank → null; explicit 0 kept; `$125,000` and `7.5%` parsing; validation; round-trip |
 | `lib/deals-repo.test.ts` | 6 | create/read; audit Old $125,000 → New $115,000 by Ben; no-op saves; filters; real `jsonb` storage |
+| `engine/comps.test.ts` | 9 | $/sqft guard; median; sale age; included-only stats; unknown prices skipped (not $0); renovated vs unrenovated; summary fields |
+| `lib/comps-repo.test.ts` | 6 | validation (incl. unsafe links); add/list/round-trip; audited edit/delete; cross-deal protection; import de-duplication |
 
 Worked example (`engine/fixtures.ts`; illustrative inputs, not market data):
 $100k purchase · 3% closing · $40k rehab + 10% · 80% LTV IO @ 12%, 2 pts,
@@ -192,6 +199,9 @@ All captured from the running production build during the E2E run.
 | Export report / [sample PDF](docs/screenshots/05-export-sample.pdf) | [05-export-report.png](docs/screenshots/05-export-report.png) |
 | Methodology | [06-methodology.png](docs/screenshots/06-methodology.png) |
 | Mobile: dashboard, deal, form | [07](docs/screenshots/07-dashboard-mobile.png) · [08](docs/screenshots/08-deal-mobile.png) · [09](docs/screenshots/09-new-deal-mobile.png) |
+| Comps page: stats, list, add form, deal summary comparison | [10-comps-page.png](docs/screenshots/10-comps-page.png) |
+| Comp changes in the audit trail | [11-comps-audit.png](docs/screenshots/11-comps-audit.png) |
+| Comps on mobile | [12-comps-mobile.png](docs/screenshots/12-comps-mobile.png) |
 
 ## ⚠️ Decisions that need Guy/Ben approval
 
@@ -237,6 +247,31 @@ approved.**
     - Max Offer recomputes price-linked costs at the offer price.
     - Score is rounded to 0.1 before classification.
 
+## Comparable properties (§32)
+
+Deal page → **Manage comps** (`/deals/[id]/comps`):
+
+- **Add / edit / delete comps by hand**: address, sale price, sale date,
+  sqft, beds, baths, distance, condition, renovated/unrenovated, source and
+  link, and notes. $/sqft and sale age are computed. Blank fields stay
+  UNKNOWN and are skipped by each statistic.
+- **Exclude** an outlier to keep it on file but out of the stats.
+- **Statistics** are shown for renovated, unrenovated and all included
+  comps: count, median and average price, range, median and average $/sqft,
+  distance, and sale age.
+- **Apply to deal.** The deal's §8 comp summary fields sit next to the
+  list's values (mismatches highlighted). One click copies them over, and
+  every field change is audited. Distance = farthest comp; recency = oldest
+  sale.
+- **ARV is never set from comps.**
+- Every comp change goes to the audit trail with before/after values, and
+  comps appear in the PDF export.
+
+**Automation (next step).** Implement `CompProvider.search()` for the chosen
+source and pass its results to `compsRepo.importComps()`. Imported comps then
+go through the same validation as manual entry, are stored with
+`origin = 'import'`, and are de-duplicated by `external_id` on re-import.
+
 ## Known limitations
 
 - **Auth.** There is no login, only a Guy/Ben selector (per §2). Use the
@@ -244,8 +279,12 @@ approved.**
   deploying.
 - **PDF export.** The PDF comes from the browser's print dialog
   ("Save as PDF"), not server-side generation.
-- **Not yet built (§30, §32).** Comps table, data integrations and the
-  listing parser. The schema and input model leave room for them.
+- **Comps are manual for now.** Automated import is wired at the code level
+  (`importComps()` + `CompProvider`) but no data source is connected yet.
+  Other data integrations and the listing parser (§30) are not built.
+- **Comps inform, they don't score.** Comp statistics don't feed the score
+  or the ARVs. Suggesting an ARV or flagging a weak comp set would be new
+  rules needing approval.
 - **Deleting deals.** There is no delete; use the `Archived` status.
 - **Rehab duration** is captured but not used in calculations: interest
   runs on **project months** (purchase → refi or sale), which is a separate
