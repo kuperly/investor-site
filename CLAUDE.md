@@ -93,6 +93,15 @@ its final frame under `prefers-reduced-motion`.
   (`prj_4zjmuFVpXvpOdFjPqAaAbKu1wM69`), connected to the `kuperly/investor-site`
   GitHub repo for auto-deploy on push to `main`.
 
+## ValeForge Deal Analyzer (`deal-analyzer/`)
+
+A separate internal Next.js app (own `package.json`, tests, and README) for
+real-estate deal underwriting. It is excluded from this site's `tsconfig.json`
+and `vitest.config.ts`, so it never affects the marketing site's build or
+deploy. See [deal-analyzer/README.md](deal-analyzer/README.md). Business rules
+live only in `deal-analyzer/src/engine/`; thresholds there change only with
+Guy/Ben approval.
+
 ## Testing
 
 TDD throughout: every component/page/route has a co-located `*.test.tsx`.
