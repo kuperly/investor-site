@@ -1,4 +1,4 @@
-# Design system — G&B Capital
+# Design system — ValeForge Capital
 
 The visual language of the site and the reasoning behind it. The site's job
 is **credibility with investors and deal partners**, not property listings —
@@ -79,9 +79,12 @@ by construction — not by each page re-implementing them:
 
 ## Components
 
-- `Logo` — the G&B Capital wordmark (Space Grotesk, ampersand in brass),
-  derived from `siteConfig.name`. Used in header + footer. Favicon is the
-  matching "GB" monogram at `src/app/icon.svg`.
+- `Logo` — the ValeForge Capital lockup: the "Vale Spark" mark (`LogoMark`,
+  two brass blades folding into a V — the vale — with an ivory diamond spark
+  in the hollow — the forge) + Space Grotesk wordmark with "Forge" in brass
+  and a small tracked "CAPITAL" descriptor. Derived from `siteConfig.name`.
+  Used in header + footer. Favicon is the same mark on ink at
+  `src/app/icon.svg`.
 - `ThemeToggle` — light/dark switch (sets `data-theme`, persists, no-flash).
 - `Eyebrow` — section label; use above every page `<h1>` and section head.
 - `HeroBackground` — decorative, `aria-hidden`; skyline + trendline + faint

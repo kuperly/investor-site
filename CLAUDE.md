@@ -1,4 +1,4 @@
-# G&B Capital — Investor Site
+# ValeForge Capital — Investor Site
 
 A 4-page Next.js marketing site for a pre-launch real estate investment
 company, built for credibility with investors and real estate professionals
@@ -10,7 +10,8 @@ company, built for credibility with investors and real estate professionals
 Everything below is a deliberate placeholder, documented so it's a one-line
 change rather than a hunt through the codebase:
 
-- **Company name/copy**: `src/lib/site-config.ts` — `siteConfig.name`,
+- **Company copy**: name is final (ValeForge Capital); copy still pending
+  from the owner. `src/lib/site-config.ts` — `siteConfig.name`,
   `tagline`, `description`, `marketFocus`, `contactEmail`. This is the single
   source of truth; nothing else in the app hardcodes the brand name.
 - **Email delivery**: three env vars, set in Vercel (Project → Settings →

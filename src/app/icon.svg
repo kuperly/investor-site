@@ -1,6 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="G&amp;B Capital">
-  <rect width="100" height="100" rx="22" fill="#0A0F1C"/>
-  <text x="51" y="69" text-anchor="middle" font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="52" letter-spacing="-3">
-    <tspan fill="#F4F2EC">G</tspan><tspan fill="#C5A253">B</tspan>
-  </text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="ValeForge Capital">
+  <rect width="32" height="32" rx="7" fill="#0A0F1C"/>
+  <g transform="translate(16 16.4) scale(0.8) translate(-16 -16)">
+    <path d="M3 5h6.2L16 19.4V27z" fill="#C5A253"/>
+    <path d="M29 5h-6.2L16 19.4V27z" fill="#C5A253" opacity="0.62"/>
+    <path d="M16 7.6l2.6 2.6L16 12.8l-2.6-2.6z" fill="#F4F2EC"/>
+  </g>
 </svg>

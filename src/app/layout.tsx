@@ -23,7 +23,7 @@ const sourceSans3 = Source_Sans_3({
   display: 'swap',
 })
 
-// Brand font — used only for the G&B Capital logo wordmark.
+// Brand font — used only for the ValeForge Capital logo wordmark.
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   weight: ['500', '600', '700'],

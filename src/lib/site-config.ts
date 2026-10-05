@@ -1,13 +1,13 @@
 /**
  * Single source of truth for site-wide, brand-dependent content.
- * `name` is a placeholder — swap it here when the real company name
- * is finalized. Nothing else in the codebase should hardcode it.
+ * `name` drives the logo lockup too (see `Logo.tsx`). Nothing else in the
+ * codebase should hardcode it.
  */
 export const siteConfig = {
-  name: 'G&B Capital',
+  name: 'ValeForge Capital',
   tagline: 'Disciplined real estate investment.',
   description:
-    'G&B Capital acquires and manages real estate for long-term capital appreciation, with a select number of disciplined renovation projects.',
+    'ValeForge Capital acquires and manages real estate for long-term capital appreciation, with a select number of disciplined renovation projects.',
   marketFocus: 'Texas and select U.S. markets',
   contactEmail: 'hello@example.com',
   nav: [
