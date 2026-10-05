@@ -131,9 +131,11 @@ e2e/          run.sh + app.e2e.mjs + comps.e2e.mjs
   cookie is scoped to the basePath.
 - **Auth fails closed.** In production (`next start`), missing
   `BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD` gives 503 on every request.
-  `AUTH_DISABLED=1` opts out for local production runs only (`e2e/run.sh`
-  sets it). Never set it on a deployment. `npm start` honours `$PORT`
-  (hosting platforms assign it).
+  `AUTH_DISABLED=1` opts out: used by local production runs (`e2e/run.sh`),
+  and on a deployment only by the owner's explicit decision.
+  **Currently ON for the Railway deployment** (Guy, Oct 5 2026, for open
+  testing). See README → "Deploying" to re-enable. `npm start` honours
+  `$PORT` (hosting platforms assign it).
 - **`src/middleware.ts` has no `matcher`, on purpose.** With a basePath,
   a matcher silently skipped the bare `/vf-internal` (the dashboard), so it
   was served without a password. `npm run e2e:auth` guards this. Run it
