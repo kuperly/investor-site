@@ -368,8 +368,9 @@ first request.
 - `ANALYZER_BASE_PATH=/vf-internal`
 
 Add them for **Preview** first (scoped to this branch), then redeploy the
-preview. The rewrite is inert while either variable is missing. Before adding
-them to **Production**, upgrade the site's Next.js (see the root CLAUDE.md).
+preview. The rewrite is inert while either variable is missing. For the
+production site (`investor-site-wheat.vercel.app`), add the same two
+variables for **Production** after the branch is merged into `main`.
 
 **After the branch merges**, switch the Railway service's branch to `main`.
 

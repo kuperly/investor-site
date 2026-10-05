@@ -86,10 +86,20 @@ its final frame under `prefers-reduced-motion`.
   declares a React 18 peer dependency; the project runs React 19. Without
   this file, a clean `npm install` (e.g. on Vercel) fails with `ERESOLVE`.
   Do not remove it without also resolving the underlying peer conflict.
-- **Next.js version is security-pinned.** Currently `15.1.11`, patching
-  CVE-2025-66478 (critical RCE) and CVE-2025-55183/55184/67779. Check
-  https://nextjs.org/blog for new advisories before bumping or pinning an
-  older version in the 15.1.x line.
+- **Next.js version is security-pinned, exactly.** Currently `15.5.27`
+  (`next` and `eslint-config-next`, no `^`). The previous pin, 15.1.11, had
+  an npm audit "critical" rating, including middleware-bypass and
+  rewrite-smuggling advisories. Check https://nextjs.org/blog and
+  `npm audit --omit=dev` before bumping. Verify a bump with tests, lint,
+  build, and before/after screenshots of all four pages (desktop + mobile,
+  dark + light). The 15.5.27 upgrade was pixel-identical.
+- **Accepted audit findings** (build-time or internal input only, re-check
+  on each bump): the `postcss` bundled inside Next (processes only our CSS
+  at build time), and `brace-expansion` via `resend` → `js-beautify`
+  (formats our own email templates, never visitor input).
+- **`next lint` is deprecated** (it prints a notice, still works on 15.x).
+  Migrate to the ESLint CLI before Next 16
+  (`npx @next/codemod@canary next-lint-to-eslint-cli .`).
 - **Git remote uses a custom SSH host alias.** `origin` is
   `git@github-private:kuperly/investor-site.git` — `github-private` is a
   host alias in this machine's SSH config for the `kuperly` GitHub account,
@@ -116,9 +126,7 @@ approval.
 deployment at `ANALYZER_URL` (Railway project `valeforge-deal-analyzer`). It's inert unless both env vars are set, and
 tested in `src/lib/analyzer-route.test.ts`. Access control is the analyzer's
 Basic Auth, not this site. Setup steps: deal-analyzer/README.md →
-"Deploying". **Before enabling it in production, upgrade this site's Next.js:**
-15.1.11 has published advisories, including request smuggling in rewrites.
-Remove the rewrite when the analyzer moves to its own repo.
+"Deploying". Remove the rewrite when the analyzer moves to its own repo.
 
 Project skills for the analyzer live in `.claude/skills/`: `vf-qa`,
 `vf-security`, `vf-underwriting-analyst`, `vf-real-estate-investor` and
