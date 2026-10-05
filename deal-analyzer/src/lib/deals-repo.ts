@@ -1,5 +1,5 @@
 /** Data access for deals + audit trail. No business logic lives here. */
-import { emptyInputs } from '@/engine/fields'
+import { emptyInputs, isDefaultable, type DefaultableKey } from '@/engine/fields'
 import type { DealInputs, DealStatus } from '@/engine/types'
 import { diffDeal } from './audit'
 import type { Db } from './db'
@@ -11,6 +11,8 @@ export interface DealRecord {
   status: DealStatus
   inputs: DealInputs
   notes: DealNotes
+  /** Inputs filled from ValeForge defaults and not yet confirmed for this deal. */
+  defaulted: DefaultableKey[]
   createdBy: string
   updatedBy: string
   createdAt: Date
@@ -44,6 +46,7 @@ function toRecord(r: Row): DealRecord {
     // Merge onto defaults so fields added after a deal was saved read as UNKNOWN.
     inputs: { ...emptyInputs(), ...parse<Partial<DealInputs>>(r.inputs) },
     notes: parse<DealNotes>(r.notes) ?? {},
+    defaulted: (parse<string[]>(r.defaulted) ?? []).filter(isDefaultable),
     createdBy: r.created_by as string,
     updatedBy: r.updated_by as string,
     createdAt: new Date(r.created_at as string),
@@ -82,11 +85,17 @@ export function dealsRepo(db: Db) {
       return rows[0] ? toRecord(rows[0]) : null
     },
 
-    async create(inputs: DealInputs, notes: DealNotes, status: DealStatus, user: User): Promise<string> {
+    async create(
+      inputs: DealInputs,
+      notes: DealNotes,
+      status: DealStatus,
+      user: User,
+      defaulted: DefaultableKey[] = [],
+    ): Promise<string> {
       const rows = await db.query<{ id: string }>(
-        `insert into deals (address, city, state, zip, market, status, inputs, notes, created_by, updated_by)
-         values ($1,$2,$3,$4,$5,$6,$7::text::jsonb,$8::text::jsonb,$9,$9) returning id`,
-        [...identity(inputs), status, JSON.stringify(inputs), JSON.stringify(notes), user],
+        `insert into deals (address, city, state, zip, market, status, inputs, notes, defaulted, created_by, updated_by)
+         values ($1,$2,$3,$4,$5,$6,$7::text::jsonb,$8::text::jsonb,$9::text::jsonb,$10,$10) returning id`,
+        [...identity(inputs), status, JSON.stringify(inputs), JSON.stringify(notes), JSON.stringify(defaulted), user],
       )
       const id = rows[0].id
       await db.query(
@@ -123,6 +132,11 @@ export function dealsRepo(db: Db) {
         )
       }
       return changes.length
+    },
+
+    /** Which inputs are still unconfirmed defaults (a marker only, not audited). */
+    async setDefaulted(id: string, keys: DefaultableKey[]): Promise<void> {
+      await db.query('update deals set defaulted = $2::text::jsonb where id = $1', [id, JSON.stringify(keys)])
     },
 
     async audit(id: string): Promise<AuditEntry[]> {

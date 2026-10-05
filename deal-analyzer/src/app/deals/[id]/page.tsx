@@ -62,7 +62,7 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
         </div>
       </div>
 
-      <AnalysisView a={a} inputs={deal.inputs} />
+      <AnalysisView a={a} inputs={deal.inputs} defaulted={deal.defaulted} />
 
       <section className="card">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

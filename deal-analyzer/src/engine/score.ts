@@ -30,6 +30,10 @@ export function exitPoints(viableCount: number): number {
 
 export interface RiskFactors {
   conservativeEquity: Num
+  /** True when the value was calculated without some UNKNOWN line items. */
+  conservativeEquityIncomplete?: boolean
+  stressDscrIncomplete?: boolean
+  stressFlipIncomplete?: boolean
   stressDscr: Num
   stressDebtService: Num
   minDscr: Num
@@ -47,13 +51,27 @@ export interface RiskFactorResult {
 /** Five risk factors × 3 points (PROVISIONAL weights). */
 export function riskFactorPoints(f: RiskFactors): RiskFactorResult[] {
   const P = PROVISIONAL.score.risk
-  const pass = (ok: boolean | null): Num => (ok === null ? null : ok ? P.pointsPerFactor : 0)
+  // Partial values are optimistic: a failed factor is proven (0), a passed one is not (UNKNOWN).
+  const pass = (ok: boolean | null, incomplete = false): Num =>
+    ok === null ? null : !ok ? 0 : incomplete ? null : P.pointsPerFactor
   const stressDscrOk =
     f.stressDebtService === 0 ? true : f.stressDscr === null || f.minDscr === null ? null : f.stressDscr >= f.minDscr
   return [
-    { label: 'Equity at Conservative ARV > 0', points: pass(f.conservativeEquity === null ? null : f.conservativeEquity > 0), max: P.pointsPerFactor },
-    { label: 'Combined-stress DSCR ≥ lender minimum', points: pass(stressDscrOk), max: P.pointsPerFactor },
-    { label: 'Combined-stress flip profit > 0', points: pass(f.stressFlipProfit === null ? null : f.stressFlipProfit > 0), max: P.pointsPerFactor },
+    {
+      label: 'Equity at Conservative ARV > 0',
+      points: pass(f.conservativeEquity === null ? null : f.conservativeEquity > 0, f.conservativeEquityIncomplete),
+      max: P.pointsPerFactor,
+    },
+    {
+      label: 'Combined-stress DSCR ≥ lender minimum',
+      points: pass(stressDscrOk, f.stressDebtService !== 0 && f.stressDscrIncomplete),
+      max: P.pointsPerFactor,
+    },
+    {
+      label: 'Combined-stress flip profit > 0',
+      points: pass(f.stressFlipProfit === null ? null : f.stressFlipProfit > 0, f.stressFlipIncomplete),
+      max: P.pointsPerFactor,
+    },
     { label: 'Rehab complexity', points: f.complexity === null ? null : P.complexityPoints[f.complexity], max: P.pointsPerFactor },
     { label: 'ARV / comp confidence', points: f.confidence === null ? null : P.confidencePoints[f.confidence], max: P.pointsPerFactor },
   ]
@@ -65,6 +83,8 @@ export interface ScoreComponent {
   max: number
   /** null = cannot be scored (missing data). */
   points: Num
+  /** Points calculated from partial (optimistic) values — an upper bound, not final. */
+  incomplete?: boolean
   detail: string
 }
 
@@ -72,7 +92,7 @@ export interface DealScore {
   components: ScoreComponent[]
   /** Points earned from components that could be scored, rounded to 0.1. */
   total: number
-  /** Total if every unscored point were earned — used to decide PASS on incomplete deals. */
+  /** Upper bound: partial points (optimistic) + the max of unscored components. Used to decide PASS on incomplete deals. */
   maxAchievable: number
   complete: boolean
 }
@@ -86,6 +106,6 @@ export function totalScore(components: ScoreComponent[]): DealScore {
     components,
     total: round1(earned),
     maxAchievable: round1(earned + unknown),
-    complete: components.every((c) => c.points !== null),
+    complete: components.every((c) => c.points !== null && !c.incomplete),
   }
 }

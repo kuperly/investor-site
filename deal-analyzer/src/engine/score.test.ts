@@ -62,3 +62,19 @@ describe('totalScore', () => {
     expect(s.complete).toBe(false)
   })
 })
+
+describe('risk factors on partial (incomplete) values', () => {
+  const base = { stressDscr: 1.1, stressDebtService: 10_000, minDscr: 1.0, complexity: 'Light', confidence: 'High' } as const
+  it('a pass on incomplete numbers is not proven → UNKNOWN', () => {
+    const r = riskFactorPoints({ ...base, conservativeEquity: 10_000, conservativeEquityIncomplete: true, stressFlipProfit: 5_000, stressFlipIncomplete: true, stressDscrIncomplete: true })
+    expect(r.map((f) => f.points).slice(0, 3)).toEqual([null, null, null])
+  })
+  it('a fail on incomplete numbers is proven → 0 points', () => {
+    const r = riskFactorPoints({ ...base, stressDscr: 0.9, conservativeEquity: -5_000, conservativeEquityIncomplete: true, stressFlipProfit: -1, stressFlipIncomplete: true, stressDscrIncomplete: true })
+    expect(r.map((f) => f.points).slice(0, 3)).toEqual([0, 0, 0])
+  })
+  it('no refi debt → DSCR factor passes regardless of incomplete NOI', () => {
+    const r = riskFactorPoints({ ...base, stressDebtService: 0, stressDscr: null, stressDscrIncomplete: true, conservativeEquity: 1, stressFlipProfit: 1 })
+    expect(r[1].points).toBe(3)
+  })
+})

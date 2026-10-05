@@ -139,7 +139,7 @@ export const FIELD_SECTIONS: FieldSection[] = [
   {
     id: 'value',
     title: 'Value (ARV & comps)',
-    description: 'Comp summary fields can be filled from the comp list (deal page → Manage comps → Apply).',
+    description: 'Comp summary fields are calculated from the deal’s comps list (deal page → Manage comps) and stay in sync automatically.',
     fields: [
       { key: 'arvConservative', label: 'Conservative ARV', kind: 'money' },
       { key: 'arvBase', label: 'Base ARV', kind: 'money' },
@@ -220,4 +220,69 @@ export function emptyInputs(): DealInputs {
     ...(base as unknown as DealInputs),
     targetAllInPct: SPEC.maxOffer.defaultTargetAllInPct,
   }
+}
+
+/**
+ * Inputs that can carry a ValeForge default assumption (set by Guy/Ben on /settings).
+ * Assumption-type fields only — property facts (price, rehab, ARV, rents, taxes,
+ * insurance, holding costs) are never defaulted. The engine never invents these values.
+ */
+export const DEFAULTABLE_KEYS = [
+  'closingCostPct',
+  'inspectionCost',
+  'attorneyCost',
+  'titleCost',
+  'otherAcquisitionCost',
+  'otherProjectCosts',
+  'additionalEquity',
+  'projectMonths',
+  'rehabContingencyPct',
+  'acqLoanType',
+  'acqLtv',
+  'acqInterestRate',
+  'acqPointsPct',
+  'acqLoanFees',
+  'acqTermYears',
+  'acqInterestOnly',
+  'refiType',
+  'refiLtv',
+  'refiInterestRate',
+  'refiTermYears',
+  'refiClosingCostPct',
+  'refiOtherCosts',
+  'refiPrepaymentPenalty',
+  'refiSeasoningMonths',
+  'refiMinDscr',
+  'vacancyPct',
+  'managementPct',
+  'maintenancePct',
+  'capexPct',
+  'hoaAnnual',
+  'utilitiesAnnual',
+  'otherOpexAnnual',
+  'sellingCostPct',
+] as const satisfies readonly InputKey[]
+export type DefaultableKey = (typeof DEFAULTABLE_KEYS)[number]
+export type DealDefaults = Partial<Pick<DealInputs, DefaultableKey>>
+
+export function isDefaultable(k: string): k is DefaultableKey {
+  return (DEFAULTABLE_KEYS as readonly string[]).includes(k)
+}
+
+/**
+ * Fills BLANK defaultable inputs from the defaults. Never overwrites a value the user
+ * entered. Returns the keys that were filled (to mark them "default" until confirmed).
+ */
+export function applyDefaults(inputs: DealInputs, defaults: DealDefaults): { inputs: DealInputs; filled: DefaultableKey[] } {
+  const out = { ...inputs } as Record<string, unknown>
+  const filled: DefaultableKey[] = []
+  for (const k of DEFAULTABLE_KEYS) {
+    const d = defaults[k]
+    if (d === undefined || d === null) continue
+    if (out[k] === null || out[k] === undefined) {
+      out[k] = d
+      filled.push(k)
+    }
+  }
+  return { inputs: out as unknown as DealInputs, filled }
 }

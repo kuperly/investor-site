@@ -24,6 +24,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </Link>
             <nav className="flex items-center gap-1 text-sm">
               <Link href="/" className="rounded px-2 py-2 hover:bg-slate-100">Deals</Link>
+              <Link href="/settings" className="rounded px-2 py-2 hover:bg-slate-100">Defaults</Link>
               <Link href="/methodology" className="rounded px-2 py-2 hover:bg-slate-100">Methodology</Link>
             </nav>
             <div className="ml-auto flex items-center gap-2">

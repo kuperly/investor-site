@@ -1,28 +1,34 @@
 import type { DealAnalysis } from '@/engine/analyze'
+import { fieldLabel } from '@/engine/fields'
 import type { GateStatus } from '@/engine/gates'
 import type { StrategyResult } from '@/engine/strategies'
-import type { DealInputs, Tri } from '@/engine/types'
+import type { DealInputs, InputKey, Tri } from '@/engine/types'
 import { dscrText, money, num, pct, ratio } from '@/lib/format'
 import { RecBadge } from './RecBadge'
-import { Val } from './Val'
+import { IncompleteLegend, Val } from './Val'
+
+type Row = [label: string, value: string, inc?: readonly InputKey[]]
 
 /** Pure presentation of an analysis. All numbers come from the engine. */
-export function AnalysisView({ a, inputs }: { a: DealAnalysis; inputs: DealInputs }) {
+export function AnalysisView({ a, inputs, defaulted = [] }: { a: DealAnalysis; inputs: DealInputs; defaulted?: readonly InputKey[] }) {
   const b = a.base
   const baseOffer = a.arvScenarios.find((s) => s.key === 'arvBase')!.maxOffer
   const invested = b.refi.totalCashInvested
-  const keyNumbers: [string, string][] = [
+  const I = b.inc
+  // Show the legend only when a marked (numeric, incomplete) figure is on screen.
+  const anyIncomplete = (b.totalProjectCost !== null && I.allIn.length > 0) || (b.rental !== null && I.noi.length > 0)
+  const keyNumbers: Row[] = [
     ['Purchase', money(b.purchasePrice)],
-    ['All-in', money(b.totalProjectCost)],
+    ['All-in', money(b.totalProjectCost), I.allIn],
     ['Base ARV', money(b.arv)],
-    ['Equity Created', money(b.equityCreated)],
-    ['Cash Required', money(invested)],
-    ['Cash Left', money(b.refi.cashLeftInDeal)],
-    ['Capital Recycled', invested !== null && invested <= 0 ? 'N/A (no cash in)' : pct(b.refi.capitalRecycledPct)],
-    ['DSCR', dscrText(b.refi.dscr, b.refi.annualDebtService)],
-    ['Monthly Cash Flow', money(b.refi.monthlyCashFlow)],
-    ['Flip Profit', money(b.flip.netProfit)],
-    [`Max Offer (${pct(inputs.targetAllInPct, 0)} of Base ARV)`, money(baseOffer.maxPurchasePrice)],
+    ['Equity Created', money(b.equityCreated), I.allIn],
+    ['Cash Required', money(invested), I.cashInvested],
+    ['Cash Left', money(b.refi.cashLeftInDeal), I.cashLeft],
+    ['Capital Recycled', invested !== null && invested <= 0 ? 'N/A (no cash in)' : pct(b.refi.capitalRecycledPct), I.cashLeft],
+    ['DSCR', dscrText(b.refi.dscr, b.refi.annualDebtService), I.dscr],
+    ['Monthly Cash Flow', money(b.refi.monthlyCashFlow), I.dscr],
+    ['Flip Profit', money(b.flip.netProfit), I.flip],
+    [`Max Offer (${pct(inputs.targetAllInPct, 0)} of Base ARV)`, money(baseOffer.maxPurchasePrice), I.maxOffer],
   ]
 
   return (
@@ -49,6 +55,14 @@ export function AnalysisView({ a, inputs }: { a: DealAnalysis; inputs: DealInput
         </div>
       </section>
 
+      {defaulted.length > 0 && (
+        <section className="rounded-lg border border-teal-300 bg-teal-50 p-4 text-sm text-teal-950">
+          <h2 className="mb-1 font-semibold">Using ValeForge defaults (not yet confirmed for this deal)</h2>
+          <p>{defaulted.map(fieldLabel).join(' · ')}</p>
+          <p className="mt-1 text-xs">Confirm or change them on the Edit page.</p>
+        </section>
+      )}
+
       {(a.missing.length > 0 || a.notices.length > 0) && (
         <section className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
           <h2 className="mb-1 font-semibold">Data integrity</h2>
@@ -68,14 +82,15 @@ export function AnalysisView({ a, inputs }: { a: DealAnalysis; inputs: DealInput
           <h2 className="h2">Key numbers</h2>
           <table className="tbl">
             <tbody>
-              {keyNumbers.map(([k, v]) => (
+              {keyNumbers.map(([k, v, inc]) => (
                 <tr key={k}>
                   <td className="text-ink-soft">{k}</td>
-                  <td className="text-right font-medium"><Val v={v} /></td>
+                  <td className="text-right font-medium"><Val v={v} inc={inc} /></td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <IncompleteLegend show={anyIncomplete} />
         </section>
 
         <section className="card">
@@ -92,26 +107,26 @@ export function AnalysisView({ a, inputs }: { a: DealAnalysis; inputs: DealInput
         <h2 className="h2">Strategy engine — the deal chooses the strategy</h2>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StrategyCard s={a.strategies.brrrr} rows={[
-            ['Capital recycled', invested !== null && invested <= 0 ? 'N/A' : pct(b.refi.capitalRecycledPct)],
-            ['Cash left', money(b.refi.cashLeftInDeal)],
-            ['Cash released beyond equity', money(b.refi.cashReleasedBeyondEquity)],
-            ['DSCR', dscrText(b.refi.dscr, b.refi.annualDebtService)],
-            ['Cash flow / mo', money(b.refi.monthlyCashFlow)],
-            ['CoC', ratio(b.refi.cashOnCash)],
-            ['Equity', money(b.equityCreated)],
+            ['Capital recycled', invested !== null && invested <= 0 ? 'N/A' : pct(b.refi.capitalRecycledPct), I.cashLeft],
+            ['Cash left', money(b.refi.cashLeftInDeal), I.cashLeft],
+            ['Cash released beyond equity', money(b.refi.cashReleasedBeyondEquity), I.cashLeft],
+            ['DSCR', dscrText(b.refi.dscr, b.refi.annualDebtService), I.dscr],
+            ['Cash flow / mo', money(b.refi.monthlyCashFlow), I.dscr],
+            ['CoC', ratio(b.refi.cashOnCash), I.coc],
+            ['Equity', money(b.equityCreated), I.allIn],
           ]} />
           <StrategyCard s={a.strategies.hold} rows={[
-            ['Cash flow / mo', money(b.hold.monthlyCashFlow)],
-            ['DSCR', dscrText(b.hold.dscr, b.hold.annualDebtService)],
-            ['CoC', ratio(b.hold.cashOnCash)],
-            ['Cash invested', money(b.hold.cashInvested)],
-            ['Equity', money(b.equityCreated)],
+            ['Cash flow / mo', money(b.hold.monthlyCashFlow), I.holdCashFlow],
+            ['DSCR', dscrText(b.hold.dscr, b.hold.annualDebtService), I.holdCashFlow],
+            ['CoC', ratio(b.hold.cashOnCash), I.holdCoc],
+            ['Cash invested', money(b.hold.cashInvested), I.cashInvested],
+            ['Equity', money(b.equityCreated), I.allIn],
           ]} />
           <StrategyCard s={a.strategies.flip} rows={[
-            ['Net profit', money(b.flip.netProfit)],
-            ['ROI', pct(b.flip.roi)],
-            ['Margin', pct(b.flip.margin)],
-            ['Stress profit (combined)', money(a.stress.find((r) => r.id === 'combined')?.flipProfit ?? null)],
+            ['Net profit', money(b.flip.netProfit), I.flip],
+            ['ROI', pct(b.flip.roi), I.flipRoi],
+            ['Margin', pct(b.flip.margin), I.flip],
+            ['Stress profit (combined)', money(a.stress.find((r) => r.id === 'combined')?.flipProfit ?? null), I.flip],
             ['Time', b.flip.months === null ? 'UNKNOWN' : `${b.flip.months} months`],
           ]} />
           <StrategyCard s={a.strategies.hybrid} rows={[
@@ -136,12 +151,12 @@ export function AnalysisView({ a, inputs }: { a: DealAnalysis; inputs: DealInput
                 <tr key={s.key}>
                   <td className="font-medium">{s.label}</td>
                   <td><Val v={money(s.arv)} /></td>
-                  <td><Val v={money(s.allIn)} /></td>
-                  <td><Val v={money(s.equity)} /></td>
-                  <td><Val v={pct(s.equityPct)} /></td>
-                  <td><Val v={pct(s.allInToArv)} /></td>
+                  <td><Val v={money(s.allIn)} inc={I.allIn} /></td>
+                  <td><Val v={money(s.equity)} inc={I.allIn} /></td>
+                  <td><Val v={pct(s.equityPct)} inc={I.allIn} /></td>
+                  <td><Val v={pct(s.allInToArv)} inc={I.allIn} /></td>
                   <td><Val v={money(s.maxOffer.maximumAllIn)} /></td>
-                  <td className="font-semibold"><Val v={money(s.maxOffer.maxPurchasePrice)} /></td>
+                  <td className="font-semibold"><Val v={money(s.maxOffer.maxPurchasePrice)} inc={I.maxOffer} /></td>
                 </tr>
               ))}
             </tbody>
@@ -165,7 +180,10 @@ export function AnalysisView({ a, inputs }: { a: DealAnalysis; inputs: DealInput
             <tbody>
               {a.stress.map((r) => (
                 <tr key={r.id} className={r.id === 'combined' ? 'bg-slate-50 font-medium' : ''}>
-                  <td className="font-medium">{r.label}</td>
+                  <td className="font-medium">
+                    {r.label}
+                    {r.incomplete && <sup className="ml-0.5 font-bold text-amber-700" title="Some figures leave out UNKNOWN inputs">*</sup>}
+                  </td>
                   <td><Val v={money(r.allIn)} /></td>
                   <td><Val v={money(r.equity)} /></td>
                   <td><Val v={money(r.refiLoan)} /></td>
@@ -194,7 +212,11 @@ export function AnalysisView({ a, inputs }: { a: DealAnalysis; inputs: DealInput
                     <div className="max-w-[340px] whitespace-normal text-xs text-ink-muted">{c.detail}</div>
                   </td>
                   <td className="text-right align-top font-semibold">
-                    {c.points === null ? <span className="unknown">?</span> : num(c.points, 1)} / {c.max}
+                    {c.points === null ? <span className="unknown">?</span> : num(c.points, 1)}
+                    {c.incomplete && c.points !== null && (
+                      <sup className="ml-0.5 font-bold text-amber-700" title="Upper bound: calculated from incomplete figures">*</sup>
+                    )}{' '}
+                    / {c.max}
                   </td>
                 </tr>
               ))}
@@ -232,44 +254,47 @@ export function AnalysisView({ a, inputs }: { a: DealAnalysis; inputs: DealInput
           ['Closing costs', money(b.closingCosts)],
           ['Rehab', money(b.rehab)],
           ['Rehab contingency', money(b.rehabContingency)],
-          ['Financing fees (points + fees)', money(b.financingFees)],
+          ['Financing fees (points + fees)', money(b.financingFees), I.financingFees],
           ['Acquisition interest', money(b.acquisitionInterest)],
           ['Holding costs', money(b.holdingCosts)],
-          ['Other project costs', money(b.otherProjectCosts)],
-          ['Total', money(b.totalProjectCost)],
+          ['Other project costs', money(b.otherProjectCosts), I.otherProjectCosts],
+          ['Total', money(b.totalProjectCost), I.allIn],
         ]} />
         <DetailCard title="Rental (annual, Market rent)" rows={[
           ['Gross scheduled rent', money(b.rental?.grossScheduledRent ?? null)],
-          ['Vacancy', money(b.rental ? -b.rental.vacancy : null)],
-          ['Effective gross income', money(b.rental?.effectiveGrossIncome ?? null)],
-          ['Management', money(b.rental ? -b.rental.management : null)],
-          ['Maintenance', money(b.rental ? -b.rental.maintenance : null)],
-          ['CapEx', money(b.rental ? -b.rental.capex : null)],
-          ['Taxes · Insurance · HOA', b.rental ? `${money(b.rental.taxes)} · ${money(b.rental.insurance)} · ${money(b.rental.hoa)}` : 'UNKNOWN'],
-          ['Utilities · Other OpEx', b.rental ? `${money(b.rental.utilities)} · ${money(b.rental.otherOpex)}` : 'UNKNOWN'],
-          ['NOI', money(b.rental?.noi ?? null)],
+          ['Vacancy', money(neg(b.rental?.vacancy))],
+          ['Effective gross income', money(b.rental?.effectiveGrossIncome ?? null), b.rental?.vacancy === null ? ['vacancyPct'] : []],
+          ['Management', money(neg(b.rental?.management))],
+          ['Maintenance', money(neg(b.rental?.maintenance))],
+          ['CapEx', money(neg(b.rental?.capex))],
+          ['Taxes', money(neg(b.rental?.taxes))],
+          ['Insurance', money(neg(b.rental?.insurance))],
+          ['HOA', money(neg(b.rental?.hoa))],
+          ['Utilities', money(neg(b.rental?.utilities))],
+          ['Other OpEx', money(neg(b.rental?.otherOpex))],
+          ['NOI', money(b.rental?.noi ?? null), I.noi],
         ]} />
         <DetailCard title="Refinance (Base ARV)" rows={[
           ['Refi loan', money(b.refi.refiLoan)],
           ['Existing debt payoff', money(b.refi.existingDebtPayoff)],
           ['Refi closing costs', money(b.refi.refiClosingCosts)],
           ['Other refi costs', money(b.refi.otherRefiCosts)],
-          ['Cash available from refi', money(b.refi.cashAvailableFromRefi)],
-          ['Total cash invested', money(b.refi.totalCashInvested)],
-          ['Cash left in deal', money(b.refi.cashLeftInDeal)],
+          ['Cash available from refi', money(b.refi.cashAvailableFromRefi), I.refiCash],
+          ['Total cash invested', money(b.refi.totalCashInvested), I.cashInvested],
+          ['Cash left in deal', money(b.refi.cashLeftInDeal), I.cashLeft],
           ['Annual debt service', money(b.refi.annualDebtService)],
-          ['Annual cash flow', money(b.refi.annualCashFlow)],
+          ['Annual cash flow', money(b.refi.annualCashFlow), I.dscr],
         ]} />
       </div>
 
       <section className="card">
         <h2 className="h2">Conservative case (Conservative ARV + Conservative rent)</h2>
         <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-5">
-          <Stat k="Equity" v={money(a.conservativeCase.equityCreated)} />
-          <Stat k="Cash left" v={money(a.conservativeCase.refi.cashLeftInDeal)} />
-          <Stat k="DSCR" v={dscrText(a.conservativeCase.refi.dscr, a.conservativeCase.refi.annualDebtService)} />
-          <Stat k="Cash flow / mo" v={money(a.conservativeCase.refi.monthlyCashFlow)} />
-          <Stat k="Flip profit" v={money(a.conservativeCase.flip.netProfit)} />
+          <Stat k="Equity" v={money(a.conservativeCase.equityCreated)} inc={a.conservativeCase.inc.allIn} />
+          <Stat k="Cash left" v={money(a.conservativeCase.refi.cashLeftInDeal)} inc={a.conservativeCase.inc.cashLeft} />
+          <Stat k="DSCR" v={dscrText(a.conservativeCase.refi.dscr, a.conservativeCase.refi.annualDebtService)} inc={a.conservativeCase.inc.dscr} />
+          <Stat k="Cash flow / mo" v={money(a.conservativeCase.refi.monthlyCashFlow)} inc={a.conservativeCase.inc.dscr} />
+          <Stat k="Flip profit" v={money(a.conservativeCase.flip.netProfit)} inc={a.conservativeCase.inc.flip} />
         </dl>
       </section>
     </div>
@@ -293,7 +318,12 @@ function viableChip(v: Tri) {
   return <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">Unknown</span>
 }
 
-function StrategyCard({ s, rows, note }: { s: StrategyResult; rows: [string, string][]; note?: string }) {
+/** Expense shown as a negative; UNKNOWN stays UNKNOWN (never −$0). */
+function neg(v: number | null | undefined): number | null {
+  return v === null || v === undefined ? null : -v
+}
+
+function StrategyCard({ s, rows, note }: { s: StrategyResult; rows: Row[]; note?: string }) {
   return (
     <div className="rounded-md border border-slate-200 p-3">
       <div className="mb-2 flex items-center justify-between">
@@ -301,10 +331,10 @@ function StrategyCard({ s, rows, note }: { s: StrategyResult; rows: [string, str
         {viableChip(s.viable)}
       </div>
       <dl className="space-y-1 text-sm">
-        {rows.map(([k, v]) => (
+        {rows.map(([k, v, inc]) => (
           <div key={k} className="flex justify-between gap-2">
             <dt className="text-ink-soft">{k}</dt>
-            <dd className="text-right font-medium tabular-nums"><Val v={v} /></dd>
+            <dd className="text-right font-medium tabular-nums"><Val v={v} inc={inc} /></dd>
           </div>
         ))}
       </dl>
@@ -320,16 +350,16 @@ function GateChip({ s }: { s: GateStatus }) {
   return <span className={`rounded px-1.5 py-0.5 text-xs font-semibold ${cls}`}>{label}</span>
 }
 
-function DetailCard({ title, rows }: { title: string; rows: [string, string][] }) {
+function DetailCard({ title, rows }: { title: string; rows: Row[] }) {
   return (
     <section className="card">
       <h2 className="h2">{title}</h2>
       <table className="tbl">
         <tbody>
-          {rows.map(([k, v], i) => (
+          {rows.map(([k, v, inc], i) => (
             <tr key={k} className={i === rows.length - 1 ? 'font-semibold' : ''}>
               <td className="whitespace-normal text-ink-soft">{k}</td>
-              <td className="text-right"><Val v={v} /></td>
+              <td className="text-right"><Val v={v} inc={inc} /></td>
             </tr>
           ))}
         </tbody>
@@ -338,11 +368,11 @@ function DetailCard({ title, rows }: { title: string; rows: [string, string][] }
   )
 }
 
-function Stat({ k, v }: { k: string; v: string }) {
+function Stat({ k, v, inc }: { k: string; v: string; inc?: readonly InputKey[] }) {
   return (
     <div>
       <dt className="text-xs text-ink-muted">{k}</dt>
-      <dd className="font-semibold tabular-nums"><Val v={v} /></dd>
+      <dd className="font-semibold tabular-nums"><Val v={v} inc={inc} /></dd>
     </div>
   )
 }

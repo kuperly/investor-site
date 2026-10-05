@@ -8,8 +8,10 @@ profit, stress tests, a 100-point **ValeForge Deal Score** and a
 score.
 
 Full specification: [docs/SPEC.md](docs/SPEC.md). Every rule the engine
-applies, with its source (SPEC / PROVISIONAL / INTERPRETATION), is listed on
-the in-app **/methodology** page.
+applies, with its source (SPEC / APPROVED / PROVISIONAL / INTERPRETATION), is
+listed on the in-app **/methodology** page. How the app maps to every section
+of the spec, including gaps and approved changes:
+[docs/SPEC-ALIGNMENT.md](docs/SPEC-ALIGNMENT.md).
 
 > This app lives in `deal-analyzer/` inside the `investor-site` repo, but it is
 > a fully separate Next.js project with its own `package.json`. The marketing
@@ -61,11 +63,12 @@ whole app behind HTTP Basic Auth. Do this for any deployed instance.
 src/
   engine/            ← ALL business logic. Pure TypeScript: no React, no I/O.
     types.ts           DealInputs (every numeric input is number | null; null = UNKNOWN)
-    config.ts          every threshold, tagged SPEC or PROVISIONAL, plus the methodology table
+    config.ts          every threshold, tagged SPEC / APPROVED / PROVISIONAL, plus the methodology table
     fields.ts          field registry (label, kind, section): drives the form, parser and warnings
     finance.ts         amortization schedule, payment, remaining balance, interest-only
     formulas.ts        §10–§21 as one small pure function each, with guarded division
-    underwrite.ts      composes formulas over nullable inputs → CoreResult; Max Offer solver
+    underwrite.ts      composes formulas over nullable inputs → CoreResult (+ per-result `inc`
+                       "incomplete" lists); Max Offer solver
     stress.ts          §22 scenarios
     comps.ts           §32 comp statistics (renovated / unrenovated / all, $/sqft, distance, sale age)
     strategies.ts      §26 BRRRR / Hold / Flip / Hybrid + best use of capital
@@ -73,9 +76,12 @@ src/
     score.ts           §23 point functions
     recommendation.ts  §24 BUY / INVESTIGATE / PASS
     analyze.ts         analyzeDeal(inputs) → full DealAnalysis, including "Why?" text
+    fields.ts          (also) DEFAULTABLE_KEYS + applyDefaults(): which inputs may carry a ValeForge default
   lib/               ← infrastructure (no business rules)
     db.ts              driver-agnostic Db: postgres.js (DATABASE_URL) or PGlite
-    deals-repo.ts      CRUD + per-field audit rows
+    deals-repo.ts      CRUD + per-field audit rows (+ which inputs are unconfirmed defaults)
+    settings-repo.ts   ValeForge default assumptions + change history
+    comp-summary.ts    keeps the deal's §8 comp summary in sync with its comps list
     comps-repo.ts      §32 comps: manual add/edit/delete + importComps() for automation, all audited
     comps/parse-comp.ts  one validator for manual entry AND imports (blank → UNKNOWN, http(s) links only)
     comps/provider.ts  CompProvider interface — where an automated data source plugs in
@@ -84,7 +90,8 @@ src/
     format.ts          display helpers ("UNKNOWN", "∞ (no cash left)", "N/A (no debt)")
   app/               ← Next.js 15 App Router UI (server components + server actions)
     page.tsx                 Deal Dashboard (filters, desktop table / mobile cards)
-    deals/new, deals/[id], deals/[id]/edit, deals/[id]/export, methodology
+    deals/new, deals/[id], deals/[id]/edit, deals/[id]/comps, deals/[id]/export,
+    settings (default assumptions), methodology
   components/        AnalysisView (shared by deal page + export), DealForm (live preview), …
 db/schema.sql        PostgreSQL schema (Supabase-compatible)
 ```
@@ -98,10 +105,18 @@ Design points:
 - **Analysis is computed, not stored.** The DB holds only inputs, notes and
   status. Every view recomputes, so a formula change applies to all deals
   immediately and stale cached numbers can't exist.
-- **UNKNOWN propagates.** `lift(fn, …args)` returns `null` if any argument is
-  unknown, and `InputReader` records which inputs were needed. The UI turns
-  that list into spec-style warnings: *"Underwriting incomplete — insurance
-  estimate required."*
+- **Calculate with what's known (§29, approved).**
+  - **Core drivers** (purchase price, rehab, ARV, rent, refi LTV/rate/term)
+    are strict: if one is missing, results that need it show UNKNOWN.
+  - **Line items** (closing %, fees, holding, expenses, selling %…) that are
+    missing show UNKNOWN, never $0. They are left out of the totals they feed,
+    and every such total is marked `*` with the list of missing inputs
+    (`CoreResult.inc`).
+  - The spec warning is still shown: *"Underwriting incomplete — insurance
+    estimate required."*
+  - Partial totals are optimistic, so a hard gate, exit or risk factor that
+    fails on them is a proven fail; one that passes stays UNKNOWN. BUY is
+    impossible while anything is missing.
 - **Ready for integrations (§30).** A future Zillow/rent/tax importer only has
   to produce a partial `DealInputs`; the engine doesn't change. ARV and rehab
   are never auto-filled.
@@ -112,8 +127,10 @@ Design points:
 
 | Table | Columns |
 |---|---|
-| `deals` | `id uuid pk`, `address`, `city`, `state`, `zip`, `market`, `status` (CHECK: the 9 spec statuses), `inputs jsonb` (all `DealInputs`; unknown = JSON `null`), `notes jsonb` (§31 categories), `created_by`, `updated_by`, `created_at`, `updated_at` |
+| `deals` | `id uuid pk`, `address`, `city`, `state`, `zip`, `market`, `status` (CHECK: the 9 spec statuses), `inputs jsonb` (all `DealInputs`; unknown = JSON `null`), `notes jsonb` (§31 categories), `defaulted jsonb` (input keys still holding an unconfirmed ValeForge default), `created_by`, `updated_by`, `created_at`, `updated_at` |
 | `deal_audit` | `id`, `deal_id → deals`, `field`, `old_value jsonb`, `new_value jsonb`, `changed_by`, `changed_at` (comp changes use `field = 'comps'` with before/after snapshots) |
+| `settings` | `key` (`deal_defaults`), `value jsonb` (the default assumptions), `updated_by`, `updated_at` |
+| `settings_history` | `id`, `key`, `field`, `old_value`, `new_value`, `changed_by`, `changed_at` (one row per changed default) |
 | `deal_comps` | `id`, `deal_id → deals` (cascade), `address`, `sale_price`, `sale_date`, `sqft`, `beds`, `baths`, `distance_miles`, `condition`, `renovation` (`renovated` / `unrenovated` / null = unknown), `sale_status` (`sold` / `pending` / `active` / null), `tier` (`standard` / `bestFit` / `superComp`), `share_override` (fraction 0–1, Super comps only, null = computed weight), `source`, `source_url`, `notes`, `included`, `origin` (`manual` / `import`), `external_id` (unique per deal + source, so re-imports never duplicate), created/updated by/at |
 
 The identity columns are copied out of `inputs` so the dashboard can filter in
@@ -130,7 +147,21 @@ SQL by market, ZIP, status and created date. Filters on computed values
   other project costs, additional equity, other refi costs, lender minimum
   DSCR, selling cost %, target All-in/ARV (default 70%) and a 6-item hard-gate
   checklist.
-  - A live sidebar shows score, recommendation and key numbers as you type.
+  - A live sidebar shows score, recommendation and key numbers as you type,
+    and each section shows what it calculates (closing $, contingency, loan,
+    interest, refi loan, NOI, DSCR, flip profit, Max Offer…). Closing $ is
+    calculated from Closing %.
+  - Results appear as soon as the basics are entered (Purchase, Rehab, ARV,
+    Rent). Missing items show UNKNOWN, and the totals they feed are marked `*`.
+  - The comp summary fields are read-only, calculated from the comps list.
+- **Default assumptions** (`/settings`, nav "Defaults"):
+  - Guy/Ben set ValeForge's standard numbers once. These are assumption
+    fields only (closing %, fees, loan/refi terms, vacancy, management,
+    maintenance, CapEx, selling %…), never property facts.
+  - New deals start pre-filled, each value marked **Default** until confirmed
+    or changed. "Confirm all defaults" and "Fill blanks from defaults" are on
+    the form, and the deal page lists unconfirmed defaults.
+  - Every change to the defaults is recorded with who and when.
 - Deal page:
   - Header: score, recommendation and the reasons behind it.
   - Data-integrity warnings, §27 key numbers, and the §28 "Why?" panel
@@ -152,7 +183,7 @@ SQL by market, ZIP, status and created date. Filters on computed values
 
 | AC | Covered by |
 |---|---|
-| AC1 create deal · AC2 inputs · AC15 saved · AC16 reopen & edit | E2E run (Playwright) on PGlite and on PostgreSQL 16; `deals-repo.test.ts` |
+| AC1 create deal · AC2 inputs · AC15 saved · AC16 reopen & edit | E2E run (Playwright) on PGlite and on PostgreSQL 16; `deals-repo.test.ts`. With only Purchase / Rehab / ARV / Rent entered, All-in, equity, NOI, flip and Max Offer calculate (`analyze.test.ts` AC2 + E2E) |
 | AC3 All-in · AC4 Equity | `underwrite.test.ts` hand-calculated example ($159,800 / $40,200) |
 | AC5 Max Offer | hand calculation, plus an exact check that All-in at the Max Offer = ARV × 70% for IO, amortizing, closing-$ and all-cash loans |
 | AC6 BRRRR · AC7 Refi · AC8 DSCR · AC9 Cash Flow | `underwrite.test.ts`, `formulas.test.ts` (incl. the spec's $60K / $54K = 90%) |
@@ -161,26 +192,28 @@ SQL by market, ZIP, status and created date. Filters on computed values
 | AC12 Score · AC14 Recommendation | `score.test.ts`, `recommendation.test.ts` (80 / 79.9 / 65 / 64.9 boundaries) |
 | AC13 Hard gates | `analyze.test.ts`: checklist yes, DSCR < min, negative CF and no exit each force PASS on a 90-point deal |
 | AC17 no ÷0 | `safeDivide`, CoC → ∞; a test walks every output with zero ARV / rent / rates / price and asserts no NaN or Infinity |
-| AC18 UNKNOWN ≠ $0 | parser, engine, UI and E2E tests (missing insurance → DSCR "UNKNOWN" + spec warning) |
+| AC18 UNKNOWN ≠ $0 | parser, engine, UI and E2E tests. Missing insurance → the insurance line shows UNKNOWN, the spec warning appears, and DSCR is marked `*` (calculated without it). A property test checks every line item: blanking it never changes a result without flagging it |
 | AC19 testable formulas | every formula is an exported pure function in `src/engine` |
 | AC20 mobile + desktop | E2E asserts no horizontal scroll at 390 px on dashboard, deal and form; screenshots below |
 
 ## Formula / unit tests
 
-`npm test`: **155 tests, 12 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 46 browser checks; `npm run e2e:auth` adds 37 password checks across `/` and basePath builds, plus the fail-closed case.
+`npm test`: **199 tests, 14 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 56 browser checks; `npm run e2e:auth` adds 37 password checks across `/` and basePath builds, plus the fail-closed case.
 
 | File | Tests | Covers |
 |---|---|---|
 | `engine/finance.test.ts` | 11 | $150k @ 7% / 30y = $997.95; 0% rate; schedule pays to 0; interest + principal = payments; IO interest |
 | `engine/formulas.test.ts` | 34 | every §10–§21 formula; ÷0 guards; Cash Left floor and released cash; CoC ∞ |
-| `engine/underwrite.test.ts` | 20 | full worked example; amortizing acquisition; all-cash; released equity; Max Offer exactness (×4 financing modes); UNKNOWN propagation; no NaN/∞ |
-| `engine/score.test.ts` | 7 | each component's scaling and clamps; risk factor unknowns; total / max achievable |
+| `engine/underwrite.test.ts` | 22 | full worked example; amortizing acquisition; all-cash; released equity; Max Offer exactness (×4 financing modes); missing line items → UNKNOWN line + partial, flagged totals; core drivers strict; unknown LTV; no NaN/∞ |
+| `engine/score.test.ts` | 10 | each component's scaling and clamps; risk factor unknowns; partial pass → UNKNOWN, partial fail → 0; total / max achievable |
 | `engine/recommendation.test.ts` | 12 | threshold boundaries; gate FAIL overrides; UNKNOWN blocks BUY; "can't reach 65" → PASS |
-| `engine/analyze.test.ts` | 24 | end-to-end BUY deal; strategies; Max Offer ×3; stress; every computed gate; spec warning text; empty deal; Base-vs-comp-ARV "Why?" text |
+| `engine/analyze.test.ts` | 55 | end-to-end BUY deal; strategies; Max Offer ×3; stress; every computed gate; spec warning text; empty deal; Base-vs-comp-ARV "Why?" text; AC2 basics-only deal; partial fail proven / partial pass not; **property test over every line item** (blanking it never changes a result unflagged) |
+| `engine/defaults.test.ts` | 4 | defaults fill blanks only; an explicit 0 is kept; property facts can't be defaulted |
+| `lib/settings-repo.test.ts` | 3 | save + change history; form parsing; deals remember unconfirmed defaults |
 | `lib/parse-inputs.test.ts` | 6 | blank → null; explicit 0 kept; `$125,000` and `7.5%` parsing; validation; round-trip |
 | `lib/deals-repo.test.ts` | 6 | create/read; audit Old $125,000 → New $115,000 by Ben; no-op saves; filters; real `jsonb` storage |
 | `engine/comps.test.ts` | 22 | $/sqft guard; median; sale age; included-only stats; unknown prices skipped (not $0); renovated vs unrenovated; summary fields; weight decay; hand-calculated comp weight; comp ARV ($187.50/sf × 1,400 = $262,500); exclusions with reasons; UNKNOWN ARV; Super comp % override (50% fixed → $180/sf × 1,400 = $252,000), multiple overrides, > 100% → UNKNOWN, scale-up when alone, ignored on non-Super / unused comps |
-| `lib/comps-repo.test.ts` | 8 | validation (incl. unsafe links); tier/status defaults; % override validation (Super comps only, 0–100%); add/list/round-trip; audited edit/delete; cross-deal protection; import de-duplication |
+| `lib/comps-repo.test.ts` | 9 | validation (incl. unsafe links); tier/status defaults; % override validation (Super comps only, 0–100%); add/list/round-trip; audited edit/delete; cross-deal protection; import de-duplication; comp summary auto-sync (audited, no-op when in sync) |
 | `lib/db.test.ts` | 2 | schema file splits cleanly into statements (no `;` in inline comments) |
 | `lib/base-path.test.ts` | 3 | hidden-route basePath: empty/`/` → root, single segment accepted, anything else fails the build |
 
@@ -208,6 +241,8 @@ All captured from the running production build during the E2E run.
 | Comp changes in the audit trail | [11-comps-audit.png](docs/screenshots/11-comps-audit.png) |
 | Comps on mobile | [12-comps-mobile.png](docs/screenshots/12-comps-mobile.png) |
 | Comp-supported ARV: weights, shares, Apply | [13-comp-arv.png](docs/screenshots/13-comp-arv.png) |
+| Only Purchase / Rehab / ARV / Rent entered: results calculate, marked `*` | [14-basics-only-live.png](docs/screenshots/14-basics-only-live.png) |
+| New deal pre-filled from ValeForge defaults (Default badges) | [15-new-deal-defaults.png](docs/screenshots/15-new-deal-defaults.png) |
 
 ## ⚠️ Decisions that need Guy/Ben approval
 
@@ -240,6 +275,9 @@ approved.**
    - Any UNKNOWN input or gate blocks BUY → INVESTIGATE.
    - It becomes PASS if the score can't reach 65 even with every unknown
      resolved favourably.
+   - (Approved: missing line items are left out of totals and flagged. The
+     remaining interpretation needing a check: if the acquisition loan terms
+     are missing, the payoff at refi is taken as the full loan principal.)
 9. **Spec conflict to confirm.** §25 "Negative post-refi cash flow → automatic
    PASS" applies even to deals whose best exit is a flip (see the
    `[DEMO] 7 Flip Only Ln` deal: $53k flip profit, PASS). That is
@@ -273,9 +311,10 @@ Deal page → **Manage comps** (`/deals/[id]/comps`):
 - **Statistics** are shown for renovated, unrenovated and all included
   comps: count, median and average price, range, median and average $/sqft,
   distance, and sale age.
-- **Apply to deal.** The deal's §8 comp summary fields sit next to the
-  list's values (mismatches highlighted). One click copies them over, and
-  every field change is audited. Distance = farthest comp; recency = oldest
+- **Comp summary, automatic.** The deal's §8 comp summary fields (number of
+  comps, average/median price, distance, recency, renovated/unrenovated
+  counts) are calculated from the list. They update on every comp change and
+  deal save, each change audited. Distance = farthest comp; recency = oldest
   sale.
 - **Comp-supported ARV** (approved method):
   - Weighted average $/sqft of the included **renovated** comps × the

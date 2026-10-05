@@ -112,6 +112,9 @@ export function analyzeDeal(inputs: DealInputs, opts: AnalyzeOptions = {}): Deal
     stressDebtService: combined.refi.annualDebtService,
     minDscr,
     stressFlipProfit: combined.flip.netProfit,
+    conservativeEquityIncomplete: conservativeCase.inc.allIn.length > 0,
+    stressDscrIncomplete: combined.inc.dscr.length > 0,
+    stressFlipIncomplete: combined.inc.flip.length > 0,
     complexity: inputs.rehabComplexity,
     confidence: inputs.arvConfidence,
   })
@@ -121,13 +124,18 @@ export function analyzeDeal(inputs: DealInputs, opts: AnalyzeOptions = {}): Deal
   const S = SPEC.score
   const recycled = base.refi.capitalRecycledPct
   const invested = base.refi.totalCashInvested
+  const partial = (keys: unknown[]) => (keys.length > 0 ? ' (incomplete — upper bound)' : '')
   const components: ScoreComponent[] = [
     {
       id: 'equity',
       label: 'Equity Creation',
       max: S.equity.max,
       points: base.equityCreationPct === null ? null : equityPoints(base.equityCreationPct),
-      detail: base.equityCreationPct === null ? 'Unknown' : `${pct(base.equityCreationPct)} equity / all-in (full at ${pct(S.equity.fullAtEquityPct)})`,
+      incomplete: base.inc.allIn.length > 0,
+      detail:
+        base.equityCreationPct === null
+          ? 'Unknown'
+          : `${pct(base.equityCreationPct)} equity / all-in (full at ${pct(S.equity.fullAtEquityPct)})${partial(base.inc.allIn)}`,
     },
     {
       id: 'capital',
@@ -135,12 +143,13 @@ export function analyzeDeal(inputs: DealInputs, opts: AnalyzeOptions = {}): Deal
       max: S.capital.max,
       points:
         invested !== null && invested <= 0 ? S.capital.max : recycled === null ? null : capitalPoints(recycled),
+      incomplete: base.inc.cashLeft.length > 0,
       detail:
         invested !== null && invested <= 0
           ? 'No cash invested'
           : recycled === null
             ? 'Unknown'
-            : `${pct(recycled)} capital recycled (full at ${pct(S.capital.fullAtRecycledPct)})`,
+            : `${pct(recycled)} capital recycled (full at ${pct(S.capital.fullAtRecycledPct)})${partial(base.inc.cashLeft)}`,
     },
     {
       id: 'cashFlow',
@@ -154,7 +163,13 @@ export function analyzeDeal(inputs: DealInputs, opts: AnalyzeOptions = {}): Deal
           : base.refi.dscr === null
             ? null
             : cashFlowPoints(base.refi.dscr),
-      detail: base.refi.dscr === null ? (base.refi.annualDebtService === 0 ? 'No refi debt' : 'Unknown') : `DSCR ${base.refi.dscr.toFixed(2)} (full at ${S.cashFlow.fullAtDscr})`,
+      incomplete: base.inc.dscr.length > 0,
+      detail:
+        base.refi.dscr === null
+          ? base.refi.annualDebtService === 0
+            ? 'No refi debt'
+            : 'Unknown'
+          : `DSCR ${base.refi.dscr.toFixed(2)} (full at ${S.cashFlow.fullAtDscr})${partial(base.inc.dscr)}`,
     },
     {
       id: 'exits',
@@ -229,30 +244,37 @@ function explain(a: {
   const strengths: string[] = []
   const risks: string[] = []
   const { base } = a
+  // Partial numbers are optimistic: a weakness found on them is real (missing costs only
+  // make it worse), but a strength is only claimed on complete numbers.
+  const pre = (inc: unknown[]) => (inc.length > 0 ? ' (before missing costs)' : '')
 
   const eq = base.equityCreationPct
   if (eq !== null) {
-    if (eq >= S.equity.fullAtEquityPct) strengths.push(`${pct(eq)} equity creation`)
-    else if (eq > 0) risks.push(`Equity creation ${pct(eq)} — below the ${pct(S.equity.fullAtEquityPct)} target`)
-    else risks.push(`No equity created at Base ARV (${pct(eq)})`)
+    if (eq >= S.equity.fullAtEquityPct) {
+      if (base.inc.allIn.length === 0) strengths.push(`${pct(eq)} equity creation`)
+    } else if (eq > 0) risks.push(`Equity creation ${pct(eq)}${pre(base.inc.allIn)} — below the ${pct(S.equity.fullAtEquityPct)} target`)
+    else risks.push(`No equity created at Base ARV (${pct(eq)})${pre(base.inc.allIn)}`)
   }
 
   const rec = base.refi.capitalRecycledPct
   if (rec !== null) {
-    if (rec >= S.capital.fullAtRecycledPct) strengths.push(`${pct(rec)} capital recycled`)
-    else risks.push(`Only ${pct(rec)} of capital recycled at refi`)
+    if (rec >= S.capital.fullAtRecycledPct) {
+      if (base.inc.cashLeft.length === 0) strengths.push(`${pct(rec)} capital recycled`)
+    } else risks.push(`Only ${pct(rec)} of capital recycled at refi${pre(base.inc.cashLeft)}`)
   }
 
   const dscr = base.refi.dscr
   if (dscr !== null) {
-    if (dscr >= S.cashFlow.fullAtDscr) strengths.push(`DSCR ${dscr.toFixed(2)}`)
-    else risks.push(`DSCR ${dscr.toFixed(2)} — below the ${S.cashFlow.fullAtDscr} target`)
+    if (dscr >= S.cashFlow.fullAtDscr) {
+      if (base.inc.dscr.length === 0) strengths.push(`DSCR ${dscr.toFixed(2)}`)
+    } else risks.push(`DSCR ${dscr.toFixed(2)}${pre(base.inc.dscr)} — below the ${S.cashFlow.fullAtDscr} target`)
   }
 
   const cf = base.refi.monthlyCashFlow
   if (cf !== null) {
-    if (cf > 0) strengths.push('Positive cash flow')
-    else risks.push('Negative post-refi cash flow')
+    if (cf > 0) {
+      if (base.inc.dscr.length === 0) strengths.push('Positive cash flow')
+    } else risks.push(`Negative post-refi cash flow${pre(base.inc.dscr)}`)
   }
 
   const viable = [a.strategies.brrrr, a.strategies.hold, a.strategies.flip].filter((s) => s.viable === true).map((s) => s.strategy)
@@ -282,7 +304,8 @@ function explain(a: {
     else strengths.push('Base ARV is at or below the comp-supported ARV')
   }
 
-  if (a.missing.length > 0) risks.push(`Underwriting incomplete — ${a.missing.length} input(s) missing`)
+  if (a.missing.length > 0)
+    risks.push(`Underwriting incomplete — ${a.missing.length} input(s) missing; figures marked * leave them out`)
 
   return { strengths, risks }
 }

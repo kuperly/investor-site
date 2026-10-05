@@ -85,12 +85,11 @@ await page.locator('tr', { hasText: '77 Placeholder Rd' }).getByRole('button', {
 await page.waitForFunction(() => !document.body.innerText.includes('77 Placeholder Rd'))
 ok(true, 'delete (with confirmation)')
 
-// apply summary
-const applyBtn = page.getByRole('button', { name: /Apply list values to deal/ })
-ok(await applyBtn.isVisible(), 'deal summary differs from list → Apply offered')
-await applyBtn.click()
-await page.waitForFunction(() => !document.body.innerText.includes('Apply list values'))
-ok(true, 'summary applied; fields now match the list')
+// comp summary syncs automatically (no Apply button)
+body = await page.locator('main').innerText()
+ok(!body.includes('Apply list values'), 'no manual "apply summary" step any more')
+const summaryRows = await page.locator('section:has(h2:text("Deal comp summary")) tbody tr.bg-amber-50').count()
+ok(summaryRows === 0, 'deal comp summary matches the list after every change (no mismatched rows)')
 
 // audit on deal page
 await page.goto(url.replace('/comps', ''))
@@ -98,7 +97,7 @@ body = await page.locator('main').innerText()
 ok(body.includes('Comp added') && body.includes('55 Manual Entry Ln · $212,500 · 2026-08-20'), 'audit: comp added')
 ok(body.includes('sale price: $212,500 → $209,000'), 'audit: comp edit shows old → new')
 ok(body.includes('Comp removed'), 'audit: comp removed')
-ok(body.includes('Number of comps') && body.includes('Changed by Ben'), 'audit: applied summary fields, by Ben')
+ok(/Number of comps\s*Old: \d+ → New: \d+/.test(body) && body.includes('Changed by Ben'), 'audit: comp summary synced automatically, attributed to Ben')
 ok(new RegExp(`Base ARV\\s*Old: \\$200,000 → New: \\$${suggested}`).test(body), 'audit: Base ARV old → new from comp ARV')
 await page.locator('h2:has-text("Audit trail")').locator('..').screenshot({ path: `${OUT}/11-comps-audit.png` })
 

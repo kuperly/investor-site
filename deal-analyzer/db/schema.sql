@@ -77,3 +77,25 @@ alter table deal_comps add column if not exists tier text not null default 'stan
   check (tier in ('standard','bestFit','superComp'));
 alter table deal_comps add column if not exists share_override double precision
   check (share_override is null or (share_override > 0 and share_override <= 1));  -- fraction, Super comps only
+
+-- Inputs pre-filled from ValeForge default assumptions and not yet confirmed per deal (array of input keys).
+alter table deals add column if not exists defaulted jsonb not null default '[]'::jsonb;
+
+-- ValeForge default assumptions (key 'deal_defaults' holds a partial DealInputs object).
+create table if not exists settings (
+  key         text primary key,
+  value       jsonb not null,
+  updated_by  text not null,
+  updated_at  timestamptz not null default now()
+);
+
+-- One row per changed default, like deal_audit.
+create table if not exists settings_history (
+  id          bigint generated always as identity primary key,
+  key         text not null,
+  field       text not null,
+  old_value   jsonb,
+  new_value   jsonb,
+  changed_by  text not null,
+  changed_at  timestamptz not null default now()
+);

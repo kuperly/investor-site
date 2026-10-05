@@ -131,19 +131,22 @@ export function compStats(comps: Comp[], asOf: Date): CompStats {
   }
 }
 
-export type CompSummaryKey =
-  | 'compCount'
-  | 'compAvgPrice'
-  | 'compMedianPrice'
-  | 'compDistanceMiles'
-  | 'compRecencyMonths'
-  | 'compRenovatedCount'
-  | 'compUnrenovatedCount'
+export const COMP_SUMMARY_KEYS = [
+  'compCount',
+  'compAvgPrice',
+  'compMedianPrice',
+  'compDistanceMiles',
+  'compRecencyMonths',
+  'compRenovatedCount',
+  'compUnrenovatedCount',
+] as const
+export type CompSummaryKey = (typeof COMP_SUMMARY_KEYS)[number]
+export const isCompSummaryKey = (k: string): k is CompSummaryKey => (COMP_SUMMARY_KEYS as readonly string[]).includes(k)
 
 /**
  * Values for the deal's §8 comp summary fields, derived from the list.
  * Distance = farthest comp, recency = oldest sale ("all comps within X mi / Y months").
- * Applied to the deal only when the user clicks "Apply" (audited) — never automatically.
+ * Kept in sync automatically whenever comps change or the deal is saved (audited).
  */
 export function summaryFromComps(s: CompStats): Pick<DealInputs, CompSummaryKey> {
   const round = (x: Num, d = 0) => (x === null ? null : Math.round(x * 10 ** d) / 10 ** d)

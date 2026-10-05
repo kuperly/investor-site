@@ -40,7 +40,7 @@ export default async function ExportPage({ params }: { params: Promise<{ id: str
         </p>
       </header>
 
-      <AnalysisView a={a} inputs={deal.inputs} />
+      <AnalysisView a={a} inputs={deal.inputs} defaulted={deal.defaulted} />
 
       <section className="card">
         <h2 className="h2">Comparable properties ({comps.length})</h2>

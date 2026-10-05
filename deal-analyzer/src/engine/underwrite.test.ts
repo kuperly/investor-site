@@ -119,22 +119,41 @@ describe('AC5: Max Offer (§21)', () => {
 })
 
 describe('AC18: missing data is UNKNOWN, never $0', () => {
-  it('unknown insurance makes NOI, DSCR and cash flow unknown and is reported', () => {
+  it('unknown insurance: the line shows UNKNOWN, NOI/DSCR are calculated without it and flagged', () => {
     const reader = new InputReader(sampleInputs({ insuranceAnnual: null }))
     const c = underwriteCore(reader.inputs, {}, reader)
-    expect(c.rental).toBeNull()
-    expect(c.refi.dscr).toBeNull()
-    expect(c.refi.annualCashFlow).toBeNull()
+    expect(c.rental?.insurance).toBeNull() // shown as UNKNOWN, never $0
+    expect(c.rental?.noi).toBeCloseTo(12_124.8 + 1_200) // partial: insurance left out
+    expect(c.inc.noi).toEqual(['insuranceAnnual'])
+    expect(c.inc.dscr).toEqual(['insuranceAnnual'])
+    expect(c.inc.allIn).toEqual([]) // All-in doesn't depend on insurance
     expect(reader.missing.has('insuranceAnnual')).toBe(true)
-    // Metrics that don't depend on insurance are still computed.
     expect(c.totalProjectCost).toBeCloseTo(159_800)
   })
 
-  it('unknown holding costs make all-in unknown rather than understated', () => {
+  it('unknown holding costs: line UNKNOWN, All-in partial and flagged (never silently understated)', () => {
     const c = underwriteCore(sampleInputs({ holdingCosts: null }))
-    expect(c.totalProjectCost).toBeNull()
-    expect(c.equityCreated).toBeNull()
-    expect(c.flip.netProfit).toBeNull()
+    expect(c.holdingCosts).toBeNull()
+    expect(c.totalProjectCost).toBeCloseTo(159_800 - 2_400)
+    expect(c.inc.allIn).toEqual(['holdingCosts'])
+    expect(c.inc.flip).toEqual(['holdingCosts'])
+    expect(c.inc.maxOffer).toEqual(['holdingCosts'])
+  })
+
+  it('core drivers stay strict: unknown purchase price or rent → UNKNOWN, not partial', () => {
+    expect(underwriteCore(sampleInputs({ purchasePrice: null })).totalProjectCost).toBeNull()
+    const c = underwriteCore(sampleInputs({ marketRent: null }))
+    expect(c.rental).toBeNull()
+    expect(c.refi.dscr).toBeNull()
+  })
+
+  it('unknown acquisition LTV: financing left out of All-in (flagged); loan-dependent results UNKNOWN', () => {
+    const c = underwriteCore(sampleInputs({ acqLtv: null }))
+    expect(c.totalProjectCost).toBeCloseTo(159_800 - 2_600 - 4_800)
+    expect(c.inc.allIn).toContain('acqLtv')
+    expect(c.acquisitionLoan).toBeNull()
+    expect(c.refi.totalCashInvested).toBeNull()
+    expect(c.refi.cashLeftInDeal).toBeNull()
   })
 
   it('unknown interest-only flag is flagged, not assumed', () => {

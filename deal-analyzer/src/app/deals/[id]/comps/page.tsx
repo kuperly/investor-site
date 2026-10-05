@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { applyCompSummary } from '@/app/comps-actions'
 import { CompForm } from '@/components/CompForm'
 import { CompsList } from '@/components/CompsList'
 import { CompsStats } from '@/components/CompsStats'
@@ -85,7 +84,8 @@ export default async function CompsPage({
       <section className="card">
         <h2 className="h2">Deal comp summary</h2>
         <p className="mb-2 text-xs text-ink-muted">
-          The deal&apos;s comp summary fields (§8) next to what this list says. Distance = farthest comp; recency = oldest sale.
+          The deal&apos;s comp summary fields (§8) are kept in sync with this list automatically (each change is in the
+          audit trail). Distance = farthest comp; recency = oldest sale.
         </p>
         <div className="overflow-x-auto">
           <table className="tbl">
@@ -103,13 +103,6 @@ export default async function CompsPage({
             </tbody>
           </table>
         </div>
-        {user && differs.length > 0 && comps.length > 0 && (
-          <form action={applyCompSummary} className="mt-3">
-            <input type="hidden" name="dealId" value={id} />
-            <button className="btn-primary">Apply list values to deal ({differs.length} field{differs.length === 1 ? '' : 's'})</button>
-            <span className="ml-2 text-xs text-ink-muted">Each change is recorded in the audit trail.</span>
-          </form>
-        )}
       </section>
     </div>
   )

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { analyzeDeal } from './analyze'
 import { emptyInputs } from './fields'
 import { sampleInputs } from './fixtures'
+import { LINE_ITEMS } from './underwrite'
 
 describe('analyzeDeal — sample deal end to end', () => {
   const a = analyzeDeal(sampleInputs())
@@ -111,11 +112,46 @@ describe('AC13: hard gates', () => {
 })
 
 describe('AC18: data integrity', () => {
-  it('insurance unknown → warning text from the spec, and no BUY', () => {
+  it('insurance unknown → spec warning, DSCR calculated without it but flagged, and no BUY', () => {
     const a = analyzeDeal(sampleInputs({ insuranceAnnual: null }))
     expect(a.missing.map((m) => m.message)).toContain('Underwriting incomplete — insurance estimate required.')
-    expect(a.base.refi.dscr).toBeNull()
+    expect(a.base.refi.dscr).not.toBeNull()
+    expect(a.base.inc.dscr).toEqual(['insuranceAnnual'])
+    expect(a.score.complete).toBe(false)
     expect(a.recommendation.recommendation).not.toBe('BUY')
+  })
+
+  it('AC2: with only Purchase / Rehab / ARV / Rent entered, the core numbers calculate (flagged incomplete)', () => {
+    const a = analyzeDeal({
+      ...emptyInputs(),
+      address: 'x',
+      purchasePrice: 100_000,
+      rehabEstimate: 40_000,
+      arvConservative: 185_000,
+      arvBase: 200_000,
+      arvUpside: 215_000,
+      marketRent: 1_800,
+    })
+    expect(a.base.totalProjectCost).toBe(140_000) // purchase + rehab; every other cost UNKNOWN and left out
+    expect(a.base.equityCreated).toBe(60_000)
+    expect(a.base.rental?.noi).toBe(21_600) // gross rent; every expense UNKNOWN and left out
+    expect(a.base.flip.netProfit).toBe(60_000)
+    expect(a.arvScenarios[1].maxOffer.maxPurchasePrice).toBe(100_000) // 70% × 200k − 40k rehab
+    expect(a.base.inc.allIn.length).toBeGreaterThan(5)
+    expect(a.base.closingCosts).toBeNull() // line items stay UNKNOWN, never $0
+    expect(a.recommendation.recommendation).not.toBe('BUY')
+  })
+
+  it('partial fail is proven, partial pass is not', () => {
+    // Insurance unknown and rent too low: cash flow is negative even before insurance → FAIL.
+    const low = analyzeDeal(sampleInputs({ insuranceAnnual: null, marketRent: 1_100 }))
+    expect(low.gates.find((g) => g.id === 'negativeCashFlow')!.status).toBe('FAIL')
+    expect(low.recommendation.recommendation).toBe('PASS')
+    // Insurance unknown, cash flow positive without it → not proven → UNKNOWN, BRRRR viability UNKNOWN.
+    const ok = analyzeDeal(sampleInputs({ insuranceAnnual: null }))
+    expect(ok.gates.find((g) => g.id === 'negativeCashFlow')!.status).toBe('UNKNOWN')
+    expect(ok.strategies.brrrr.viable).toBeNull()
+    expect(ok.strategies.flip.viable).toBe(true) // flip doesn't depend on insurance
   })
 
   it('a brand-new empty deal computes without throwing and reports everything missing', () => {
@@ -144,5 +180,51 @@ describe('comp-supported ARV in "Why?"', () => {
     expect(analyzeDeal(sampleInputs(), { compArv: 200_000 }).why.strengths).toContain('Base ARV is at or below the comp-supported ARV')
     const plain = analyzeDeal(sampleInputs())
     expect([...plain.why.strengths, ...plain.why.risks].some((s) => s.includes('comp-supported'))).toBe(false)
+  })
+})
+
+describe('every UNKNOWN line item is flagged on every result it changes', () => {
+  // Property: blanking any single line item must never change a result silently.
+  const results = (a: ReturnType<typeof analyzeDeal>) => {
+    const b = a.base
+    return {
+      allIn: [b.totalProjectCost, b.equityCreated, b.allInToArv],
+      maxOffer: [a.arvScenarios[1].maxOffer.maxPurchasePrice],
+      noi: [b.rental?.noi ?? null],
+      cashInvested: [b.refi.totalCashInvested],
+      refiCash: [b.refi.cashAvailableFromRefi],
+      cashLeft: [b.refi.cashLeftInDeal, b.refi.capitalRecycledPct],
+      dscr: [b.refi.dscr, b.refi.annualCashFlow],
+      coc: [typeof b.refi.cashOnCash === 'number' ? b.refi.cashOnCash : null],
+      holdCashFlow: [b.hold.annualCashFlow],
+      holdCoc: [typeof b.hold.cashOnCash === 'number' ? b.hold.cashOnCash : null],
+      flip: [b.flip.netProfit, b.flip.margin],
+      flipRoi: [b.flip.roi],
+    } as const
+  }
+  const full = results(analyzeDeal(sampleInputs({ hoaAnnual: 600, otherAcquisitionCost: 250, otherProjectCosts: 300, otherOpexAnnual: 120, refiOtherCosts: 400, additionalEquity: 1_000, utilitiesAnnual: 360 })))
+  const items = [...new Set(Object.values(LINE_ITEMS).flat())]
+
+  it.each(items)('%s', (key) => {
+    const inputs = sampleInputs({ hoaAnnual: 600, otherAcquisitionCost: 250, otherProjectCosts: 300, otherOpexAnnual: 120, refiOtherCosts: 400, additionalEquity: 1_000, utilitiesAnnual: 360, [key]: null })
+    if (key === 'closingCostPct') inputs.closingCostAmount = null
+    const a = analyzeDeal(inputs)
+    const now = results(a)
+    for (const [k, vals] of Object.entries(now) as [keyof typeof now, readonly (number | null)[]][]) {
+      vals.forEach((v, i) => {
+        const before = full[k][i]
+        if (v === null || before === null || Math.abs(v - before) < 1e-9) return
+        // The value changed while staying numeric → the result must list this input as missing.
+        expect({ result: k, flagged: a.base.inc[k] }).toEqual({ result: k, flagged: expect.arrayContaining([key]) })
+      })
+    }
+  })
+
+  it('the amortizing-loan term is also covered when the loan amortizes', () => {
+    const base = { acqInterestOnly: false, acqTermYears: 30 } as const
+    const full = analyzeDeal(sampleInputs(base)).base
+    const a = analyzeDeal(sampleInputs({ ...base, acqTermYears: null })).base
+    expect(a.totalProjectCost).not.toBeCloseTo(full.totalProjectCost!)
+    expect(a.inc.allIn).toContain('acqTermYears')
   })
 })

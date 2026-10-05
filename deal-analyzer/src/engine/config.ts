@@ -126,6 +126,26 @@ export const METHODOLOGY: MethodologyRule[] = [
     rule: 'If data or a hard gate is UNKNOWN: PASS when the best possible score is still < 65, otherwise INVESTIGATE (never BUY on incomplete underwriting)',
     source: 'INTERPRETATION',
   },
+  {
+    area: 'Missing data (§29)',
+    rule: 'Calculate with what is known: a missing line item (closing %, fees, holding, expenses, selling %, refi costs, additional equity, acquisition LTV/rate/terms) is shown as UNKNOWN — never $0 — and left out of the totals it feeds; every such total is marked incomplete (*) with the missing inputs listed, and the spec warning is shown. Core drivers (purchase price, rehab, ARV, rent, refi LTV/rate/term) stay strict: missing → result UNKNOWN (approved by Guy, Oct 2026)',
+    source: 'APPROVED',
+  },
+  {
+    area: 'Missing data · decisions',
+    rule: 'Partial totals leave out costs, so they are optimistic: a hard gate, exit or risk factor that FAILS on partial numbers is a proven fail; one that PASSES stays UNKNOWN until complete. Strengths in "Why?" are only claimed on complete numbers. Score points from partial numbers are an upper bound (marked *)',
+    source: 'INTERPRETATION',
+  },
+  {
+    area: 'Missing data · payoff',
+    rule: 'If acquisition loan terms are UNKNOWN, the payoff at refi is taken as the full loan principal (conservative)',
+    source: 'INTERPRETATION',
+  },
+  {
+    area: 'Default assumptions',
+    rule: 'Guy/Ben set ValeForge default assumptions on /settings (assumption fields only, never property facts). New deals pre-fill blanks from them, marked Default until confirmed or changed per deal; every change to defaults is recorded. The system never supplies its own values (approved by Guy, Oct 2026)',
+    source: 'APPROVED',
+  },
   { area: 'Hard gates', rule: 'Negative post-refi cash flow, DSCR below lender minimum, and no viable exit are computed; the other six are a user checklist', source: 'INTERPRETATION' },
   { area: 'Closing costs', rule: 'Purchase × Closing %; Closing $ is used only when % is blank', source: 'INTERPRETATION' },
   {
@@ -150,8 +170,8 @@ export const METHODOLOGY: MethodologyRule[] = [
   },
   {
     area: 'Comps → deal summary',
-    rule: 'On "Apply": comp distance = farthest included comp, comp recency = oldest included sale (months)',
-    source: 'INTERPRETATION',
+    rule: 'The §8 comp summary fields are calculated from the comps list and kept in sync automatically on every comp change and deal save (audited); comp distance = farthest included comp, comp recency = oldest included sale (months) (approved by Guy, Oct 2026)',
+    source: 'APPROVED',
   },
   {
     area: 'Comp ARV',

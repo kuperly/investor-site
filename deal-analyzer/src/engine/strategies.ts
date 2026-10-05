@@ -26,39 +26,53 @@ export interface StrategyEvaluation {
 
 const and = (...xs: Tri[]): Tri => (xs.some((x) => x === false) ? false : xs.some((x) => x === null) ? null : true)
 const or = (...xs: Tri[]): Tri => (xs.some((x) => x === true) ? true : xs.some((x) => x === null) ? null : false)
-const gt0 = (v: Num): Tri => (v === null ? null : v > 0)
+/**
+ * Pass/fail on a possibly partial value. Partial results leave out UNKNOWN costs, so they
+ * are optimistic: a FAIL is proven, a PASS is not (→ UNKNOWN until the data is complete).
+ */
+export function check(ok: boolean | null, incomplete: boolean): Tri {
+  if (ok === null) return null
+  if (!ok) return false
+  return incomplete ? null : true
+}
+const gt0 = (v: Num, incomplete: boolean): Tri => check(v === null ? null : v > 0, incomplete)
 
 export function evaluateStrategies(base: CoreResult, minDscr: Num): StrategyEvaluation {
   // BRRRR — post-refi cash flow positive and DSCR at or above the lender minimum.
+  const noiInc = base.inc.dscr.length > 0
   const brrrrDscrOk: Tri =
-    base.refi.annualDebtService === 0 ? true : base.refi.dscr === null || minDscr === null ? null : base.refi.dscr >= minDscr
-  const brrrrViable = and(gt0(base.refi.annualCashFlow), brrrrDscrOk)
+    base.refi.annualDebtService === 0
+      ? true
+      : base.refi.dscr === null || minDscr === null
+        ? null
+        : check(base.refi.dscr >= minDscr, noiInc)
+  const brrrrViable = and(gt0(base.refi.annualCashFlow, noiInc), brrrrDscrOk)
   const brrrr: StrategyResult = {
     strategy: 'BRRRR',
     viable: brrrrViable,
     reason:
       brrrrViable === null
-        ? 'Cannot evaluate — missing cash flow, DSCR or lender minimum DSCR'
+        ? 'Not proven — cash flow / DSCR incomplete, or lender minimum DSCR missing'
         : brrrrViable
           ? 'Positive post-refi cash flow and DSCR meets lender minimum'
           : 'Post-refi cash flow ≤ 0 or DSCR below lender minimum',
     annualReturnOnCapital: base.refi.cashOnCash,
   }
 
-  const holdViable = gt0(base.hold.annualCashFlow)
+  const holdViable = gt0(base.hold.annualCashFlow, base.inc.holdCashFlow.length > 0)
   const hold: StrategyResult = {
     strategy: 'Hold',
     viable: holdViable,
     reason:
       holdViable === null
-        ? 'Cannot evaluate — missing rental or acquisition-financing data'
+        ? 'Not proven — rental or acquisition-financing data incomplete'
         : holdViable
           ? 'Positive cash flow on acquisition financing'
           : 'Cash flow on acquisition financing ≤ 0',
     annualReturnOnCapital: base.hold.cashOnCash,
   }
 
-  const flipViable = gt0(base.flip.netProfit)
+  const flipViable = gt0(base.flip.netProfit, base.inc.flip.length > 0)
   const flipAnnualized: Ratio =
     base.flip.roi === null || base.flip.months === null || base.flip.months <= 0
       ? null
@@ -67,7 +81,7 @@ export function evaluateStrategies(base: CoreResult, minDscr: Num): StrategyEval
     strategy: 'Flip',
     viable: flipViable,
     reason:
-      flipViable === null ? 'Cannot evaluate — missing sale or cost data' : flipViable ? 'Positive net flip profit' : 'Net flip profit ≤ 0',
+      flipViable === null ? 'Not proven — sale or cost data incomplete' : flipViable ? 'Positive net flip profit' : 'Net flip profit ≤ 0',
     annualReturnOnCapital: flipAnnualized,
   }
 

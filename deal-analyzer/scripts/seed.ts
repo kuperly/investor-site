@@ -7,6 +7,7 @@ import { getDb } from '../src/lib/db'
 import { dealsRepo } from '../src/lib/deals-repo'
 import { compsRepo } from '../src/lib/comps-repo'
 import { parseComp } from '../src/lib/comps/parse-comp'
+import { syncCompSummary } from '../src/lib/comp-summary'
 
 async function main() {
   const db = await getDb()
@@ -73,6 +74,7 @@ async function main() {
         { address: '[DEMO] 9 Fixture Ct', salePrice: '118000', saleDate: '2026-03-20', sqft: '1350', beds: '3', baths: '1', distanceMiles: '0.5', condition: 'Original, dated', renovation: 'unrenovated', saleStatus: 'sold', source: 'Manual' },
       ]
       for (const c of demoComps) await comps.add(id, parseComp((k) => c[k] ?? null).comp, 'Guy')
+      await syncCompSummary(db, id, 'Guy')
     }
     console.log(`Seeded ${d.inputs.address} → /deals/${id}`)
   }

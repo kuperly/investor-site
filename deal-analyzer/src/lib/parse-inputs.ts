@@ -2,7 +2,7 @@
  * FormData → DealInputs. Blank → null (UNKNOWN), never 0 (AC18).
  * Only structural validation here (types, ranges); no business thresholds.
  */
-import { ALL_FIELDS, emptyInputs, type FieldDef } from '@/engine/fields'
+import { ALL_FIELDS, DEFAULTABLE_KEYS, FIELD_BY_KEY, emptyInputs, type DealDefaults, type FieldDef } from '@/engine/fields'
 import type { DealInputs } from '@/engine/types'
 
 export type FieldErrors = Partial<Record<keyof DealInputs, string>>
@@ -16,7 +16,7 @@ export function parseNumber(raw: string): number | null | 'invalid' {
   return Number.isFinite(n) ? n : 'invalid'
 }
 
-function parseField(f: FieldDef, raw: string): { value: unknown; error?: string } {
+export function parseField(f: FieldDef, raw: string): { value: unknown; error?: string } {
   const s = raw.trim()
   switch (f.kind) {
     case 'text':
@@ -66,4 +66,23 @@ export function toFormValues(inputs: DealInputs): Record<string, string> {
     else out[f.key] = String(v)
   }
   return out
+}
+
+/** Settings form → defaults. Blank = no default for that field. */
+export function parseDefaultsForm(get: (key: string) => string | null): { defaults: DealDefaults; errors: FieldErrors } {
+  const defaults: Record<string, unknown> = {}
+  const errors: FieldErrors = {}
+  for (const k of DEFAULTABLE_KEYS) {
+    const { value, error } = parseField(FIELD_BY_KEY[k], get(k) ?? '')
+    if (error) errors[k] = error
+    else if (value !== null) defaults[k] = value
+  }
+  return { defaults: defaults as DealDefaults, errors }
+}
+
+/** Defaults → form strings (percents as whole numbers). */
+export function defaultsToForm(d: DealDefaults): Record<string, string> {
+  const filled = { ...emptyInputs(), ...d }
+  const all = toFormValues(filled)
+  return Object.fromEntries(DEFAULTABLE_KEYS.map((k) => [k, d[k] === undefined || d[k] === null ? '' : all[k]]))
 }

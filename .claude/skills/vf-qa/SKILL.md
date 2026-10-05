@@ -64,7 +64,7 @@ When you add a feature, **extend `e2e/*.e2e.mjs`** with assertions for it
 | AC12 Score · AC14 BUY/INVESTIGATE/PASS | `score.test.ts`, `recommendation.test.ts` boundaries 80 / 79.9 / 65 / 64.9 |
 | AC13 Hard gates | each computed + checklist gate forces PASS on a ≥ 80 deal |
 | AC17 no ÷0 | NaN/Infinity walk test; manually try ARV 0, rent 0, purchase 0 in the form |
-| AC18 UNKNOWN ≠ $0 | blank insurance → DSCR UNKNOWN + "Underwriting incomplete — insurance estimate required." |
+| AC18 UNKNOWN ≠ $0 | blank insurance → insurance line shows UNKNOWN, warning "Underwriting incomplete — insurance estimate required.", DSCR marked `*` (calculated without it), never BUY; property test in `analyze.test.ts` |
 | AC19 testable formulas | every function in `src/engine/formulas.ts` has a direct test |
 | AC20 mobile + desktop | e2e asserts no horizontal scroll at 390 px; inspect screenshots at 1440 px |
 
@@ -82,7 +82,13 @@ When you add a feature, **extend `e2e/*.e2e.mjs`** with assertions for it
 - Audit trail shows old → new + user for inputs, status, notes and comps.
 - No user selected → saving is blocked with a clear message.
 - Comps: unknown sqft → $/sqft UNKNOWN and excluded from $/sqft stats;
-  excluded comp kept but out of stats; "Apply to deal" audited.
+  excluded comp kept but out of stats; comp summary on the deal syncs
+  automatically (audited); "Apply as Base ARV" audited.
+- Defaults: set on /settings → new deal pre-filled with "Default" badges →
+  editing one confirms it → the deal page lists the remaining unconfirmed
+  ones.
+- Basics only (Purchase / Rehab / ARV / Rent) → numbers appear, marked `*`.
+- Spec alignment: `docs/SPEC-ALIGNMENT.md` is still accurate for the change.
 
 ## 6. Documentation check (always: stale docs fail QA)
 

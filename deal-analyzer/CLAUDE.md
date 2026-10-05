@@ -22,12 +22,27 @@ is evaluated as BRRRR, Hold, Flip and Hybrid.
    or `gates.ts`. When something is approved, retag it from PROVISIONAL to APPROVED,
    note who approved it and when, and remove it from the README's open
    decisions.
-3. **UNKNOWN is never $0 (AC18).** Missing numeric input = `null`.
-   - Compose with `lift()` / `sumKnown()` in `underwrite.ts`; never `?? 0` on
-     an input.
-   - The UI shows `UNKNOWN`, and only an explicitly entered 0 is zero.
-   - New fields must flow through `InputReader` so they appear in the
+3. **UNKNOWN is never $0 (AC18), and we calculate with what's known (§29,
+   approved Oct 2026).** A missing numeric input is `null`.
+   - **Core drivers** (purchase, rehab, ARV, rent, refi LTV/rate/term) are
+     read with `reader.num()` and propagate strictly through `lift()`: a
+     result that needs one is UNKNOWN.
+   - **Line items** are read with `reader.optional()`. The item itself stays
+     `null` (UI: `UNKNOWN`), it's left out of the totals it feeds, and those
+     totals are flagged through `RESULT_DEPS` / `CoreResult.inc` (UI: `*`).
+   - A new line item must be added to `LINE_ITEMS` and `RESULT_DEPS`. The
+     property test in `analyze.test.ts` fails if a result changes without
+     being flagged.
+   - Partial totals are optimistic: a gate, exit or risk factor that fails on
+     them is a proven fail; a pass stays UNKNOWN (`check()` in
+     `strategies.ts`). Strengths are only claimed on complete numbers.
+   - Never `?? 0` on an input outside these paths. Only an explicitly
+     entered 0 is zero.
+   - Inputs must flow through `InputReader` so they appear in the
      "Underwriting incomplete — …" warnings.
+   - **Default assumptions** (`/settings`) are values Guy/Ben enter. They
+     fill blank assumption fields on new deals and are marked "Default".
+     Never add system-supplied values.
 4. **No division by zero (AC17).** Use `safeDivide`; CoC with $0 left is
    `INFINITE`.
 5. **All business logic lives in `src/engine/`.** It is pure TypeScript: no
@@ -66,6 +81,12 @@ npm run db:migrate   # apply db/schema.sql to DATABASE_URL
 Local PostgreSQL in a cloud session: `pg_ctlcluster 16 main start`, then
 create a superuser role and a database for `TEST_DATABASE_URL`.
 
+## Alignment with the spec
+
+[docs/SPEC-ALIGNMENT.md](docs/SPEC-ALIGNMENT.md) maps every spec section to
+its status (done / approved change / provisional / not built) and lists the
+open gaps. Update it whenever behaviour changes.
+
 ## Map
 
 ```
@@ -73,9 +94,11 @@ src/engine/   types · config (SPEC/PROVISIONAL) · fields (input registry) · f
               underwrite (+ Max Offer solver) · stress · strategies · gates · score
               recommendation · comps · analyze (single entry point) · fixtures (test data)
 src/lib/      db (postgres.js | PGlite) · deals-repo · comps-repo · comps/{parse-comp,provider}
+              settings-repo (default assumptions) · comp-summary (sync §8 fields from comps)
               parse-inputs · audit · audit-format · format · session/users
 src/app/      / dashboard · /deals/new · /deals/[id] · /deals/[id]/edit · /deals/[id]/comps
-              /deals/[id]/export · /methodology · actions.ts · comps-actions.ts
+              /deals/[id]/export · /settings (defaults) · /methodology
+              actions.ts · comps-actions.ts · settings-actions.ts
 db/schema.sql idempotent; applied automatically at startup
 e2e/          run.sh + app.e2e.mjs + comps.e2e.mjs
 ```
@@ -162,6 +185,7 @@ against the change. **Add** what's new, **update** what changed, and
 | `README.md` | Features, commands, architecture map, DB schema, test table (file / count / covers), screenshots list, open decisions, known limitations, deploy steps |
 | `CLAUDE.md` (this file) | Rules, commands, code map, gotchas, skills, definition of done |
 | `src/engine/config.ts` → `METHODOLOGY` | Any rule added or changed, tagged SPEC / APPROVED / PROVISIONAL / INTERPRETATION. When Guy/Ben approve a provisional rule, retag it and remove it from README "Decisions that need approval" |
+| `docs/SPEC-ALIGNMENT.md` | Any change to behaviour vs the spec: status per section, approved changes, open gaps |
 | `docs/SPEC.md` | Never edited, except to add a new spec version from Guy/Ben verbatim |
 | `docs/screenshots/` | UI changed visibly: `E2E_OUT=docs/screenshots npm run e2e` |
 | `../CLAUDE.md` (repo root) | The analyzer's location, skills list or isolation from the site changes |

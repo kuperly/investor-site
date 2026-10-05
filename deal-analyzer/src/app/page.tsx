@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { analyzeDeal } from '@/engine/analyze'
-import { DEAL_STATUSES, STRATEGIES, type Recommendation } from '@/engine/types'
+import { DEAL_STATUSES, STRATEGIES, type InputKey, type Recommendation } from '@/engine/types'
 import { RecBadge } from '@/components/RecBadge'
 import { Val } from '@/components/Val'
 import { dscrText, money, shortDate } from '@/lib/format'
@@ -96,12 +96,12 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                     <td>{d.inputs.zip ?? '—'}</td>
                     <td><Val v={money(d.inputs.purchasePrice)} /></td>
                     <td><Val v={money(d.inputs.arvBase)} /></td>
-                    <td><Val v={money(a.base.totalProjectCost)} /></td>
-                    <td><Val v={money(a.base.equityCreated)} /></td>
-                    <td><Val v={money(a.base.refi.cashLeftInDeal)} /></td>
-                    <td><Val v={dscrText(a.base.refi.dscr, a.base.refi.annualDebtService)} /></td>
-                    <td><Val v={money(a.base.refi.monthlyCashFlow)} /></td>
-                    <td><Val v={money(a.base.flip.netProfit)} /></td>
+                    <td><Val v={money(a.base.totalProjectCost)} inc={a.base.inc.allIn} /></td>
+                    <td><Val v={money(a.base.equityCreated)} inc={a.base.inc.allIn} /></td>
+                    <td><Val v={money(a.base.refi.cashLeftInDeal)} inc={a.base.inc.cashLeft} /></td>
+                    <td><Val v={dscrText(a.base.refi.dscr, a.base.refi.annualDebtService)} inc={a.base.inc.dscr} /></td>
+                    <td><Val v={money(a.base.refi.monthlyCashFlow)} inc={a.base.inc.dscr} /></td>
+                    <td><Val v={money(a.base.flip.netProfit)} inc={a.base.inc.flip} /></td>
                     <td className="font-semibold">{a.score.total}{!a.score.complete && <span className="text-amber-700" title="Incomplete">*</span>}</td>
                     <td><RecBadge rec={a.recommendation.recommendation} /></td>
                     <td>{d.status}</td>
@@ -110,7 +110,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 ))}
               </tbody>
             </table>
-            <p className="px-3 py-2 text-xs text-ink-muted">* score incomplete — some inputs are UNKNOWN</p>
+            <p className="px-3 py-2 text-xs text-ink-muted">* incomplete — calculated without inputs that are still UNKNOWN (hover a figure for the list)</p>
           </div>
 
           {/* Mobile cards */}
@@ -132,11 +132,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                   </div>
                   <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
                     <Mini k="Purchase" v={money(d.inputs.purchasePrice)} />
-                    <Mini k="All-in" v={money(a.base.totalProjectCost)} />
-                    <Mini k="Equity" v={money(a.base.equityCreated)} />
-                    <Mini k="Cash Left" v={money(a.base.refi.cashLeftInDeal)} />
-                    <Mini k="DSCR" v={dscrText(a.base.refi.dscr, a.base.refi.annualDebtService)} />
-                    <Mini k="Flip" v={money(a.base.flip.netProfit)} />
+                    <Mini k="All-in" v={money(a.base.totalProjectCost)} inc={a.base.inc.allIn} />
+                    <Mini k="Equity" v={money(a.base.equityCreated)} inc={a.base.inc.allIn} />
+                    <Mini k="Cash Left" v={money(a.base.refi.cashLeftInDeal)} inc={a.base.inc.cashLeft} />
+                    <Mini k="DSCR" v={dscrText(a.base.refi.dscr, a.base.refi.annualDebtService)} inc={a.base.inc.dscr} />
+                    <Mini k="Flip" v={money(a.base.flip.netProfit)} inc={a.base.inc.flip} />
                   </dl>
                 </Link>
               </li>
@@ -148,11 +148,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   )
 }
 
-function Mini({ k, v }: { k: string; v: string }) {
+function Mini({ k, v, inc }: { k: string; v: string; inc?: readonly InputKey[] }) {
   return (
     <div>
       <dt className="text-ink-muted">{k}</dt>
-      <dd className="font-medium tabular-nums"><Val v={v} /></dd>
+      <dd className="font-medium tabular-nums"><Val v={v} inc={inc} /></dd>
     </div>
   )
 }

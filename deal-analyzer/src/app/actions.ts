@@ -7,6 +7,9 @@ import { DEAL_STATUSES, type DealStatus } from '@/engine/types'
 import { NOTE_CATEGORIES, type DealNotes } from '@/lib/notes'
 import { parseDealForm, type FieldErrors } from '@/lib/parse-inputs'
 import { repo } from '@/lib/repo'
+import { getDb } from '@/lib/db'
+import { compSummaryFor } from '@/lib/comp-summary'
+import { isDefaultable, type DefaultableKey } from '@/engine/fields'
 import { currentUser } from '@/lib/session'
 import { asUser, USER_COOKIE } from '@/lib/users'
 import { BASE_PATH } from '@/lib/base-path'
@@ -24,10 +27,11 @@ export async function saveDeal(_prev: SaveState, formData: FormData): Promise<Sa
   const user = await currentUser()
   if (!user) return { error: 'Choose who you are (Guy or Ben) in the header before saving — changes are attributed in the audit trail.' }
 
-  const { inputs, errors } = parseDealForm((k) => {
+  const parsed = parseDealForm((k) => {
     const v = formData.get(k)
     return typeof v === 'string' ? v : null
   })
+  const { errors } = parsed
   if (Object.keys(errors).length > 0) return { error: 'Please fix the highlighted fields.', errors }
 
   const notes: DealNotes = {}
@@ -38,13 +42,26 @@ export async function saveDeal(_prev: SaveState, formData: FormData): Promise<Sa
   const status = readStatus(formData.get('status'))
   const id = String(formData.get('id') ?? '')
 
+  // Comp summary fields are never typed: they always come from the comps list.
+  const inputs = { ...parsed.inputs, ...(await compSummaryFor(await getDb(), id || null)) }
+
+  // Fields still holding an unconfirmed ValeForge default (a marker only).
+  let defaulted: DefaultableKey[] = []
+  try {
+    const raw = JSON.parse(String(formData.get('defaulted') ?? '[]'))
+    if (Array.isArray(raw)) defaulted = raw.filter((k): k is DefaultableKey => typeof k === 'string' && isDefaultable(k) && inputs[k] !== null)
+  } catch {
+    defaulted = []
+  }
+
   const r = await repo()
   let dealId = id
   if (id) {
     if (!(await r.get(id))) return { error: 'Deal not found.' }
     await r.update(id, { inputs, notes, status }, user)
+    await r.setDefaulted(id, defaulted)
   } else {
-    dealId = await r.create(inputs, notes, status, user)
+    dealId = await r.create(inputs, notes, status, user, defaulted)
   }
   revalidatePath('/')
   revalidatePath(`/deals/${dealId}`)

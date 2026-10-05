@@ -4,6 +4,7 @@ import { getDb } from './db'
 import { compsRepo } from './comps-repo'
 import { parseComp } from './comps/parse-comp'
 import { dealsRepo } from './deals-repo'
+import { syncCompSummary } from './comp-summary'
 
 process.env.PGLITE_DIR = 'memory://'
 if (process.env.TEST_DATABASE_URL) process.env.DATABASE_URL = process.env.TEST_DATABASE_URL
@@ -104,5 +105,24 @@ describe('comps repository', () => {
     expect(await comps.importComps(dealId, 'MLS', raw, 'Guy')).toMatchObject({ added: 0, duplicates: 1 })
     const imported = (await comps.list(dealId)).find((x) => x.externalId === 'mls-1')!
     expect(imported).toMatchObject({ origin: 'import', source: 'MLS', salePrice: 199_000 })
+  })
+
+  it('comp summary on the deal syncs from the list automatically (audited)', async () => {
+    const id = await deals.create(sampleInputs({ compCount: 99 }), {}, 'Lead', 'Guy')
+    await comps.add(id, c({ address: 'S1', salePrice: '200000', renovation: 'renovated', distanceMiles: '0.5' }), 'Guy')
+    await comps.add(id, c({ address: 'S2', salePrice: '100000', renovation: 'unrenovated', distanceMiles: '1.2' }), 'Guy')
+    await syncCompSummary(await getDb(), id, 'Ben')
+    const d = await deals.get(id)
+    expect(d?.inputs).toMatchObject({
+      compCount: 2,
+      compAvgPrice: 150_000,
+      compMedianPrice: 150_000,
+      compDistanceMiles: 1.2,
+      compRenovatedCount: 1,
+      compUnrenovatedCount: 1,
+    })
+    const audit = await deals.audit(id)
+    expect(audit.find((a) => a.field === 'compCount')).toMatchObject({ oldValue: 99, newValue: 2, changedBy: 'Ben' })
+    expect(await syncCompSummary(await getDb(), id, 'Ben')).toBe(0) // already in sync → no audit rows
   })
 })

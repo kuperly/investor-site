@@ -38,8 +38,10 @@ export function evaluateGates(
   const exitStatus: GateStatus =
     strategies.viableCount > 0 ? 'PASS' : strategies.incomplete ? 'UNKNOWN' : 'FAIL'
 
+  // Partial (incomplete) values are optimistic: a failure is proven, a pass is not.
+  const noiInc = base.inc.dscr.length > 0
   const cf = base.refi.annualCashFlow
-  const cfStatus: GateStatus = cf === null ? 'UNKNOWN' : cf < 0 ? 'FAIL' : 'PASS'
+  const cfStatus: GateStatus = cf === null ? 'UNKNOWN' : cf < 0 ? 'FAIL' : noiInc ? 'UNKNOWN' : 'PASS'
 
   const dscr = base.refi.dscr
   let dscrStatus: GateStatus
@@ -54,8 +56,8 @@ export function evaluateGates(
     dscrStatus = 'UNKNOWN'
     dscrDetail = `DSCR ${dscr.toFixed(2)}; lender minimum not entered`
   } else {
-    dscrStatus = dscr < minDscr ? 'FAIL' : 'PASS'
-    dscrDetail = `DSCR ${dscr.toFixed(2)} vs lender minimum ${minDscr.toFixed(2)}`
+    dscrStatus = dscr < minDscr ? 'FAIL' : noiInc ? 'UNKNOWN' : 'PASS'
+    dscrDetail = `DSCR ${dscr.toFixed(2)}${noiInc ? ' (incomplete)' : ''} vs lender minimum ${minDscr.toFixed(2)}`
   }
 
   return [
@@ -75,7 +77,10 @@ export function evaluateGates(
       label: 'Negative post-refi cash flow',
       kind: 'computed',
       status: cfStatus,
-      detail: cf === null ? 'Cash flow cannot be computed' : `Post-refi cash flow $${Math.round(cf).toLocaleString('en-US')}/yr`,
+      detail:
+        cf === null
+          ? 'Cash flow cannot be computed'
+          : `Post-refi cash flow $${Math.round(cf).toLocaleString('en-US')}/yr${noiInc ? ' (incomplete — not proven)' : ''}`,
     },
     { id: 'dscrBelowMin', label: 'DSCR below minimum threshold', kind: 'computed', status: dscrStatus, detail: dscrDetail },
     checklist('appreciationOnly', 'Deal depends entirely on appreciation', inputs.gateAppreciationOnly),

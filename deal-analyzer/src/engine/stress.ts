@@ -28,6 +28,8 @@ export interface StressRow {
   dscr: Num
   monthlyCashFlow: Num
   flipProfit: Num
+  /** Some figures in this row leave out UNKNOWN line items. */
+  incomplete: boolean
 }
 
 export function toStressRow(id: StressId, label: string, c: CoreResult): StressRow {
@@ -42,6 +44,7 @@ export function toStressRow(id: StressId, label: string, c: CoreResult): StressR
     dscr: c.refi.dscr,
     monthlyCashFlow: c.refi.monthlyCashFlow,
     flipProfit: c.flip.netProfit,
+    incomplete: [c.inc.allIn, c.inc.noi, c.inc.cashLeft, c.inc.flip].some((x) => x.length > 0),
   }
 }
 

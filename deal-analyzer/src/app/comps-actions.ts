@@ -2,7 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { compArv, compStats, summaryFromComps } from '@/engine/comps'
+import { compArv } from '@/engine/comps'
+import { syncCompSummary } from '@/lib/comp-summary'
 import { compsRepo } from '@/lib/comps-repo'
 import { parseComp, type CompErrors } from '@/lib/comps/parse-comp'
 import { getDb } from '@/lib/db'
@@ -19,6 +20,11 @@ const NO_USER = 'Choose who you are (Guy or Ben) in the header first — comp ch
 async function repos() {
   const db = await getDb()
   return { comps: compsRepo(db), deals: dealsRepo(db) }
+}
+
+async function afterCompChange(dealId: string, user: Parameters<typeof syncCompSummary>[2]) {
+  await syncCompSummary(await getDb(), dealId, user)
+  refresh(dealId)
 }
 
 function refresh(dealId: string) {
@@ -45,7 +51,7 @@ export async function saveComp(_prev: CompSaveState, formData: FormData): Promis
   } else {
     await comps.add(dealId, comp, user)
   }
-  refresh(dealId)
+  await afterCompChange(dealId, user)
   redirect(`/deals/${dealId}/comps`)
 }
 
@@ -54,7 +60,7 @@ export async function deleteComp(formData: FormData) {
   const dealId = String(formData.get('dealId') ?? '')
   if (!user) return
   await (await repos()).comps.remove(dealId, String(formData.get('compId') ?? ''), user)
-  refresh(dealId)
+  await afterCompChange(dealId, user)
 }
 
 export async function toggleCompIncluded(formData: FormData) {
@@ -65,20 +71,7 @@ export async function toggleCompIncluded(formData: FormData) {
   const c = await comps.get(dealId, String(formData.get('compId') ?? ''))
   if (!c) return
   await comps.update(dealId, c.id, { ...c, included: !c.included }, user)
-  refresh(dealId)
-}
-
-/** Copies list-derived stats into the deal's §8 comp summary fields (audited per field). */
-export async function applyCompSummary(formData: FormData) {
-  const user = await currentUser()
-  const dealId = String(formData.get('dealId') ?? '')
-  if (!user) return
-  const { comps, deals } = await repos()
-  const deal = await deals.get(dealId)
-  if (!deal) return
-  const summary = summaryFromComps(compStats(await comps.list(dealId), new Date()))
-  await deals.update(dealId, { inputs: { ...deal.inputs, ...summary } }, user)
-  refresh(dealId)
+  await afterCompChange(dealId, user)
 }
 
 /** Sets Base ARV to the comp-supported ARV (approved flow: suggest → user clicks Apply; audited). */

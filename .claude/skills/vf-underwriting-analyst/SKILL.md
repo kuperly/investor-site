@@ -46,10 +46,18 @@ For each engine function in scope:
    - points on the **loan**;
    - refi closing on the **refi loan**;
    - selling costs on the **sale price**.
-3. **UNKNOWN propagation.** Set each input the function reads to `null` in
-   turn. The output must become `null`, and the input must appear in
-   `analysis.missing`. Watch for silent zeros: `?? 0`, `|| 0`, `Number(null)`
-   (which is 0), `reduce` with an initial 0 over values that include nulls.
+3. **UNKNOWN handling (§29, approved: calculate with what's known).** Set
+   each input the function reads to `null` in turn.
+   - For a **core driver**, the output must become `null`.
+   - For a **line item**, the line itself must stay `null` (shown as
+     UNKNOWN), and every total that changes must list it in `CoreResult.inc`
+     (shown as `*`).
+   - Either way, the input must appear in `analysis.missing`.
+   - Watch for silent zeros outside the line-item path: `?? 0`, `|| 0`,
+     `Number(null)` (which is 0), `reduce` with an initial 0 over values that
+     include nulls.
+   - Partial totals are optimistic, so check that gates, viability and risk
+     factors treat a partial pass as UNKNOWN.
 4. **Zero / edge inputs.** Try 0 for ARV, rent, purchase price, sqft, rates,
    LTV and term. There must be no NaN or Infinity anywhere (AC17). Ratios
    must use `safeDivide`, and $0 cash left gives CoC `INFINITE`.
