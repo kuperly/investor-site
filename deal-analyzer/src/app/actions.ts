@@ -9,6 +9,7 @@ import { parseDealForm, type FieldErrors } from '@/lib/parse-inputs'
 import { repo } from '@/lib/repo'
 import { currentUser } from '@/lib/session'
 import { asUser, USER_COOKIE } from '@/lib/users'
+import { BASE_PATH } from '@/lib/base-path'
 
 export interface SaveState {
   error?: string
@@ -62,6 +63,6 @@ export async function setStatus(formData: FormData) {
 export async function setUser(formData: FormData) {
   const user = asUser(String(formData.get('user') ?? ''))
   if (!user) return
-  ;(await cookies()).set(USER_COOKIE, user, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 365 })
+  ;(await cookies()).set(USER_COOKIE, user, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: BASE_PATH || '/', maxAge: 60 * 60 * 24 * 365 })
   revalidatePath('/', 'layout')
 }

@@ -111,6 +111,15 @@ deploy. See [deal-analyzer/README.md](deal-analyzer/README.md) and its own
 in `deal-analyzer/src/engine/`; thresholds there change only with Guy/Ben
 approval.
 
+**Hidden route.** `next.config.ts` (`analyzerRewrites`) forwards
+`<ANALYZER_BASE_PATH>/*` (e.g. `/vf-internal`) to the analyzer's own
+deployment at `ANALYZER_URL`. It's inert unless both env vars are set, and
+tested in `src/lib/analyzer-route.test.ts`. Access control is the analyzer's
+Basic Auth, not this site. Setup steps: deal-analyzer/README.md →
+"Deploying". **Before enabling it in production, upgrade this site's Next.js:**
+15.1.11 has published advisories, including request smuggling in rewrites.
+Remove the rewrite when the analyzer moves to its own repo.
+
 Project skills for the analyzer live in `.claude/skills/`: `vf-qa`,
 `vf-security`, `vf-underwriting-analyst`, `vf-real-estate-investor` and
 `vf-property-inspector`.

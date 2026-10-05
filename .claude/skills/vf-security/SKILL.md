@@ -31,8 +31,14 @@ advice.
 ### Access and deployment
 - [ ] The deployed instance has Basic Auth env vars or platform protection.
       If not, it's critical.
-- [ ] `middleware.ts` matcher still covers every route, including `/deals/*`
-      and server-action POSTs. New routes aren't excluded by accident.
+- [ ] `middleware.ts` has **no matcher** and protects every path. A
+      matcher once let the bare basePath root (`/vf-internal`, the dashboard)
+      through without a password. Run `npm run e2e:auth`, which covers both
+      `/` and basePath builds.
+- [ ] Hidden route (website rewrite → analyzer): "hidden" is not security.
+      The analyzer's own Basic Auth must answer through the proxy
+      (`yoursite.com/<base>` → 401 + `WWW-Authenticate`). `ANALYZER_URL` is a
+      fixed env value, never derived from the request (SSRF).
 - [ ] `robots: noindex` stays in `layout.tsx`.
 - [ ] No secrets in code or commits (`git log -p | grep -iE "password|secret|api[_-]?key|postgres://"`).
       `.env*` stays gitignored.
@@ -78,13 +84,16 @@ advice.
       a **middleware authorization bypass**, and our Basic Auth lives in
       middleware. Before bumping, check https://nextjs.org/blog and
       `npm audit`.
-- [ ] Basic Auth smoke test after any Next/middleware change. Start the app
-      with `BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD`, then check:
-      - `/`, `/deals/new` and a server-action POST without credentials → 401;
-      - wrong password → 401;
-      - header `x-middleware-subrequest: middleware:middleware:middleware:middleware:middleware`
-        → 401 (CVE-2025-29927 bypass);
-      - right credentials → 200.
+- [ ] Basic Auth check after any Next, middleware or routing change:
+      `npm run e2e:auth`. At `/` and under `/vf-internal`, it verifies 401
+      for:
+      - the bare root, the root with a trailing slash, and deep pages;
+      - a wrong password;
+      - a server-action POST;
+      - a static asset;
+      - the `x-middleware-subrequest` bypass header (CVE-2025-29927).
+
+      Right credentials must return 200.
 - [ ] Known accepted residual risk: Next bundles its own `postcss@8.4.31`
       (npm audit "high"). It only processes our own CSS at build time, so
       it isn't attacker-reachable. Re-check whenever Next is bumped.

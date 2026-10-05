@@ -47,6 +47,7 @@ npm run dev
 | `TEST_DATABASE_URL=postgres://… npm test` | Also runs the repository tests against real PostgreSQL |
 | `npm run check` | typecheck + lint + tests |
 | `npm run e2e` | Isolated DB → seed → production build → Playwright acceptance suites (`e2e/`) |
+| `npm run e2e:auth` | Builds at `/` and at `/vf-internal`, then checks every kind of path demands the password |
 
 Pick **Guy** or **Ben** in the header before editing; the name is recorded on
 every audit entry. Set `BASIC_AUTH_USER` and `BASIC_AUTH_PASSWORD` to put the
@@ -166,7 +167,7 @@ SQL by market, ZIP, status and created date. Filters on computed values
 
 ## Formula / unit tests
 
-`npm test`: **152 tests, 11 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 46 browser checks.
+`npm test`: **155 tests, 12 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 46 browser checks; `npm run e2e:auth` adds 32 password checks across `/` and basePath builds.
 
 | File | Tests | Covers |
 |---|---|---|
@@ -181,6 +182,7 @@ SQL by market, ZIP, status and created date. Filters on computed values
 | `engine/comps.test.ts` | 22 | $/sqft guard; median; sale age; included-only stats; unknown prices skipped (not $0); renovated vs unrenovated; summary fields; weight decay; hand-calculated comp weight; comp ARV ($187.50/sf × 1,400 = $262,500); exclusions with reasons; UNKNOWN ARV; Super comp % override (50% fixed → $180/sf × 1,400 = $252,000), multiple overrides, > 100% → UNKNOWN, scale-up when alone, ignored on non-Super / unused comps |
 | `lib/comps-repo.test.ts` | 8 | validation (incl. unsafe links); tier/status defaults; % override validation (Super comps only, 0–100%); add/list/round-trip; audited edit/delete; cross-deal protection; import de-duplication |
 | `lib/db.test.ts` | 2 | schema file splits cleanly into statements (no `;` in inline comments) |
+| `lib/base-path.test.ts` | 3 | hidden-route basePath: empty/`/` → root, single segment accepted, anything else fails the build |
 
 Worked example (`engine/fixtures.ts`; illustrative inputs, not market data):
 $100k purchase · 3% closing · $40k rehab + 10% · 80% LTV IO @ 12%, 2 pts,
@@ -306,9 +308,9 @@ go through the same validation as manual entry, are stored with
 
 ## Known limitations
 
-- **Auth.** There is no login, only a Guy/Ben selector (per §2). Use the
-  built-in Basic Auth env vars or Vercel password protection before
-  deploying.
+- **Auth.** There is no login, only a Guy/Ben selector (per §2) plus one
+  shared Basic Auth password for the whole app. Both users share that
+  password, so the audit trail relies on each person picking their own name.
 - **PDF export.** The PDF comes from the browser's print dialog
   ("Save as PDF"), not server-side generation.
 - **Comps are manual for now.** Automated import is wired at the code level
@@ -332,13 +334,39 @@ go through the same validation as manual entry, are stored with
 - **PGlite** is for local, single-process use. Deployed instances must set
   `DATABASE_URL` (Supabase/Postgres).
 
-## Deploying (when ready)
+## Deploying: hidden route on the investor website
 
-Create a **separate** Vercel project from this repo with **Root Directory =
-`deal-analyzer`**. Set:
+For testing, the analyzer is exposed at a hidden path on the website (e.g.
+`yoursite.com/vf-internal`). It's still a separate app and deployment; the
+website only forwards that path to it. Moving it to its own repo later means
+removing the forward.
 
-- `DATABASE_URL`: Supabase transaction-pooler URI.
-- `BASIC_AUTH_USER` and `BASIC_AUTH_PASSWORD`.
+```
+browser → yoursite.com/vf-internal/* ──(site rewrite)──▶ analyzer deployment /vf-internal/*
+                                                         └ Basic Auth (middleware) → app → Postgres
+```
 
-Then run `npm run db:migrate` once against that database. The existing
-`investor-site` Vercel project is unaffected.
+1. **Database.** Create a PostgreSQL database (Supabase, or Neon via Vercel).
+   PGlite can't be used on Vercel because its disk isn't persistent.
+2. **Analyzer Vercel project.** New project from this repo, **Root Directory
+   = `deal-analyzer`**. Environment variables:
+   - `DATABASE_URL`: the pooled connection string.
+   - `BASIC_AUTH_USER`, `BASIC_AUTH_PASSWORD`: strong values. This is the
+     only access control.
+   - `ANALYZER_BASE_PATH=/vf-internal`: the hidden path. It's applied at
+     build time, so redeploy after changing it.
+
+   The schema is applied automatically on first request (or run
+   `npm run db:migrate` with `DATABASE_URL` set).
+3. **Website Vercel project** (`investor-site`). Add:
+   - `ANALYZER_URL`: the analyzer deployment's origin, e.g.
+     `https://valeforge-analyzer.vercel.app`.
+   - `ANALYZER_BASE_PATH=/vf-internal`: the same value as the analyzer.
+
+   Redeploy. The rewrite is inert while either variable is missing.
+4. **Verify** in a private window: `yoursite.com/vf-internal` must ask for
+   the password before showing anything. `npm run e2e:auth` checks the same
+   locally.
+
+"Hidden" only means unlinked and not indexed (`noindex` meta +
+`X-Robots-Tag`). The password is what protects the data.

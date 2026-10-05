@@ -41,6 +41,7 @@ failed to connect shows up as skips.
 
 ```bash
 npm run e2e                                # isolated DB, prod build, both suites
+npm run e2e:auth                           # password required on every path (/ and basePath builds)
 E2E_OUT=docs/screenshots npm run e2e       # only when README screenshots should be refreshed
 ```
 

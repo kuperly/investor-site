@@ -2,10 +2,12 @@ import { chromium } from 'playwright-core'
 const BASE = process.env.E2E_BASE_URL || 'http://localhost:3100'
 const OUT = process.env.E2E_OUT || new URL('./.out', import.meta.url).pathname
 await import('node:fs').then((fs) => fs.mkdirSync(OUT, { recursive: true }))
+// Optional Basic Auth (e.g. when testing through the website's hidden route)
+const AUTH = process.env.E2E_HTTP_USER ? { httpCredentials: { username: process.env.E2E_HTTP_USER, password: process.env.E2E_HTTP_PASSWORD ?? '' } } : {}
 const ok = (c, m) => { if (!c) throw new Error('FAIL: ' + m); console.log('✓', m) }
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined })
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+const ctx = await browser.newContext({ ...AUTH, viewport: { width: 1440, height: 900 } })
 const page = await ctx.newPage()
 const errors = []
 page.on('pageerror', (e) => errors.push(e.message))
@@ -91,7 +93,7 @@ ok((await page.locator('table tbody tr').count()) === 1, 'dashboard market filte
 console.log('   BUY rows:', buyRows)
 
 // AC20: mobile
-const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 })
+const m = await browser.newContext({ ...AUTH, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 })
 const mp = await m.newPage()
 for (const [url, name] of [[BASE, '07-dashboard-mobile'], [dealUrl, '08-deal-mobile'], [BASE + '/deals/new', '09-new-deal-mobile']]) {
   await mp.goto(url)

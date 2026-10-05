@@ -57,6 +57,7 @@ npm run check        # typecheck + lint + unit/integration tests — run before 
 npm test             # vitest (unit + integration)
 TEST_DATABASE_URL=postgres://… npm test   # repo tests against real PostgreSQL too
 npm run e2e          # isolated DB + prod build + Playwright suites (e2e/*.e2e.mjs)
+npm run e2e:auth     # Basic Auth must cover every path, at / and under a basePath
 E2E_OUT=docs/screenshots npm run e2e      # refresh the README screenshots
 npm run db:seed      # [DEMO] deals + comps (illustrative only)
 npm run db:migrate   # apply db/schema.sql to DATABASE_URL
@@ -97,10 +98,18 @@ e2e/          run.sh + app.e2e.mjs + comps.e2e.mjs
 
 - **Next.js is pinned exactly at `15.5.27`** (security). Never use `^` for
   `next` or `eslint-config-next`. Bump only after checking the advisories
-  and running `npm run check`, `npm run e2e` and the `vf-security` Basic Auth
-  smoke test.
+  and running `npm run check`, `npm run e2e` and `npm run e2e:auth`.
 - `next.config.ts` sets `outputFileTracingRoot` because the repo root has
   its own lockfile.
+- **Hidden route / basePath.** `ANALYZER_BASE_PATH` (build time) serves the
+  app under e.g. `/vf-internal`; the website rewrites that path to this
+  deployment (README → "Deploying"). Use `Link` / `redirect()` for internal
+  URLs, never hand-built `/…` strings: they handle the basePath. The user
+  cookie is scoped to the basePath.
+- **`src/middleware.ts` has no `matcher`, on purpose.** With a basePath,
+  a matcher silently skipped the bare `/vf-internal` (the dashboard), so it
+  was served without a password. `npm run e2e:auth` guards this. Run it
+  after any middleware, basePath or Next.js change.
 - `e2e/run.sh` refuses to start if its port (3199) is busy. A stale server
   serving a rebuilt `.next` gives confusing failures.
 
@@ -160,7 +169,8 @@ exact). Before committing, grep the docs for names you renamed or removed.
 ## Definition of done
 
 1. `npm run check` is green.
-2. `npm run e2e` is green for any UI or flow change.
+2. `npm run e2e` is green for any UI or flow change, and `npm run e2e:auth`
+   for any middleware, basePath, routing or Next.js change.
 3. New logic has hand-calculated tests.
 4. **All affected docs are updated in the same commit** (see "Documentation
    is part of every change"): README, this file, `METHODOLOGY`, screenshots,

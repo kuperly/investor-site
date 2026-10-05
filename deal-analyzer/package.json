@@ -12,7 +12,8 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "e2e": "bash e2e/run.sh",
-    "check": "npm run typecheck && npm run lint && npm test"
+    "check": "npm run typecheck && npm run lint && npm test",
+    "e2e:auth": "bash e2e/auth-check.sh"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
