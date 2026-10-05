@@ -113,7 +113,7 @@ approval.
 
 **Hidden route.** `next.config.ts` (`analyzerRewrites`) forwards
 `<ANALYZER_BASE_PATH>/*` (e.g. `/vf-internal`) to the analyzer's own
-deployment at `ANALYZER_URL`. It's inert unless both env vars are set, and
+deployment at `ANALYZER_URL` (Railway project `valeforge-deal-analyzer`). It's inert unless both env vars are set, and
 tested in `src/lib/analyzer-route.test.ts`. Access control is the analyzer's
 Basic Auth, not this site. Setup steps: deal-analyzer/README.md →
 "Deploying". **Before enabling it in production, upgrade this site's Next.js:**
