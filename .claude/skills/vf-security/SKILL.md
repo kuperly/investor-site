@@ -31,6 +31,9 @@ advice.
 ### Access and deployment
 - [ ] The deployed instance has Basic Auth env vars or platform protection.
       If not, it's critical.
+- [ ] Auth **fails closed**: production without `BASIC_AUTH_*` → 503 on
+      every path. `AUTH_DISABLED` must never be set on a deployment (check
+      the host's env vars).
 - [ ] `middleware.ts` has **no matcher** and protects every path. A
       matcher once let the bare basePath root (`/vf-internal`, the dashboard)
       through without a password. Run `npm run e2e:auth`, which covers both

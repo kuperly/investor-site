@@ -9,6 +9,7 @@ PORT="${E2E_PORT:-3199}"
 export PGLITE_DIR="${PGLITE_DIR:-$PWD/.data/e2e}"
 export E2E_BASE_URL="http://localhost:$PORT"
 unset DATABASE_URL   # never run E2E against a real database
+export AUTH_DISABLED=1   # production build without a password (fail-closed otherwise)
 
 if [ -z "${CHROMIUM_PATH:-}" ]; then
   CHROMIUM_PATH="$(ls -d /opt/pw-browsers/chromium-*/chrome-linux/chrome 2>/dev/null | head -1 || true)"

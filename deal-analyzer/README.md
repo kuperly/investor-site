@@ -167,7 +167,7 @@ SQL by market, ZIP, status and created date. Filters on computed values
 
 ## Formula / unit tests
 
-`npm test`: **155 tests, 12 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 46 browser checks; `npm run e2e:auth` adds 32 password checks across `/` and basePath builds.
+`npm test`: **155 tests, 12 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 46 browser checks; `npm run e2e:auth` adds 37 password checks across `/` and basePath builds, plus the fail-closed case.
 
 | File | Tests | Covers |
 |---|---|---|
@@ -309,7 +309,9 @@ go through the same validation as manual entry, are stored with
 ## Known limitations
 
 - **Auth.** There is no login, only a Guy/Ben selector (per §2) plus one
-  shared Basic Auth password for the whole app. Both users share that
+  shared Basic Auth password for the whole app. It fails closed: a
+  production server without the password configured refuses every request
+  (503). Both users share that
   password, so the audit trail relies on each person picking their own name.
 - **PDF export.** The PDF comes from the browser's print dialog
   ("Save as PDF"), not server-side generation.

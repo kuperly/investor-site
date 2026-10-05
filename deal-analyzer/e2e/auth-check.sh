@@ -32,6 +32,7 @@ for BP in "" "/vf-internal"; do
     expect "no auth   ${BP}${path:-}" 401 "$(code -L "$url")"
     expect "wrong pw  ${BP}${path:-}" 401 "$(code -L -u "$U:nope" "$url")"
   done
+  expect "malformed Authorization header" 401 "$(code -H 'Authorization: Basic %%%' "$ROOT")"
   expect "server-action POST, no auth" 401 "$(code -X POST -H 'Next-Action: x' "$ROOT")"
   expect "x-middleware-subrequest bypass (CVE-2025-29927)" 401 \
     "$(code -H 'x-middleware-subrequest: middleware:middleware:middleware:middleware:middleware' "$ROOT")"
@@ -43,5 +44,16 @@ for BP in "" "/vf-internal"; do
 
   kill -- -"$SERVER" 2>/dev/null || true; trap - EXIT; sleep 1
 done
+
+echo "── fail-closed: production without a password ──"
+ANALYZER_BASE_PATH="" npx next build >/dev/null
+setsid env -u BASIC_AUTH_USER -u BASIC_AUTH_PASSWORD -u AUTH_DISABLED ./node_modules/.bin/next start -p "$PORT" >"${TMPDIR:-/tmp}/vf-auth-server.log" 2>&1 &
+SERVER=$!
+trap 'kill -- -"$SERVER" 2>/dev/null || true' EXIT
+for _ in $(seq 1 60); do [ "$(code "http://localhost:$PORT/")" != "000" ] && break; sleep 1; done
+expect "no password configured → refuses /" 503 "$(code "http://localhost:$PORT/")"
+expect "no password configured → refuses /methodology" 503 "$(code "http://localhost:$PORT/methodology")"
+expect "garbage Authorization header → refused" 503 "$(code -H 'Authorization: Basic %%%' "http://localhost:$PORT/")"
+kill -- -"$SERVER" 2>/dev/null || true; trap - EXIT
 rm -rf "$PGLITE_DIR"
 [ "$fail" = 0 ] && echo "AUTH CHECK: all passed" || { echo "AUTH CHECK: FAILED"; exit 1; }
