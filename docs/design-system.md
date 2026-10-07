@@ -69,6 +69,10 @@ Expensive, not flashy. Every animation collapses to its final frame under
   capped.
 - **Scroll reveals** — `Reveal` fades/rises blocks with
   `cubic-bezier(0.16, 1, 0.3, 1)`, staggered 60–90ms.
+- **Model loop** — `ModelFlywheel` cycles the active stage every 3.2s with a
+  brass arc travelling the ring. Autoplays only while on screen, pauses on
+  hover/focus, stops when a visitor picks a stage, has a Pause/Play control,
+  and never autoplays under reduced motion.
 - **Hover** — quiet: a brass hairline fills (capabilities), a title nudges
   and turns brass (strategies), CTA arrows slide 4px.
 
@@ -94,7 +98,8 @@ Expensive, not flashy. Every animation collapses to its final frame under
   brass, outlined) with a sliding arrow; square-ish `rounded-sm` corners.
 - `ThemeToggle` — light/dark switch (sets `data-theme`, persists, no flash).
 - Sections (`src/components/sections/`): `Hero`, `Philosophy`,
-  `ValeForgeModel`, `Capabilities`, `Strategies` (`withHeading` prop),
+  `ValeForgeModel` (copy + the interactive `ModelFlywheel` loop — the model
+  is shown as an experience, not a numbered list), `Capabilities`, `Strategies` (`withHeading` prop),
   `CapitalEfficiency`, `Underwriting`, `ExitPaths`, `AboutIntro`,
   `PartnershipCta`.
 

@@ -17,6 +17,13 @@ export const model = {
   intro: 'We build around a simple principle: capital should keep working.',
   body: 'Depending on the opportunity, when we can create equity, improve cash flow, or unlock value through execution, we seek to monetize that value and redeploy capital into the next opportunity.',
   steps: ['Find Opportunity', 'Acquire', 'Create Value', 'Monetize', 'Recycle Capital', 'Acquire Again'],
+  /** The repeating part of the loop, shown on the flywheel. */
+  cycle: [
+    { title: 'Acquire', line: 'Secure the right asset, at the right basis.' },
+    { title: 'Create Value', line: 'Renovate, reposition, or improve operations.' },
+    { title: 'Monetize', line: 'Sell, refinance, or hold for cash flow.' },
+    { title: 'Recycle Capital', line: 'Put recovered capital back to work.' },
+  ],
 }
 
 export const capabilities = [

@@ -59,6 +59,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* The parked mobile drawer sits just off-canvas; never let it widen the page. */
+  overflow-x: clip;
 }
 
 body {
@@ -100,7 +102,17 @@ body {
   }
 }
 
+@keyframes flywheel-swap {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
 @layer utilities {
+  .flywheel-swap {
+    animation: flywheel-swap 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
   .draw-line,
   .draw-line-group > * {
     stroke-dasharray: 1;

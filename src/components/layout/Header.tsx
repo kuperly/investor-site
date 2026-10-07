@@ -120,8 +120,8 @@ export function Header() {
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
-        className={`fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85vw] flex-col border-l border-border bg-background transition-transform duration-300 md:hidden ${
-          isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85vw] flex-col border-l border-border bg-background transition-[transform,visibility] duration-300 md:hidden ${
+          isMenuOpen ? 'visible translate-x-0' : 'invisible translate-x-full'
         }`}
       >
         <div className="flex items-center justify-between px-4 py-4">
