@@ -45,10 +45,10 @@ export default async function LegalPage({ params }: { params: Promise<{ slug: st
             This document is being prepared and will be published here. In the meantime, questions can be
             sent to{' '}
             <a
-              href={`mailto:${siteConfig.contactEmail}`}
+              href={`mailto:${siteConfig.emails.investment}`}
               className="font-medium text-foreground underline decoration-primary/60 underline-offset-4 hover:text-primary"
             >
-              {siteConfig.contactEmail}
+              {siteConfig.emails.investment}
             </a>
             .
           </p>

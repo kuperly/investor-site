@@ -12,7 +12,8 @@ describe('siteConfig', () => {
     expect(hrefs).toEqual(['/', '/approach', '/strategies', '/about', '/contact'])
   })
 
-  it('has a plausible contact email', () => {
-    expect(siteConfig.contactEmail).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+  it('has real inboxes on the company domain', () => {
+    expect(siteConfig.emails.investment).toBe('investment@valeforgecapital.com')
+    expect(siteConfig.emails.deals).toBe('deals@valeforgecapital.com')
   })
 })

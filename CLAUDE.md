@@ -16,8 +16,8 @@ change rather than a hunt through the codebase:
 
 - **Brand config**: `src/lib/site-config.ts` — `name` (final: Vale Forge
   Capital), `url` (defaults to `https://valeforgecapital.com`),
-  `tagline`, `philosophy`, `description`, `nav`, `legal`, and
-  **`contactEmail` (still `hello@example.com` — placeholder)**. Nothing
+  `tagline`, `philosophy`, `description`, `nav`, `legal`, and `emails`
+  (`investment@` and `deals@valeforgecapital.com`, Zoho Mail). Nothing
   else in the app hardcodes the brand name. Page copy lives in
   `src/lib/content.ts`.
 - **Site URL**: `siteConfig.url` defaults to `https://valeforgecapital.com`
@@ -35,14 +35,17 @@ change rather than a hunt through the codebase:
   with `noindex`. Replace with counsel-approved text and drop the noindex.
   The footer's non-solicitation line (`nonSolicitation` in `content.ts`)
   should also get counsel review.
-- **Email delivery**: three env vars, set in Vercel (Project → Settings →
-  Environment Variables), not in code:
+- **Email delivery**: the form routes by inquiry type — Property
+  Opportunity / Operating Partnership → `deals@`, Capital Partnership /
+  Financing / General Inquiry → `investment@` (`inbox` on
+  `contactIntentOptions` in `src/lib/contact-schema.ts`). Two env vars, set
+  in Vercel (Project → Settings → Environment Variables), not in code:
   - `RESEND_API_KEY` — from resend.com
-  - `CONTACT_TO_EMAIL` — inbox that receives form submissions
-  - `CONTACT_FROM_EMAIL` — sender address (must be `onboarding@resend.dev`
-    unless a custom domain is verified in Resend, in which case
-    `CONTACT_TO_EMAIL` is unrestricted; the `onboarding@resend.dev` sender
-    can only deliver to the email on the Resend account itself)
+  - `CONTACT_FROM_EMAIL` — sender address. **Must be on a domain verified
+    in Resend** (e.g. `noreply@valeforgecapital.com`): Resend's test sender
+    `onboarding@resend.dev` can only deliver to the Resend account's own
+    email, so it can't reach `deals@`/`investment@`.
+  - `CONTACT_TO_EMAIL` is no longer read (routing replaced it).
 
 ## Tech stack
 

@@ -9,8 +9,14 @@ export const siteConfig = {
   philosophy: "We don't buy properties. We buy opportunities.",
   description:
     'Vale Forge Capital is a U.S. real estate investment company focused on acquiring, improving and operating opportunities where disciplined execution can create meaningful equity and recurring cash flow.',
-  // Placeholder — swap for the real inbox before launch.
-  contactEmail: 'hello@example.com',
+  /**
+   * Public inboxes (Zoho Mail). The contact form routes each inquiry type to
+   * one of these — see `contactIntentOptions` in contact-schema.ts.
+   */
+  emails: {
+    investment: 'investment@valeforgecapital.com',
+    deals: 'deals@valeforgecapital.com',
+  },
   /** Canonical origin for metadata/OG/sitemap. Override with NEXT_PUBLIC_SITE_URL. */
   url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://valeforgecapital.com',
   /**

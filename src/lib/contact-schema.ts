@@ -1,18 +1,31 @@
 import { z } from 'zod'
 
+/**
+ * Inquiry types and the inbox each one is routed to: deal flow goes to
+ * `deals@`, capital/financing/general goes to `investment@`.
+ */
 export const contactIntentOptions = [
-  { value: 'property', label: 'Property Opportunity' },
-  { value: 'capital', label: 'Capital Partnership' },
-  { value: 'financing', label: 'Financing' },
-  { value: 'operating', label: 'Operating Partnership' },
-  { value: 'general', label: 'General Inquiry' },
+  { value: 'property', label: 'Property Opportunity', inbox: 'deals' },
+  { value: 'capital', label: 'Capital Partnership', inbox: 'investment' },
+  { value: 'financing', label: 'Financing', inbox: 'investment' },
+  { value: 'operating', label: 'Operating Partnership', inbox: 'deals' },
+  { value: 'general', label: 'General Inquiry', inbox: 'investment' },
 ] as const
 
 export const contactIntents = ['property', 'capital', 'financing', 'operating', 'general'] as const
 export type ContactIntent = (typeof contactIntents)[number]
 
+function optionFor(intent: ContactIntent) {
+  return contactIntentOptions.find((option) => option.value === intent) ?? contactIntentOptions[4]
+}
+
 export function contactIntentLabel(intent: ContactIntent) {
-  return contactIntentOptions.find((option) => option.value === intent)?.label ?? 'General Inquiry'
+  return optionFor(intent).label
+}
+
+/** Which public inbox (`siteConfig.emails` key) handles this inquiry type. */
+export function contactIntentInbox(intent: ContactIntent) {
+  return optionFor(intent).inbox
 }
 
 export const contactFormSchema = z.object({

@@ -14,4 +14,11 @@ describe('ContactPage', () => {
     expect(screen.getByLabelText('Email')).toBeInTheDocument()
     expect(screen.getByLabelText('Message')).toBeInTheDocument()
   })
+
+  it('lists both inboxes as mailto links', () => {
+    render(<ContactPage />)
+    for (const email of ['investment@valeforgecapital.com', 'deals@valeforgecapital.com']) {
+      expect(screen.getByRole('link', { name: email })).toHaveAttribute('href', `mailto:${email}`)
+    }
+  })
 })

@@ -13,6 +13,11 @@ export const metadata: Metadata = {
   alternates: { canonical: '/contact' },
 }
 
+const inboxes = [
+  { label: 'Investment & capital partners', email: siteConfig.emails.investment },
+  { label: 'Deals & property opportunities', email: siteConfig.emails.deals },
+]
+
 export default function ContactPage() {
   return (
     <PageContainer className="pb-24 pt-16 sm:pb-32 sm:pt-24 lg:pt-28">
@@ -27,15 +32,23 @@ export default function ContactPage() {
               {contact.intro}
             </p>
 
-            <div className="mt-10 max-w-md border-t border-border pt-6">
-              <p className="text-xs font-semibold uppercase tracking-eyebrow text-muted-foreground">Email</p>
-              <a
-                href={`mailto:${siteConfig.contactEmail}`}
-                className="mt-2 inline-flex min-h-[44px] items-center font-medium text-foreground transition-colors duration-200 hover:text-primary"
-              >
-                {siteConfig.contactEmail}
-              </a>
-            </div>
+            <dl className="mt-10 max-w-md space-y-6 border-t border-border pt-6">
+              {inboxes.map((inbox) => (
+                <div key={inbox.email}>
+                  <dt className="text-xs font-semibold uppercase tracking-eyebrow text-muted-foreground">
+                    {inbox.label}
+                  </dt>
+                  <dd>
+                    <a
+                      href={`mailto:${inbox.email}`}
+                      className="mt-1 inline-flex min-h-[44px] items-center font-medium text-foreground transition-colors duration-200 hover:text-primary"
+                    >
+                      {inbox.email}
+                    </a>
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </Reveal>
         </div>
 
