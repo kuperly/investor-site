@@ -25,6 +25,16 @@ const sourceSans3 = Source_Sans_3({
 
 const defaultTitle = `${siteConfig.name} | U.S. Real Estate Investment`
 
+// Share image from the brand kit. Declared here (not via the
+// opengraph-image file convention) so its alt text always comes from code —
+// the file convention's alt.txt is cached with the image and can go stale.
+const shareImage = {
+  url: '/og-image-1200x630.png',
+  width: 1200,
+  height: 630,
+  alt: `${siteConfig.name} — ${siteConfig.tagline}`,
+}
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
@@ -39,11 +49,13 @@ export const metadata: Metadata = {
     title: defaultTitle,
     description: siteConfig.description,
     locale: 'en_US',
+    images: [shareImage],
   },
   twitter: {
     card: 'summary_large_image',
     title: defaultTitle,
     description: siteConfig.description,
+    images: [shareImage],
   },
 }
 
