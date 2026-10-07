@@ -1,6 +1,6 @@
-# Vale Forge Capital — Marketing Site
+# ValeForge — Marketing Site
 
-A 5-page Next.js marketing site for Vale Forge Capital, an early-stage U.S. real
+A 5-page Next.js marketing site for ValeForge (ValeForge Capital), an early-stage U.S. real
 estate investment company ("Building Value from Opportunity." / "We don't
 buy properties. We buy opportunities."). Built for credibility with
 operators, property owners, financing and capital partners — **not** active
@@ -14,8 +14,12 @@ small multifamily, creative financing are a *toolkit*, never claims). Visual sys
 Everything below is a deliberate placeholder, documented so it's a one-line
 change rather than a hunt through the codebase:
 
-- **Brand config**: `src/lib/site-config.ts` — `name` (final: Vale Forge
-  Capital), `url` (defaults to `https://valeforgecapital.com`),
+- **Naming**: the brand is **ValeForge** (one word) in all copy and titles;
+  **ValeForge Capital** only where the legal entity is meant (copyright,
+  logo alt text). Never "Vale Forge". `src/app/page.test.tsx` guards this.
+  (The logo artwork itself sets the name as "VALE FORGE / CAPITAL".)
+- **Brand config**: `src/lib/site-config.ts` — `name` (ValeForge),
+  `legalName` (ValeForge Capital), `url` (defaults to `https://valeforgecapital.com`),
   `tagline`, `philosophy`, `description`, `nav`, `legal`, and `emails`
   (`investment@` and `deals@valeforgecapital.com`, Zoho Mail). Nothing
   else in the app hardcodes the brand name. Page copy lives in
@@ -137,7 +141,7 @@ header/footer as a WCAG regression guard — extend it if new pages are
 added. `src/app/page.test.tsx` also guards against fabricated performance
 claims (%, IRR, AUM, testimonials, "passive income"…) on the home page.
 
-**No fabricated track record — ever.** Vale Forge Capital is early-stage: no deal
+**No fabricated track record — ever.** ValeForge is early-stage: no deal
 counts, AUM, returns, investor counts, testimonials, logos, case studies or
 years-of-experience claims. Other constraints (≥44px touch targets, ≥4.5:1
 contrast) are enforced by convention and code review.

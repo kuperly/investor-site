@@ -1,12 +1,10 @@
 import { siteConfig } from '@/lib/site-config'
+import { hero } from '@/lib/content'
 import { HeroBackground } from '@/components/ui/HeroBackground'
 import { PageContainer } from '@/components/ui/PageContainer'
 import { Reveal } from '@/components/ui/Reveal'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { ButtonLink } from '@/components/ui/ButtonLink'
-
-const heroCopy =
-  'Vale Forge Capital is a U.S. real estate investment company focused on identifying, acquiring, improving and operating opportunities where disciplined execution can create meaningful equity and recurring cash flow.'
 
 export function Hero() {
   return (
@@ -21,8 +19,11 @@ export function Hero() {
           >
             {siteConfig.tagline}
           </h1>
-          <p className="mt-8 max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
-            {heroCopy}
+          <p className="mt-8 max-w-2xl text-pretty text-xl leading-relaxed text-foreground/90 sm:text-2xl">
+            {hero.lead}
+          </p>
+          <p className="mt-4 max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground">
+            {hero.support}
           </p>
           <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
             <ButtonLink href="/approach">Explore Our Approach</ButtonLink>

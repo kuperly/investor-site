@@ -1,14 +1,19 @@
 /**
  * Single source of truth for site-wide, brand-dependent content.
- * `name` drives the logo lockup too (see `Logo.tsx`). Nothing else in the
- * codebase should hardcode it. Page copy lives in `content.ts`.
+ * Nothing else in the codebase should hardcode the name. Page copy lives in
+ * `content.ts`.
+ *
+ * Naming: the brand is "ValeForge" (one word) everywhere in copy and titles;
+ * the company name "ValeForge Capital" is used only where the legal entity is
+ * meant (copyright line, logo alt text).
  */
 export const siteConfig = {
-  name: 'Vale Forge Capital',
+  name: 'ValeForge',
+  legalName: 'ValeForge Capital',
   tagline: 'Building Value from Opportunity.',
   philosophy: "We don't buy properties. We buy opportunities.",
   description:
-    'Vale Forge Capital is a U.S. real estate investment company focused on acquiring, improving and operating opportunities where disciplined execution can create meaningful equity and recurring cash flow.',
+    'ValeForge is a U.S. real estate investment company focused on acquiring and creating value from overlooked opportunities, using disciplined underwriting, active execution and thoughtful capital structures.',
   /**
    * Public inboxes (Zoho Mail). The contact form routes each inquiry type to
    * one of these — see `contactIntentOptions` in contact-schema.ts.

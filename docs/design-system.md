@@ -1,4 +1,4 @@
-# Design system — Vale Forge Capital
+# Design system — ValeForge Capital
 
 The visual language of the site and the reasoning behind it. The site's job
 is to make a visitor think *"these people approach real estate like an
@@ -87,7 +87,7 @@ Expensive, not flashy. Every animation collapses to its final frame under
 
 ## Components
 
-- `Logo` — the official Vale Forge Capital logo (pillar icon + "VALE FORGE /
+- `Logo` — the official ValeForge Capital logo (pillar icon + "VALE FORGE /
   CAPITAL"), from the brand kit in `public/brand/`. Renders both colourways;
   CSS shows the one matching the theme. `BrandIcon` is the pillar icon as
   SVG (used as a faint watermark in the partnership section). Favicon,

@@ -3,7 +3,8 @@ import { siteConfig } from './site-config'
 
 describe('siteConfig', () => {
   it('has the brand name and positioning line', () => {
-    expect(siteConfig.name).toBe('Vale Forge Capital')
+    expect(siteConfig.name).toBe('ValeForge')
+    expect(siteConfig.legalName).toBe('ValeForge Capital')
     expect(siteConfig.tagline).toBe('Building Value from Opportunity.')
   })
 

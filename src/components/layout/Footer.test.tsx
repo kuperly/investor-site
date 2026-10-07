@@ -7,9 +7,9 @@ describe('Footer', () => {
   it('renders the brand and positioning line', () => {
     render(<Footer />)
     const footer = screen.getByRole('contentinfo')
-    expect(screen.getAllByAltText(siteConfig.name).length).toBeGreaterThan(0)
+    expect(screen.getAllByAltText(siteConfig.legalName).length).toBeGreaterThan(0)
     expect(footer).toHaveTextContent(siteConfig.tagline)
-    expect(footer).toHaveTextContent(`© ${new Date().getFullYear()} ${siteConfig.name}`)
+    expect(footer).toHaveTextContent(`© ${new Date().getFullYear()} ${siteConfig.legalName}`)
   })
 
   it('links to every section page except Home', () => {

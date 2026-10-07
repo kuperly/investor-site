@@ -7,7 +7,7 @@ const LOGO_WIDTH = 1957
 const LOGO_HEIGHT = 390
 
 /**
- * The Vale Forge Capital horizontal logo. Renders both colourways and lets
+ * The ValeForge Capital horizontal logo. Renders both colourways and lets
  * CSS (`.logo-for-dark` / `.logo-for-light` in globals.css) show the one that
  * matches the active theme, so there is no flash or hydration mismatch.
  */
@@ -16,7 +16,7 @@ export function Logo({ className = 'h-9', priority = false }: { className?: stri
     <span className="inline-flex items-center">
       <Image
         src="/brand/logo-horizontal-for-dark.png"
-        alt={siteConfig.name}
+        alt={siteConfig.legalName}
         width={LOGO_WIDTH}
         height={LOGO_HEIGHT}
         priority={priority}
@@ -24,7 +24,7 @@ export function Logo({ className = 'h-9', priority = false }: { className?: stri
       />
       <Image
         src="/brand/logo-horizontal-for-light.png"
-        alt={siteConfig.name}
+        alt={siteConfig.legalName}
         width={LOGO_WIDTH}
         height={LOGO_HEIGHT}
         priority={priority}

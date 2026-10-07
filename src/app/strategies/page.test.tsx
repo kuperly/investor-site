@@ -10,6 +10,6 @@ describe('StrategiesPage', () => {
     for (const item of strategies.items) {
       expect(screen.getByRole('heading', { level: 3, name: item.title })).toBeInTheDocument()
     }
-    expect(screen.getByText(/Our strategy toolkit includes/)).toBeInTheDocument()
+    expect(screen.getByText(/not a claim of past transactions/)).toBeInTheDocument()
   })
 })
