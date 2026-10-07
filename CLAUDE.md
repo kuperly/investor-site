@@ -32,7 +32,8 @@ change rather than a hunt through the codebase:
   and footer use `logo-horizontal-for-dark.png` / `-for-light.png`
   (cropped; the light one is the dark one with its white lettering recoloured
   to brand navy). Favicon `src/app/icon.svg` is the pillar icon traced as
-  vector; `apple-icon.png` and `opengraph-image.png` are generated from the
+  vector; `apple-icon.png` and `public/og-image-1200x630.png` (share image,
+  declared in `layout.tsx` metadata with its alt text) are generated from the
   kit. Brand colours in the kit: navy `#1D2D3D`, gold `#B08D57`.
 - **Legal pages**: `/legal/privacy`, `/legal/terms`, `/legal/disclaimer`
   (`src/app/legal/[slug]/page.tsx`) are honest "being prepared" placeholders
@@ -70,7 +71,7 @@ npm run lint     # eslint
 
 - `src/app/` — routes: `/` (home), `/approach`,
   `/strategies`, `/about`, `/contact`, `/legal/[slug]`, `/api/contact`
-  (route handler); plus `opengraph-image.png`, `apple-icon.png`, `icon.svg`,
+  (route handler); plus `apple-icon.png`, `icon.svg`,
   `robots.ts`, `sitemap.ts`
 - `src/components/sections/` — `Hero`, `Philosophy`, `Strategies`,
   `AboutIntro`, `PartnershipCta`. Other content (model, underwriting,
