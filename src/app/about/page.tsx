@@ -8,7 +8,7 @@ import { PartnershipCta } from '@/components/sections/PartnershipCta'
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'Vale Forge Capital is being built as a U.S. real estate investment company focused on disciplined acquisition, value creation and long-term capital growth.',
+    'ValeForge is being built as a U.S. real estate investment company focused on disciplined acquisition, value creation and long-term capital growth.',
   alternates: { canonical: '/about' },
 }
 
@@ -17,7 +17,7 @@ export default function AboutPage() {
 
   return (
     <>
-      <PageHeader eyebrow="About Vale Forge" title={about.title} intro={lead} />
+      <PageHeader eyebrow="About ValeForge" title={about.title} intro={lead} />
 
       <Section labelledBy="about-system-title">
         <div className="grid gap-10 lg:grid-cols-12">
@@ -45,8 +45,8 @@ export default function AboutPage() {
       </Section>
 
       <Section labelledBy="principles-title" tone="muted">
-        <SectionHeading id="principles-title" eyebrow="Principles" title="How we intend to operate." />
-        <ul className="mt-14 grid gap-x-12 gap-y-10 sm:grid-cols-2">
+        <SectionHeading id="principles-title" eyebrow="Principles" title="How We Invest" />
+        <ul className="mt-14 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {about.principles.map((principle, index) => (
             <li key={principle.title}>
               <Reveal delay={index * 80}>

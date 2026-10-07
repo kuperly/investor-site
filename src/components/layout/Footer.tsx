@@ -53,7 +53,7 @@ export function Footer() {
         <div className="mt-16 flex flex-col gap-4 border-t border-border pt-8 text-sm text-muted-foreground lg:flex-row lg:items-start lg:justify-between lg:gap-16">
           <p className="max-w-3xl text-pretty leading-relaxed">{nonSolicitation}</p>
           <p className="shrink-0">
-            © <span className="tabular-nums">{year}</span> {siteConfig.name}. All rights reserved.
+            © <span className="tabular-nums">{year}</span> {siteConfig.legalName}. All rights reserved.
           </p>
         </div>
       </div>

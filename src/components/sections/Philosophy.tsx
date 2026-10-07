@@ -3,7 +3,11 @@ import { Section } from '@/components/ui/Section'
 import { Reveal } from '@/components/ui/Reveal'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 
-/** The central brand statement — the site's largest type after the hero. */
+/**
+ * The central brand statement — the site's largest type after the hero —
+ * plus the thesis behind it: opportunities exist where an asset is misaligned
+ * with its potential.
+ */
 export function Philosophy() {
   const [first, second] = philosophy.lines
 
@@ -21,9 +25,12 @@ export function Philosophy() {
       </Reveal>
       <Reveal delay={150}>
         <div className="mt-12 grid gap-8 lg:mt-16 lg:grid-cols-12">
-          <p className="max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl lg:col-span-6 lg:col-start-7">
-            {philosophy.body}
-          </p>
+          <div className="max-w-xl lg:col-span-6 lg:col-start-7">
+            <p className="font-heading text-3xl leading-tight text-foreground sm:text-4xl">{philosophy.thesis}</p>
+            <p className="mt-5 text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
+              {philosophy.body}
+            </p>
+          </div>
         </div>
       </Reveal>
     </Section>

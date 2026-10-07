@@ -2,47 +2,55 @@
  * Marketing copy for the public site, kept in one place so sections can be
  * reused across pages (and tested) without drifting.
  *
- * Ground rule: Vale Forge Capital is early-stage. Nothing here may state or imply a
+ * Ground rule: ValeForge is early-stage. Nothing here may state or imply a
  * track record — no deal counts, AUM, returns, testimonials or case studies.
  * Strategies are a toolkit we evaluate, not a claim of what we've executed.
  */
 
+export const hero = {
+  lead: 'ValeForge is a U.S. real estate investment company focused on acquiring and creating value from overlooked opportunities.',
+  support:
+    'We use disciplined underwriting, active execution and thoughtful capital structures to create equity and durable cash flow.',
+}
+
+/** Why an opportunity exists at all: misalignment between an asset and its potential. */
 export const philosophy = {
   lines: ["We don't buy properties.", 'We buy opportunities.'],
-  body: 'A property is only the starting point. We look for situations where disciplined acquisition, thoughtful improvements, and the right capital structure can unlock value that others overlook.',
+  thesis: 'We look for misalignment.',
+  body: "Situations where price, condition, ownership, operations, financing or use don't fully reflect an asset's potential. That gap is where value is created.",
 }
 
 export const model = {
-  title: 'The Vale Forge Model',
-  intro: 'We build around a simple principle: capital should keep working.',
-  body: 'Depending on the opportunity, when we can create equity, improve cash flow, or unlock value through execution, we seek to monetize that value and redeploy capital into the next opportunity.',
+  title: 'The ValeForge Model',
+  intro: 'Capital should not stop at the first deal.',
+  body: 'We look for opportunities where value creation can increase equity, generate cash flow and potentially return capital to the investment cycle — so it can be put to work again.',
 }
 
 export const capabilities = [
   {
     title: 'Acquire',
-    body: 'Identify properties and situations where pricing, condition, ownership, or market dynamics create an opportunity.',
+    body: 'Buy at a basis that leaves room to execute the plan, with the downside understood before we commit.',
   },
   {
     title: 'Create Value',
-    body: 'Improve the asset through renovation, repositioning, operational improvements, or other value-creation strategies.',
+    body: "Renovate, reposition, re-lease or improve operations — whatever closes the gap between the asset today and its potential.",
   },
   {
     title: 'Monetize',
-    body: 'Choose the appropriate exit or capitalization strategy — including sale, refinance, or continued operation.',
+    body: 'Sell, refinance or hold — whichever outcome best captures the value that was created.',
   },
   {
     title: 'Recycle Capital',
-    body: 'Seek to redeploy capital into the next opportunity rather than leaving productive capital idle.',
+    body: 'Return capital to work in the next opportunity instead of leaving it idle in the last one.',
   },
 ]
 
 export const strategies = {
   title: 'One Opportunity. The Right Strategy.',
   intro:
-    "We don't force every property into the same investment model. The strategy follows the opportunity.",
+    "We don't force every property into the same model. The asset, the market and the capital structure decide the approach.",
   toolkitNote:
-    'Our strategy toolkit includes the approaches below. These are categories we evaluate opportunities across — not a promise that every one applies to every deal.',
+    'These are the approaches we evaluate opportunities across. Which one applies depends on the asset — not every strategy fits every deal, and listing one here is not a claim of past transactions.',
   items: [
     {
       title: 'Value-Add',
@@ -72,8 +80,8 @@ export const strategies = {
 }
 
 export const capitalEfficiency = {
-  title: 'Capital should create more capital.',
-  body: 'We evaluate every opportunity not only by the return it can generate, but by how efficiently our capital can be deployed, recovered and redeployed.',
+  title: 'Measured by more than return.',
+  body: 'We evaluate every opportunity not only by the return it can generate, but by how efficiently capital can be deployed, recovered and redeployed.',
   concepts: [
     { title: 'Equity Creation', body: 'How much value can disciplined execution create?' },
     { title: 'Cash Flow', body: 'Can the asset produce durable recurring income?' },
@@ -103,34 +111,38 @@ export const exitPaths = {
 export const about = {
   title: 'Built to Compound.',
   paragraphs: [
-    'Vale Forge Capital is being built as a real estate investment company focused on disciplined acquisition, value creation and long-term capital growth.',
+    'ValeForge is being built as a real estate investment company focused on disciplined acquisition, value creation and long-term capital growth.',
     'We believe sustainable real estate investing is not about finding one great property.',
-    'It is about building a repeatable system for identifying opportunities, executing well, protecting downside, and putting capital back to work.',
+    'It is about a repeatable process — sourcing, underwriting, executing and protecting the downside — applied with the same discipline to every opportunity.',
   ],
   principles: [
     {
       title: 'Opportunity over asset type',
-      body: 'We start from the situation — pricing, condition, ownership, market — and let the strategy follow.',
+      body: 'We start from the misalignment — price, condition, ownership, operations, financing or use — and let the strategy follow.',
     },
     {
       title: 'Underwriting before conviction',
-      body: 'Capital is committed only after the numbers, the downside, and the exit options have been worked through.',
+      body: 'Capital is committed only after the numbers, the downside and the exit options have been worked through.',
     },
     {
-      title: 'Capital that keeps working',
-      body: 'We think about how capital is deployed, recovered and redeployed — not only what a single deal returns.',
+      title: 'Active execution',
+      body: 'Value is created by doing the work — renovation, operations and leasing managed closely, not left to the market.',
+    },
+    {
+      title: 'Capital efficiency',
+      body: 'We measure an opportunity by how efficiently capital can be deployed, recovered and redeployed — not only by its return.',
     },
     {
       title: 'Built for the long term',
-      body: 'We are building a repeatable system and lasting relationships, not chasing a single transaction.',
+      body: 'We are building lasting relationships and a repeatable process, not chasing a single transaction.',
     },
   ],
 }
 
 export const partnership = {
   title: 'Build the Next Opportunity With Us.',
-  body: 'Vale Forge Capital is building relationships with operators, property owners, financing partners and capital partners who share a long-term approach to U.S. real estate.',
-  cta: 'Partner With Vale Forge',
+  body: 'ValeForge is building relationships with operators, property owners, financing partners and capital partners who share a long-term approach to U.S. real estate.',
+  cta: 'Partner With ValeForge',
 }
 
 export const contact = {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import HomePage from './page'
 import { siteConfig } from '@/lib/site-config'
-import { capabilities, strategies } from '@/lib/content'
+import { capabilities, hero, strategies } from '@/lib/content'
 
 describe('HomePage', () => {
   it('renders the positioning line as the only h1, with both hero CTAs', () => {
@@ -14,17 +14,29 @@ describe('HomePage', () => {
     expect(screen.getByRole('link', { name: 'Partner With Us' })).toHaveAttribute('href', '/contact')
   })
 
-  it('leads with the core philosophy', () => {
+  it('leads with the core philosophy and the misalignment thesis behind it', () => {
     render(<HomePage />)
     expect(
       screen.getByRole('heading', { name: "We don't buy properties. We buy opportunities." }),
     ).toBeInTheDocument()
+    expect(screen.getByText('We look for misalignment.')).toBeInTheDocument()
+  })
+
+  it('introduces the company in the hero as ValeForge', () => {
+    render(<HomePage />)
+    expect(screen.getByText(hero.lead)).toBeInTheDocument()
+    expect(screen.getByText(hero.support)).toBeInTheDocument()
+  })
+
+  it('spells the brand consistently as one word', () => {
+    const { container } = render(<HomePage />)
+    expect(container.textContent).not.toMatch(/Vale Forge/)
   })
 
   it('renders each home section', () => {
     render(<HomePage />)
     for (const name of [
-      'The Vale Forge Model',
+      'The ValeForge Model',
       strategies.title,
       'The Numbers Come First.',
       'Built to Compound.',
