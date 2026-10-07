@@ -1,5 +1,4 @@
 import { siteConfig } from '@/lib/site-config'
-import { model } from '@/lib/content'
 import { HeroBackground } from '@/components/ui/HeroBackground'
 import { PageContainer } from '@/components/ui/PageContainer'
 import { Reveal } from '@/components/ui/Reveal'
@@ -10,10 +9,6 @@ const heroCopy =
   'ValeForge is a U.S. real estate investment company focused on identifying, acquiring, improving and operating opportunities where disciplined execution can create meaningful equity and recurring cash flow.'
 
 export function Hero() {
-  // The loop, minus "Find Opportunity" / "Acquire Again" bookends, as a quiet
-  // one-line summary under the CTAs.
-  const loop = model.steps.slice(1, 5)
-
   return (
     <section aria-labelledby="hero-title" className="relative isolate overflow-hidden">
       <HeroBackground />
@@ -35,26 +30,6 @@ export function Hero() {
               Partner With Us
             </ButtonLink>
           </div>
-        </Reveal>
-
-        <Reveal delay={250} className="mt-16 sm:mt-24">
-          <p className="sr-only">Our investment loop:</p>
-          <ol className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-semibold uppercase tracking-eyebrow text-muted-foreground">
-            {loop.map((step, index) => (
-              <li key={step} className="flex items-center gap-3">
-                {step}
-                {index < loop.length - 1 ? (
-                  <span aria-hidden="true" className="text-primary">
-                    →
-                  </span>
-                ) : (
-                  <span aria-hidden="true" className="text-primary">
-                    ↺
-                  </span>
-                )}
-              </li>
-            ))}
-          </ol>
         </Reveal>
       </PageContainer>
     </section>

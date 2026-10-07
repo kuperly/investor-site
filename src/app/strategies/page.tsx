@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import { strategies } from '@/lib/content'
+import { exitPaths, strategies } from '@/lib/content'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Strategies } from '@/components/sections/Strategies'
-import { ExitPaths } from '@/components/sections/ExitPaths'
+import { TextSection } from '@/components/ui/TextSection'
 import { PartnershipCta } from '@/components/sections/PartnershipCta'
 
 export const metadata: Metadata = {
@@ -17,7 +17,14 @@ export default function StrategiesPage() {
     <>
       <PageHeader eyebrow="Strategies" title={strategies.title} intro={strategies.intro} />
       <Strategies withHeading={false} />
-      <ExitPaths />
+      <TextSection
+        id="exits-title"
+        eyebrow="Optionality"
+        title={exitPaths.title}
+        body={exitPaths.body}
+        items={exitPaths.paths}
+        tone="muted"
+      />
       <PartnershipCta />
     </>
   )

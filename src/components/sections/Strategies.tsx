@@ -4,7 +4,7 @@ import { Reveal } from '@/components/ui/Reveal'
 import { TextLink } from '@/components/ui/ButtonLink'
 
 /**
- * The strategy toolkit as a ruled index (title | description), framed as
+ * The strategy toolkit as a simple list (title | description), framed as
  * categories we evaluate — never as a claim of deals executed. On the
  * /strategies page the page masthead supplies the heading (`withHeading`
  * false) and the list is introduced by the toolkit note.
@@ -40,13 +40,10 @@ export function Strategies({ withHeading = true }: { withHeading?: boolean }) {
             <li key={item.title}>
               <Reveal delay={index * 60}>
                 <div className="group grid gap-2 border-t border-border py-7 transition-colors duration-300 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-8">
-                  <h3 className="flex items-baseline gap-4 font-heading text-2xl text-foreground transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-primary">
-                    <span aria-hidden="true" className="text-sm tabular-nums text-muted-foreground">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
+                  <h3 className="font-heading text-2xl text-foreground transition-colors duration-300 group-hover:text-primary">
                     {item.title}
                   </h3>
-                  <p className="pl-9 leading-relaxed text-muted-foreground sm:pl-0">{item.body}</p>
+                  <p className="leading-relaxed text-muted-foreground">{item.body}</p>
                 </div>
               </Reveal>
             </li>

@@ -53,23 +53,24 @@ npm run lint     # eslint
 
 ## Structure
 
-- `src/app/` — routes: `/` (home — the full long-form story), `/approach`,
+- `src/app/` — routes: `/` (home), `/approach`,
   `/strategies`, `/about`, `/contact`, `/legal/[slug]`, `/api/contact`
   (route handler); plus `opengraph-image.tsx`, `robots.ts`, `sitemap.ts`,
   `icon.svg`
-- `src/components/sections/` — reusable page sections (`Hero`,
-  `Philosophy`, `ValeForgeModel`, `Capabilities`, `Strategies`,
-  `CapitalEfficiency`, `Underwriting`, `ExitPaths`, `AboutIntro`,
-  `PartnershipCta`). Home composes all of them; inner pages reuse subsets.
+- `src/components/sections/` — `Hero`, `Philosophy`, `Strategies`,
+  `AboutIntro`, `PartnershipCta`. Other content (model, underwriting,
+  capital efficiency, exit paths) uses the plain `TextSection` primitive.
+  **Keep the site simple and inviting: explain ideas in text, don't turn
+  them into diagrams/flow charts/widgets** (tried and rejected by the owner).
 - `src/components/layout/` — `Header.tsx` (sticky nav, active-page
   indicator, mobile drawer below `md`), `Footer.tsx` (brand, nav, legal,
   non-solicitation line)
 - `src/components/contact/` — `ContactForm.tsx` (client component, intent
   selector + inline validation + submit states)
 - `src/components/ui/` — primitives: `Section.tsx` (`Section` band +
-  `SectionHeading`), `PageHeader.tsx`, `PageContainer.tsx`, `ButtonLink.tsx`
+  `SectionHeading`), `TextSection.tsx`, `PageHeader.tsx`, `PageContainer.tsx`, `ButtonLink.tsx`
   (CTA styles + `TextLink`), `Eyebrow.tsx`, `Logo.tsx` (`Logo` +
-  `LogoMark`), `HeroBackground.tsx` (architectural elevation linework,
+  `LogoMark`), `HeroBackground.tsx` (quiet skyline outline,
   client component for parallax/draw-in), `Reveal.tsx`, `ThemeToggle.tsx`
 - `src/lib/content.ts` — all marketing copy (single-sourced, tested)
 - `src/lib/site-config.ts` — brand config (see above)
@@ -78,22 +79,22 @@ npm run lint     # eslint
 
 ## Design tokens
 
-Institutional **muted-brass-on-warm-charcoal** dark theme by default, with a
-warm-paper/sand/dark-bronze light variant, driven by `prefers-color-scheme`
+Institutional **champagne-brass-on-deep-ink-navy** dark theme by default
+(owner-approved — keep it), with a warm-paper/dark-bronze light variant, driven by `prefers-color-scheme`
 and overridable via the header `ThemeToggle` (see `src/app/globals.css`
 CSS custom properties, mapped into Tailwind via `tailwind.config.ts`).
 Every foreground/background pair meets ≥4.5:1 in both modes. Typography:
 Fraunces (headings) + Source Sans 3 (body) + Space Grotesk (logo wordmark
 only), loaded via `next/font/google` in `src/app/layout.tsx`. No stock
-photography — the site is **typography-led** with architectural SVG
-linework. If real architectural photography (owned or properly licensed)
+photography — the site is **typography-led**, with a quiet skyline
+outline behind the hero. If real architectural photography (owned or properly licensed)
 becomes available, it can go in the hero behind `HeroBackground`.
 
 Full visual system — palette, type scale, motion, components, and the
 reasoning behind them — lives in
-[docs/design-system.md](docs/design-system.md). Motion (hero linework
+[docs/design-system.md](docs/design-system.md). Motion (hero skyline
 draw-in, subtle scroll parallax in `HeroBackground.tsx`, spring-eased scroll
-reveals in `Reveal.tsx`, quiet hover hairlines) is intentionally restrained and always collapses to
+reveals in `Reveal.tsx`, quiet hovers) is intentionally restrained and always collapses to
 its final frame under `prefers-reduced-motion`.
 
 ## Known gotchas

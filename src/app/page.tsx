@@ -1,15 +1,12 @@
 import type { Metadata } from 'next'
 import { siteConfig } from '@/lib/site-config'
+import { capabilities, model, underwriting } from '@/lib/content'
 import { Hero } from '@/components/sections/Hero'
 import { Philosophy } from '@/components/sections/Philosophy'
-import { ValeForgeModel } from '@/components/sections/ValeForgeModel'
-import { Capabilities } from '@/components/sections/Capabilities'
 import { Strategies } from '@/components/sections/Strategies'
-import { CapitalEfficiency } from '@/components/sections/CapitalEfficiency'
-import { Underwriting } from '@/components/sections/Underwriting'
-import { ExitPaths } from '@/components/sections/ExitPaths'
 import { AboutIntro } from '@/components/sections/AboutIntro'
 import { PartnershipCta } from '@/components/sections/PartnershipCta'
+import { TextSection } from '@/components/ui/TextSection'
 
 export const metadata: Metadata = {
   // The home page uses the full brand title rather than the "%s | ValeForge" template.
@@ -22,12 +19,24 @@ export default function HomePage() {
     <>
       <Hero />
       <Philosophy />
-      <ValeForgeModel />
-      <Capabilities />
+      <TextSection
+        id="model-title"
+        eyebrow="How We Work"
+        title={model.title}
+        lead={model.intro}
+        body={model.body}
+        items={capabilities}
+        tone="muted"
+      />
       <Strategies />
-      <CapitalEfficiency />
-      <Underwriting />
-      <ExitPaths />
+      <TextSection
+        id="underwriting-title"
+        eyebrow="Discipline"
+        title={underwriting.title}
+        lead={underwriting.lead}
+        body={underwriting.body}
+        tone="muted"
+      />
       <AboutIntro />
       <PartnershipCta />
     </>

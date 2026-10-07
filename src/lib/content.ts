@@ -16,14 +16,6 @@ export const model = {
   title: 'The ValeForge Model',
   intro: 'We build around a simple principle: capital should keep working.',
   body: 'Depending on the opportunity, when we can create equity, improve cash flow, or unlock value through execution, we seek to monetize that value and redeploy capital into the next opportunity.',
-  steps: ['Find Opportunity', 'Acquire', 'Create Value', 'Monetize', 'Recycle Capital', 'Acquire Again'],
-  /** The repeating part of the loop, shown on the flywheel. */
-  cycle: [
-    { title: 'Acquire', line: 'Secure the right asset, at the right basis.' },
-    { title: 'Create Value', line: 'Renovate, reposition, or improve operations.' },
-    { title: 'Monetize', line: 'Sell, refinance, or hold for cash flow.' },
-    { title: 'Recycle Capital', line: 'Put recovered capital back to work.' },
-  ],
 }
 
 export const capabilities = [
@@ -83,11 +75,11 @@ export const capitalEfficiency = {
   title: 'Capital should create more capital.',
   body: 'We evaluate every opportunity not only by the return it can generate, but by how efficiently our capital can be deployed, recovered and redeployed.',
   concepts: [
-    { title: 'Equity Creation', question: 'How much value can disciplined execution create?' },
-    { title: 'Cash Flow', question: 'Can the asset produce durable recurring income?' },
+    { title: 'Equity Creation', body: 'How much value can disciplined execution create?' },
+    { title: 'Cash Flow', body: 'Can the asset produce durable recurring income?' },
     {
       title: 'Capital Recycling',
-      question: 'How much of the original capital can potentially be recovered and redeployed?',
+      body: 'How much of the original capital can potentially be recovered and redeployed?',
     },
   ],
 }
@@ -96,17 +88,15 @@ export const underwriting = {
   title: 'The Numbers Come First.',
   lead: 'Every opportunity begins with underwriting.',
   body: 'We evaluate acquisition price, renovation requirements, financing, market fundamentals, operating economics, exit options and downside scenarios before capital is committed.',
-  factors: ['Acquisition', 'Renovation', 'Financing', 'ARV / Value', 'Rent', 'Cash Flow', 'Exit', 'Risk'],
 }
 
 export const exitPaths = {
   title: 'The Best Opportunities Have More Than One Path.',
-  body: 'We look for investments where the economics can support multiple outcomes — from a stabilized rental to a refinance, sale, or other strategic exit.',
-  note: 'A conceptual framework — not every opportunity offers every path.',
+  body: 'We look for investments where the economics can support multiple outcomes — from a stabilized rental to a refinance, sale, or other strategic exit. Not every opportunity offers every path; the best ones offer more than one.',
   paths: [
-    { title: 'Hold', body: 'Operate as a stabilized rental.' },
-    { title: 'Refinance', body: 'Recover capital while retaining the asset.' },
-    { title: 'Sell', body: 'Realize the value created.' },
+    { title: 'Hold', body: 'Operate the asset as a stabilized rental for durable cash flow.' },
+    { title: 'Refinance', body: 'Recover capital while continuing to own the asset.' },
+    { title: 'Sell', body: 'Realize the value created and move to the next opportunity.' },
   ],
 }
 

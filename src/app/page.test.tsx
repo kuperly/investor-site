@@ -21,14 +21,12 @@ describe('HomePage', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders every section of the long-form story', () => {
+  it('renders each home section', () => {
     render(<HomePage />)
     for (const name of [
       'The ValeForge Model',
       strategies.title,
-      'Capital should create more capital.',
       'The Numbers Come First.',
-      'The Best Opportunities Have More Than One Path.',
       'Built to Compound.',
       'Build the Next Opportunity With Us.',
     ]) {

@@ -7,20 +7,21 @@ below serves that.
 
 ## Direction
 
-A boutique real estate investment / development firm: **muted brass on warm
-charcoal**, editorial typography, architectural linework, large margins.
-Not a realtor site, not a guru site, not a SaaS landing page.
+A boutique real estate investment firm: **champagne brass on deep ink
+navy**, editorial typography, large margins. **Simple and inviting** — the
+site tells the story in plain words. Not a realtor site, not a guru site,
+not a SaaS landing page.
 
-- **Typography-led.** No stock photography. The only imagery is
-  architectural SVG linework (the hero elevation) and abstract conceptual
-  glyphs. Generic stock photos read as less serious for an investment firm;
+- **Typography-led.** No stock photography. The only imagery is a quiet
+  skyline outline behind the hero. Generic stock photos read as less serious for an investment firm;
   owned or properly licensed architectural photography could be added later.
-- **No fake proof.** No charts with values, no metrics, no testimonials, no
-  logos. Diagrams are conceptual (the model loop, the exit-path tree) and say
-  so where it matters.
+- **No diagrams, no fake proof.** Concepts (the model, underwriting, capital
+  efficiency, exit paths) are explained in text — heading, short paragraph,
+  a few short points. No flow charts, process diagrams, grids of labels,
+  charts, metrics, testimonials or logos.
 - **Restraint over cards.** Sections are separated by hairline rules and a
   subtle tonal band (`Section tone="muted"`), not by card grids with shadows.
-  Lists are ruled indexes with small index numbers.
+  Lists are simple ruled rows.
 
 ## Color
 
@@ -32,18 +33,18 @@ they render outside the page CSS).
 
 | Token | Dark (default) | Light |
 |---|---|---|
-| `background` | `#121110` warm near-black | `#F6F3EC` warm paper |
-| `foreground` | `#F2EEE6` warm off-white | `#171614` charcoal |
-| `primary` | `#C4A46A` muted brass | `#7A5F24` dark bronze |
-| `secondary` | `#D6BE92` lighter brass (hover) | `#624C1C` |
-| `card` | `#1A1917` | `#FBF9F4` |
-| `muted` / `muted-foreground` | `#23211E` / `#A9A296` stone | `#ECE7DC` sand / `#5C564C` stone |
-| `border` | `#34312C` | `#DED7C9` |
+| `background` | `#0A0F1C` deep ink navy | `#FAF8F3` warm paper |
+| `foreground` | `#F4F2EC` warm paper-white | `#14192B` deep ink |
+| `primary` | `#C5A253` champagne brass | `#8A6D1F` dark bronze |
+| `secondary` | `#D9BE7E` lighter brass (hover) | `#6E5518` |
+| `card` | `#131A2C` | `#FFFFFF` |
+| `muted` / `muted-foreground` | `#1B2339` / `#9BA6BD` | `#F1EEE7` / `#545E76` |
+| `border` | `#29344F` | `#E5E0D5` |
 | `ring` | brass | bronze |
 
-Measured contrast: foreground ≥13.8:1, muted-foreground ≥5.9:1, primary
-≥4.9:1 on every surface in both modes; button text on brass ≥6:1. No blue,
-no green, no gradients beyond a faint brass wash in the hero.
+This is the owner-approved palette — keep it. Every foreground/background
+pair is ≥4.5:1; light-mode `primary` is darkened to bronze so brass-as-text
+still clears 4.5:1 on paper.
 
 ## Typography
 
@@ -62,19 +63,13 @@ no green, no gradients beyond a faint brass wash in the hero.
 Expensive, not flashy. Every animation collapses to its final frame under
 `prefers-reduced-motion` (the global rule zeroes duration *and* delay).
 
-- **Hero linework draw-in** — building outlines stroke in (`.draw-line`,
-  `.draw-line-group`, `pathLength="1"`), facade detail and dimension lines
-  fade up after (`.draw-fade`).
+- **Hero skyline draw-in** — building outlines stroke in (`.draw-line`,
+  `.draw-line-group`, `pathLength="1"`).
 - **Hero parallax** — `HeroBackground` drifts on scroll, rAF-throttled and
   capped.
 - **Scroll reveals** — `Reveal` fades/rises blocks with
   `cubic-bezier(0.16, 1, 0.3, 1)`, staggered 60–90ms.
-- **Model loop** — `ModelFlywheel` cycles the active stage every 3.2s with a
-  brass arc travelling the ring. Autoplays only while on screen, pauses on
-  hover/focus, stops when a visitor picks a stage, has a Pause/Play control,
-  and never autoplays under reduced motion.
-- **Hover** — quiet: a brass hairline fills (capabilities), a title nudges
-  and turns brass (strategies), CTA arrows slide 4px.
+- **Hover** — quiet: strategy titles turn brass, CTA arrows slide 4px.
 
 ## Layout primitives
 
@@ -84,6 +79,9 @@ Expensive, not flashy. Every animation collapses to its final frame under
 - `Section` — one section band: top hairline, `py-20/28/32` rhythm, optional
   `tone="muted"` surface, `aria-labelledby` its heading.
 - `SectionHeading` — eyebrow → h2 → optional lead at one fixed scale.
+- `TextSection` — the standard content section: heading left, short
+  paragraph right, optional 3–4 short text points below. Use this for any
+  new concept rather than inventing a visual.
 - `PageHeader` — the masthead for inner pages (eyebrow → h1 → intro).
 - 12-column asymmetric grids (`lg:col-span-5` / `lg:col-start-7`) for
   heading-left / content-right compositions.
@@ -98,10 +96,8 @@ Expensive, not flashy. Every animation collapses to its final frame under
   brass, outlined) with a sliding arrow; square-ish `rounded-sm` corners.
 - `ThemeToggle` — light/dark switch (sets `data-theme`, persists, no flash).
 - Sections (`src/components/sections/`): `Hero`, `Philosophy`,
-  `ValeForgeModel` (copy + the interactive `ModelFlywheel` loop — the model
-  is shown as an experience, not a numbered list), `Capabilities`, `Strategies` (`withHeading` prop),
-  `CapitalEfficiency`, `Underwriting`, `ExitPaths`, `AboutIntro`,
-  `PartnershipCta`.
+  `Strategies` (`withHeading` prop), `AboutIntro`, `PartnershipCta`;
+  everything else is a `TextSection`.
 
 ## Accessibility guardrails
 
@@ -117,4 +113,5 @@ every page plus header/footer — extend it when adding pages.
 Build pages from `PageHeader` + sections; build sections from `Section` +
 `SectionHeading`. Put copy in `src/lib/content.ts`. Reuse the tokens; do not
 introduce hardcoded colours, emoji icons, stock photography, card-grid
-patterns, or anything that implies a track record that doesn't exist.
+patterns, diagrams, or anything that implies a track record that doesn't
+exist.

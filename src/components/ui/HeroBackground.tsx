@@ -4,22 +4,9 @@ import { useEffect, useRef } from 'react'
 
 const GROUND = 520
 
-/** Floor lines + mullions for one building elevation. */
-function facade(x: number, y: number, w: number, floor: number, bays: number) {
-  const lines: string[] = []
-  for (let fy = y + floor; fy < GROUND; fy += floor) lines.push(`M${x} ${fy}H${x + w}`)
-  for (let i = 1; i < bays; i++) {
-    const bx = x + (w / bays) * i
-    lines.push(`M${bx} ${y}V${GROUND}`)
-  }
-  return lines.join('')
-}
-
 /**
- * Decorative hero backdrop: an architectural elevation drawn in fine brass
- * linework — a small mid-rise district on a ground line, with a dimension
- * line above it, like a page from a set of drawings. It draws itself in on
- * load and drifts subtly on scroll. No charts, no photography; purely
+ * Decorative hero backdrop: a quiet skyline outline in fine brass linework
+ * on a ground line. It draws itself in on load and drifts subtly on scroll. No charts, no photography; purely
  * decorative and hidden from assistive tech. Reduced motion collapses every
  * animation to its final frame.
  */
@@ -85,25 +72,12 @@ export function HeroBackground() {
 
         <g style={{ stroke: 'rgb(var(--color-primary))' }} fill="none" strokeWidth={1}>
           {/* building outlines */}
-          <g className="draw-line-group" opacity={0.55}>
+          <g className="draw-line-group" opacity={0.4}>
             <path pathLength={1} d={`M520 ${GROUND}V340L565 305L610 340V${GROUND}`} />
             <rect pathLength={1} x="630" y="130" width="150" height={GROUND - 130} />
             <rect pathLength={1} x="800" y="230" width="170" height={GROUND - 230} />
-            <path pathLength={1} d={`M780 190H800`} />
           </g>
 
-          {/* facade detail — fades in after the outlines */}
-          <g className="draw-fade" opacity={0.2}>
-            <path d={facade(520, 340, 90, 45, 2)} />
-            <path d={facade(630, 130, 150, 36, 5)} />
-            <path d={facade(800, 230, 170, 29, 6)} />
-          </g>
-
-          {/* dimension line above the tower */}
-          <g className="draw-fade" opacity={0.45}>
-            <path d="M630 100H780M630 92V108M780 92V108" />
-            <path d="M600 130V520M592 130H608M592 520H608" />
-          </g>
         </g>
       </svg>
     </div>

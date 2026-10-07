@@ -5,7 +5,7 @@ import { Eyebrow } from '@/components/ui/Eyebrow'
 
 /**
  * One editorial section band: generous vertical rhythm, a hairline rule on
- * top, and an optional tonal (sand/charcoal) surface to alternate sections
+ * top, and an optional tonal (muted) surface to alternate sections
  * without resorting to cards.
  */
 export function Section({
