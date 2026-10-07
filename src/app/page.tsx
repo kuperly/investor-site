@@ -9,7 +9,7 @@ import { PartnershipCta } from '@/components/sections/PartnershipCta'
 import { TextSection } from '@/components/ui/TextSection'
 
 export const metadata: Metadata = {
-  // The home page uses the full brand title rather than the "%s | ValeForge" template.
+  // The home page uses the full brand title rather than the "%s | Vale Forge Capital" template.
   title: { absolute: `${siteConfig.name} | U.S. Real Estate Investment` },
   alternates: { canonical: '/' },
 }

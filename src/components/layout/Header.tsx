@@ -63,7 +63,7 @@ export function Header() {
     >
       <div className={`flex items-center justify-between py-4 ${pageGutter}`}>
         <Link href="/" aria-label={`${siteConfig.name} — home`} className="flex min-h-[44px] items-center transition-opacity duration-200 hover:opacity-80">
-          <Logo className="text-xl" />
+          <Logo className="h-9 sm:h-11" priority />
         </Link>
 
         <div className="flex items-center gap-1 md:gap-6">

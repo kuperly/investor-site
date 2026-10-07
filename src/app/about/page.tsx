@@ -8,7 +8,7 @@ import { PartnershipCta } from '@/components/sections/PartnershipCta'
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'ValeForge is being built as a U.S. real estate investment company focused on disciplined acquisition, value creation and long-term capital growth.',
+    'Vale Forge Capital is being built as a U.S. real estate investment company focused on disciplined acquisition, value creation and long-term capital growth.',
   alternates: { canonical: '/about' },
 }
 
@@ -17,7 +17,7 @@ export default function AboutPage() {
 
   return (
     <>
-      <PageHeader eyebrow="About ValeForge" title={about.title} intro={lead} />
+      <PageHeader eyebrow="About Vale Forge" title={about.title} intro={lead} />
 
       <Section labelledBy="about-system-title">
         <div className="grid gap-10 lg:grid-cols-12">

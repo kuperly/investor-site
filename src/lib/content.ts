@@ -2,7 +2,7 @@
  * Marketing copy for the public site, kept in one place so sections can be
  * reused across pages (and tested) without drifting.
  *
- * Ground rule: ValeForge is early-stage. Nothing here may state or imply a
+ * Ground rule: Vale Forge Capital is early-stage. Nothing here may state or imply a
  * track record — no deal counts, AUM, returns, testimonials or case studies.
  * Strategies are a toolkit we evaluate, not a claim of what we've executed.
  */
@@ -13,7 +13,7 @@ export const philosophy = {
 }
 
 export const model = {
-  title: 'The ValeForge Model',
+  title: 'The Vale Forge Model',
   intro: 'We build around a simple principle: capital should keep working.',
   body: 'Depending on the opportunity, when we can create equity, improve cash flow, or unlock value through execution, we seek to monetize that value and redeploy capital into the next opportunity.',
 }
@@ -103,7 +103,7 @@ export const exitPaths = {
 export const about = {
   title: 'Built to Compound.',
   paragraphs: [
-    'ValeForge is being built as a real estate investment company focused on disciplined acquisition, value creation and long-term capital growth.',
+    'Vale Forge Capital is being built as a real estate investment company focused on disciplined acquisition, value creation and long-term capital growth.',
     'We believe sustainable real estate investing is not about finding one great property.',
     'It is about building a repeatable system for identifying opportunities, executing well, protecting downside, and putting capital back to work.',
   ],
@@ -129,8 +129,8 @@ export const about = {
 
 export const partnership = {
   title: 'Build the Next Opportunity With Us.',
-  body: 'ValeForge is building relationships with operators, property owners, financing partners and capital partners who share a long-term approach to U.S. real estate.',
-  cta: 'Partner With ValeForge',
+  body: 'Vale Forge Capital is building relationships with operators, property owners, financing partners and capital partners who share a long-term approach to U.S. real estate.',
+  cta: 'Partner With Vale Forge',
 }
 
 export const contact = {

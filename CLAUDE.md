@@ -1,6 +1,6 @@
-# ValeForge — Marketing Site
+# Vale Forge Capital — Marketing Site
 
-A 5-page Next.js marketing site for ValeForge, an early-stage U.S. real
+A 5-page Next.js marketing site for Vale Forge Capital, an early-stage U.S. real
 estate investment company ("Building Value from Opportunity." / "We don't
 buy properties. We buy opportunities."). Built for credibility with
 operators, property owners, financing and capital partners — **not** active
@@ -14,14 +14,22 @@ small multifamily, creative financing are a *toolkit*, never claims). Visual sys
 Everything below is a deliberate placeholder, documented so it's a one-line
 change rather than a hunt through the codebase:
 
-- **Brand config**: `src/lib/site-config.ts` — `name` (final: ValeForge),
+- **Brand config**: `src/lib/site-config.ts` — `name` (final: Vale Forge
+  Capital), `url` (defaults to `https://valeforgecapital.com`),
   `tagline`, `philosophy`, `description`, `nav`, `legal`, and
   **`contactEmail` (still `hello@example.com` — placeholder)**. Nothing
   else in the app hardcodes the brand name. Page copy lives in
   `src/lib/content.ts`.
-- **Site URL**: set `NEXT_PUBLIC_SITE_URL` in Vercel once a custom domain
-  exists (drives canonical URLs, OG, sitemap, robots); otherwise falls back
-  to `VERCEL_PROJECT_PRODUCTION_URL`.
+- **Site URL**: `siteConfig.url` defaults to `https://valeforgecapital.com`
+  (drives canonical URLs, OG, sitemap, robots); override with
+  `NEXT_PUBLIC_SITE_URL` if needed.
+- **Brand assets**: the official kit lives in `public/brand/` (logos on
+  navy/paper, stacked, horizontal, icon, LinkedIn-size banner). The header
+  and footer use `logo-horizontal-for-dark.png` / `-for-light.png`
+  (cropped; the light one is the dark one with its white lettering recoloured
+  to brand navy). Favicon `src/app/icon.svg` is the pillar icon traced as
+  vector; `apple-icon.png` and `opengraph-image.png` are generated from the
+  kit. Brand colours in the kit: navy `#1D2D3D`, gold `#B08D57`.
 - **Legal pages**: `/legal/privacy`, `/legal/terms`, `/legal/disclaimer`
   (`src/app/legal/[slug]/page.tsx`) are honest "being prepared" placeholders
   with `noindex`. Replace with counsel-approved text and drop the noindex.
@@ -55,8 +63,8 @@ npm run lint     # eslint
 
 - `src/app/` — routes: `/` (home), `/approach`,
   `/strategies`, `/about`, `/contact`, `/legal/[slug]`, `/api/contact`
-  (route handler); plus `opengraph-image.tsx`, `robots.ts`, `sitemap.ts`,
-  `icon.svg`
+  (route handler); plus `opengraph-image.png`, `apple-icon.png`, `icon.svg`,
+  `robots.ts`, `sitemap.ts`
 - `src/components/sections/` — `Hero`, `Philosophy`, `Strategies`,
   `AboutIntro`, `PartnershipCta`. Other content (model, underwriting,
   capital efficiency, exit paths) uses the plain `TextSection` primitive.
@@ -69,8 +77,9 @@ npm run lint     # eslint
   selector + inline validation + submit states)
 - `src/components/ui/` — primitives: `Section.tsx` (`Section` band +
   `SectionHeading`), `TextSection.tsx`, `PageHeader.tsx`, `PageContainer.tsx`, `ButtonLink.tsx`
-  (CTA styles + `TextLink`), `Eyebrow.tsx`, `Logo.tsx` (`Logo` +
-  `LogoMark`), `HeroBackground.tsx` (quiet skyline outline,
+  (CTA styles + `TextLink`), `Eyebrow.tsx`, `Logo.tsx` (`Logo` — official
+  image logo, theme-aware via `.logo-for-dark/.logo-for-light` in
+  globals.css — + `BrandIcon`, the pillar icon as SVG), `HeroBackground.tsx` (quiet skyline outline,
   client component for parallax/draw-in), `Reveal.tsx`, `ThemeToggle.tsx`
 - `src/lib/content.ts` — all marketing copy (single-sourced, tested)
 - `src/lib/site-config.ts` — brand config (see above)
@@ -84,8 +93,7 @@ Institutional **champagne-brass-on-deep-ink-navy** dark theme by default
 and overridable via the header `ThemeToggle` (see `src/app/globals.css`
 CSS custom properties, mapped into Tailwind via `tailwind.config.ts`).
 Every foreground/background pair meets ≥4.5:1 in both modes. Typography:
-Fraunces (headings) + Source Sans 3 (body) + Space Grotesk (logo wordmark
-only), loaded via `next/font/google` in `src/app/layout.tsx`. No stock
+Fraunces (headings) + Source Sans 3 (body), loaded via `next/font/google` in `src/app/layout.tsx`. No stock
 photography — the site is **typography-led**, with a quiet skyline
 outline behind the hero. If real architectural photography (owned or properly licensed)
 becomes available, it can go in the hero behind `HeroBackground`.
@@ -126,7 +134,7 @@ header/footer as a WCAG regression guard — extend it if new pages are
 added. `src/app/page.test.tsx` also guards against fabricated performance
 claims (%, IRR, AUM, testimonials, "passive income"…) on the home page.
 
-**No fabricated track record — ever.** ValeForge is early-stage: no deal
+**No fabricated track record — ever.** Vale Forge Capital is early-stage: no deal
 counts, AUM, returns, investor counts, testimonials, logos, case studies or
 years-of-experience claims. Other constraints (≥44px touch targets, ≥4.5:1
 contrast) are enforced by convention and code review.

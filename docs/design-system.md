@@ -1,4 +1,4 @@
-# Design system — ValeForge
+# Design system — Vale Forge Capital
 
 The visual language of the site and the reasoning behind it. The site's job
 is to make a visitor think *"these people approach real estate like an
@@ -52,7 +52,6 @@ still clears 4.5:1 on paper.
   heavy. Display sizes use `.tracking-display` (−0.02em) and `.text-balance`.
   Italic + brass is reserved for the second line of the philosophy statement.
 - **Body:** Source Sans 3, 400–600.
-- **Logo wordmark only:** Space Grotesk (`font-brand`).
 - **Eyebrows:** the `Eyebrow` component — 12px, `.tracking-eyebrow` (0.22em),
   uppercase, brass, preceded by a 32px brass rule.
 - Scale: hero h1 up to `text-8xl`; philosophy up to 6.5rem; page h1 up to
@@ -88,10 +87,11 @@ Expensive, not flashy. Every animation collapses to its final frame under
 
 ## Components
 
-- `Logo` / `LogoMark` — the "Vale Spark" mark (two brass blades folding into
-  a V — the vale — with a diamond spark in the hollow — the forge) +
-  "Vale**Forge**" wordmark, derived from `siteConfig.name`. Favicon
-  (`src/app/icon.svg`) and OG image use the same mark.
+- `Logo` — the official Vale Forge Capital logo (pillar icon + "VALE FORGE /
+  CAPITAL"), from the brand kit in `public/brand/`. Renders both colourways;
+  CSS shows the one matching the theme. `BrandIcon` is the pillar icon as
+  SVG (used as a faint watermark in the partnership section). Favicon,
+  Apple icon and OG image all come from the same kit.
 - `ButtonLink` / `buttonClasses` / `TextLink` — the two CTA styles (solid
   brass, outlined) with a sliding arrow; square-ish `rounded-sm` corners.
 - `ThemeToggle` — light/dark switch (sets `data-theme`, persists, no flash).

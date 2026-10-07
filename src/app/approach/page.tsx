@@ -7,7 +7,7 @@ import { PartnershipCta } from '@/components/sections/PartnershipCta'
 export const metadata: Metadata = {
   title: 'Our Approach',
   description:
-    'How ValeForge approaches U.S. real estate: find the opportunity, acquire with discipline, create value, monetize, and recycle capital into the next opportunity.',
+    'How Vale Forge Capital approaches U.S. real estate: find the opportunity, acquire with discipline, create value, monetize, and recycle capital into the next opportunity.',
   alternates: { canonical: '/approach' },
 }
 

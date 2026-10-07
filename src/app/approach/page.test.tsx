@@ -8,7 +8,7 @@ describe('ApproachPage', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       "We don't buy properties. We buy opportunities.",
     )
-    for (const name of ['The ValeForge Model', 'The Numbers Come First.', 'Capital should create more capital.']) {
+    for (const name of ['The Vale Forge Model', 'The Numbers Come First.', 'Capital should create more capital.']) {
       expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument()
     }
   })

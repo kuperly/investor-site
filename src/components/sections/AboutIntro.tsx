@@ -10,7 +10,7 @@ export function AboutIntro() {
   return (
     <Section labelledBy="about-title">
       <div className="grid gap-10 lg:grid-cols-12">
-        <SectionHeading id="about-title" eyebrow="About ValeForge" title={about.title} className="lg:col-span-5" />
+        <SectionHeading id="about-title" eyebrow="About Vale Forge" title={about.title} className="lg:col-span-5" />
         <Reveal delay={100} className="lg:col-span-6 lg:col-start-7 lg:pt-14">
           <p className="text-pretty font-heading text-2xl leading-snug text-foreground sm:text-3xl">{lead}</p>
           {rest.map((paragraph) => (
@@ -19,7 +19,7 @@ export function AboutIntro() {
             </p>
           ))}
           <div className="mt-8">
-            <TextLink href="/about">More about ValeForge</TextLink>
+            <TextLink href="/about">More about Vale Forge</TextLink>
           </div>
         </Reveal>
       </div>

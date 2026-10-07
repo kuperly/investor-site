@@ -9,7 +9,7 @@ import { Eyebrow } from '@/components/ui/Eyebrow'
 export const metadata: Metadata = {
   title: 'Contact',
   description:
-    'Contact ValeForge about a property opportunity, capital partnership, financing, operating partnership or general inquiry.',
+    'Contact Vale Forge Capital about a property opportunity, capital partnership, financing, operating partnership or general inquiry.',
   alternates: { canonical: '/contact' },
 }
 

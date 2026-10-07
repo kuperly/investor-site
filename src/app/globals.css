@@ -57,6 +57,25 @@
   color-scheme: light;
 }
 
+/* Logo colourway follows the active theme (mirrors the token logic above). */
+.logo-for-light {
+  display: none;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .logo-for-dark {
+    display: none;
+  }
+  :root:not([data-theme='dark']) .logo-for-light {
+    display: block;
+  }
+}
+:root[data-theme='light'] .logo-for-dark {
+  display: none;
+}
+:root[data-theme='light'] .logo-for-light {
+  display: block;
+}
+
 html {
   scroll-behavior: smooth;
   /* The parked mobile drawer sits just off-canvas; never let it widen the page. */

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Fraunces, Source_Sans_3, Space_Grotesk } from 'next/font/google'
+import { Fraunces, Source_Sans_3 } from 'next/font/google'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { siteConfig } from '@/lib/site-config'
@@ -20,14 +20,6 @@ const sourceSans3 = Source_Sans_3({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
   variable: '--font-body',
-  display: 'swap',
-})
-
-// Brand font — used only for the ValeForge logo wordmark.
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  weight: ['500', '600', '700'],
-  variable: '--font-brand',
   display: 'swap',
 })
 
@@ -67,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${sourceSans3.variable} ${spaceGrotesk.variable}`}
+      className={`${fraunces.variable} ${sourceSans3.variable}`}
     >
       <body className="flex min-h-dvh flex-col bg-background font-body text-foreground antialiased">
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

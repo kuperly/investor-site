@@ -1,6 +1,6 @@
-# ValeForge — Marketing Site
+# Vale Forge Capital — Marketing Site
 
-Public marketing site for ValeForge, an early-stage U.S. real estate
+Public marketing site for Vale Forge Capital, an early-stage U.S. real estate
 investment company — *Building Value from Opportunity.* Five pages — Home,
 Approach, Strategies, About, Contact — plus placeholder legal pages.
 

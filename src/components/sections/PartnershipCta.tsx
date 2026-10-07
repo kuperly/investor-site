@@ -3,7 +3,7 @@ import { PageContainer } from '@/components/ui/PageContainer'
 import { Reveal } from '@/components/ui/Reveal'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { ButtonLink } from '@/components/ui/ButtonLink'
-import { LogoMark } from '@/components/ui/Logo'
+import { BrandIcon } from '@/components/ui/Logo'
 
 /**
  * Partnerships are part of the long-term model — this is relationship
@@ -12,7 +12,7 @@ import { LogoMark } from '@/components/ui/Logo'
 export function PartnershipCta() {
   return (
     <section aria-labelledby="partner-title" className="relative isolate overflow-hidden border-t border-border">
-      <LogoMark className="pointer-events-none absolute -right-16 top-1/2 -z-10 h-[28rem] w-[28rem] -translate-y-1/2 opacity-[0.06] sm:-right-8" />
+      <BrandIcon className="pointer-events-none absolute -right-16 top-1/2 -z-10 h-[26rem] w-[26rem] -translate-y-1/2 opacity-[0.06] sm:-right-4" />
       <PageContainer className="py-24 sm:py-32 lg:py-40">
         <Reveal>
           <Eyebrow>Partnerships</Eyebrow>

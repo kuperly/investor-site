@@ -24,7 +24,7 @@ describe('HomePage', () => {
   it('renders each home section', () => {
     render(<HomePage />)
     for (const name of [
-      'The ValeForge Model',
+      'The Vale Forge Model',
       strategies.title,
       'The Numbers Come First.',
       'Built to Compound.',

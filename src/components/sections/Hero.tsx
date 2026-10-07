@@ -6,7 +6,7 @@ import { Eyebrow } from '@/components/ui/Eyebrow'
 import { ButtonLink } from '@/components/ui/ButtonLink'
 
 const heroCopy =
-  'ValeForge is a U.S. real estate investment company focused on identifying, acquiring, improving and operating opportunities where disciplined execution can create meaningful equity and recurring cash flow.'
+  'Vale Forge Capital is a U.S. real estate investment company focused on identifying, acquiring, improving and operating opportunities where disciplined execution can create meaningful equity and recurring cash flow.'
 
 export function Hero() {
   return (

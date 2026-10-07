@@ -4,23 +4,15 @@
  * codebase should hardcode it. Page copy lives in `content.ts`.
  */
 export const siteConfig = {
-  name: 'ValeForge',
+  name: 'Vale Forge Capital',
   tagline: 'Building Value from Opportunity.',
   philosophy: "We don't buy properties. We buy opportunities.",
   description:
-    'ValeForge is a U.S. real estate investment company focused on acquiring, improving and operating opportunities where disciplined execution can create meaningful equity and recurring cash flow.',
+    'Vale Forge Capital is a U.S. real estate investment company focused on acquiring, improving and operating opportunities where disciplined execution can create meaningful equity and recurring cash flow.',
   // Placeholder — swap for the real inbox before launch.
   contactEmail: 'hello@example.com',
-  /**
-   * Canonical origin for metadata/OG/sitemap. Set NEXT_PUBLIC_SITE_URL in
-   * Vercel once a custom domain exists; falls back to the Vercel production
-   * URL, then localhost for dev.
-   */
-  url:
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : 'http://localhost:3000'),
+  /** Canonical origin for metadata/OG/sitemap. Override with NEXT_PUBLIC_SITE_URL. */
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://valeforgecapital.com',
   /**
    * Primary navigation. A future public-safe "Investment Platform" entry
    * slots in here (before Contact) — don't add it until there's a public

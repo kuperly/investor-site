@@ -8,7 +8,7 @@ import { PartnershipCta } from '@/components/sections/PartnershipCta'
 export const metadata: Metadata = {
   title: 'Strategies',
   description:
-    'ValeForge is strategy-agnostic: we evaluate opportunities across value-add, fix & flip, BRRRR, buy & hold, small multifamily and creative financing — the strategy follows the opportunity.',
+    'Vale Forge Capital is strategy-agnostic: we evaluate opportunities across value-add, fix & flip, BRRRR, buy & hold, small multifamily and creative financing — the strategy follows the opportunity.',
   alternates: { canonical: '/strategies' },
 }
 
