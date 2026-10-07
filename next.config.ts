@@ -6,7 +6,7 @@ import type { NextConfig } from 'next'
  * yoursite.com<ANALYZER_BASE_PATH>/* to it. Inert unless BOTH env vars are set:
  *   ANALYZER_URL        e.g. https://deal-analyzer-production.up.railway.app (no trailing slash)
  *   ANALYZER_BASE_PATH  e.g. /vf-internal — must equal the analyzer's own ANALYZER_BASE_PATH
- * Access control (Basic Auth) is enforced by the analyzer itself, not here.
+ * Access control (sign-in) is enforced by the analyzer itself, not here.
  */
 export function analyzerRewrites(env: Record<string, string | undefined> = process.env) {
   const url = env.ANALYZER_URL?.trim().replace(/\/+$/, '')

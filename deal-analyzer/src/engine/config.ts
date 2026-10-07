@@ -9,6 +9,13 @@
  *               decision. Replace with the approved rule before relying on it.
  */
 
+/**
+ * Version of the underwriting rules, stored with every analysis snapshot. Bump it in the same
+ * commit as ANY change to a formula, threshold, provisional rule or interpretation, so stored
+ * snapshots show which rules produced them.
+ */
+export const ENGINE_VERSION = '1.0.0'
+
 export const SPEC = {
   maxOffer: {
     /** §21 — default Target All-in / ARV */

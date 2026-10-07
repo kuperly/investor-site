@@ -40,8 +40,8 @@ failed to connect shows up as skips.
 ## 3. End-to-end (when anything user-facing changed)
 
 ```bash
-npm run e2e                                # isolated DB, prod build, both suites
-npm run e2e:auth                           # password required on every path (/ and basePath builds)
+npm run e2e                                # isolated DB, prod build, app + comps + markets suites, real sign-in
+npm run e2e:auth                           # sign-in required on every path (/ and basePath builds), fail-closed, revocation
 E2E_OUT=docs/screenshots npm run e2e       # only when README screenshots should be refreshed
 ```
 
@@ -89,6 +89,17 @@ When you add a feature, **extend `e2e/*.e2e.mjs`** with assertions for it
   ones.
 - Basics only (Purchase / Rehab / ARV / Rent) → numbers appear, marked `*`.
 - Spec alignment: `docs/SPEC-ALIGNMENT.md` is still accurate for the change.
+
+## 5b. VF-03 Market Intelligence checks (when `src/market` or `/markets` changed)
+
+- `src/market/boundary.test.ts` green: no underwriting formula in VF-03, no `src/engine` → `src/market` import.
+- UNKNOWN is never 0: a market with missing evidence shows UNKNOWN / ranges, not 0.
+- Low confidence, low completeness or < 5 peers → no precise score and no rank.
+- Markets never show BUY / PASS; decisions are KEEP / WATCH / DROP / DRILL DOWN with reasons.
+- Ingestion: rejected values stored with reasons, duplicates skipped, observations never updated.
+- Hand-off: the new deal has property facts + asking price only; estimates are in notes.
+- `docs/VF03-ALIGNMENT.md` and `/markets/methodology` still match the code.
+- Rules changed → `MARKET_ENGINE_VERSION` bumped; Deal Analyzer rules changed → `ENGINE_VERSION` bumped.
 
 ## 6. Documentation check (always: stale docs fail QA)
 

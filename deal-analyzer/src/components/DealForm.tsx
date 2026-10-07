@@ -14,6 +14,8 @@ import { RecBadge } from './RecBadge'
 import { IncompleteLegend, Val } from './Val'
 
 interface Props {
+  /** Deal version the form was opened at (optimistic locking). */
+  version?: number
   id?: string
   initialValues: Record<string, string>
   initialNotes: DealNotes
@@ -26,7 +28,7 @@ interface Props {
   compSummary?: Record<string, string>
 }
 
-export function DealForm({ id, initialValues, initialNotes, initialStatus, defaults = {}, initialDefaulted = [], compSummary }: Props) {
+export function DealForm({ id, version, initialValues, initialNotes, initialStatus, defaults = {}, initialDefaulted = [], compSummary }: Props) {
   const [values, setValues] = useState(initialValues)
   const [defaulted, setDefaulted] = useState<Set<string>>(() => new Set(initialDefaulted))
   const [state, action, pending] = useActionState<SaveState, FormData>(saveDeal, {})
@@ -52,6 +54,7 @@ export function DealForm({ id, initialValues, initialNotes, initialStatus, defau
   return (
     <form action={action} className="grid gap-4 lg:grid-cols-[1fr_300px]" noValidate>
       {id && <input type="hidden" name="id" value={id} />}
+      {version !== undefined && <input type="hidden" name="version" value={version} />}
       <input type="hidden" name="defaulted" value={JSON.stringify([...defaulted])} />
 
       <div className="space-y-4">

@@ -29,7 +29,7 @@ request, kept verbatim). Every rule's provenance is also listed in-app on
 | § | Requirement | Status | Where / notes |
 |---|---|---|---|
 | 1 | Answers equity, capital, recycled, Hold / BRRRR / Flip, Max Offer, stress, risk, score, BUY/INVESTIGATE/PASS | ✅ | Deal page |
-| 2 | Users Guy & Ben, no permission system | ✅ | Header user picker plus one shared password |
+| 2 | Users Guy & Ben, no permission system | ✅ 🟦 | Each has a real account and signs in (VF-03 §22, Oct 2026). Roles: admin (users, VF-03 thresholds) and member; the Deal Analyzer itself has no further permissions |
 | 3 | React + TS, Node/TS, Postgres; responsive, fast, maintainable; formulas in one place | ✅ | Next.js 15 + TS; PostgreSQL on Railway (Supabase-compatible); `src/engine` |
 | 4 | Dashboard: 15 columns, 7 filters, 9 statuses | ✅ | "ARV" column = Base ARV; the Strategy filter means "viable for" |
 | 5 | New Deal: property fields, 6 property types | ✅ | |
@@ -63,7 +63,7 @@ request, kept verbatim). Every rule's provenance is also listed in-app on
 | 30 | Architecture ready for integrations; never auto-fill ARV/rehab | ✅ ⬜ | `CompProvider` + `importComps()` exist; no source connected yet. ARV changes only by the user's "Apply" |
 | 31 | Seven note categories | ✅ | |
 | 32 | Comps (future in spec) | ✅ 🟦 | Built: comp list, renovated/unrenovated split, $/sqft. **Approved additions:** comp-supported ARV (weighted $/sqft × sqft), Best fit / Super comp tiers, Super comp % override. Weighting numbers are 🟨 |
-| 33 | Audit trail: old / new / who / when | ✅ | Inputs, notes, status, comps, comp summary sync, ARV apply. Default-assumption changes have their own history |
+| 33 | Audit trail: old / new / who / when | ✅ | Inputs, notes, status, comps, comp summary sync, ARV apply, actual result. Default-assumption changes have their own history. "Who" is the signed-in user. Saves are transactional with optimistic locking, and each save stores an analysis snapshot |
 | 34 | Export Deal → PDF with all sections | ✅ | Print-optimised page → browser "Save as PDF" (limitation: not server-generated) |
 | 35 | AC1–AC20 | ✅ | Evidence table in README; `npm run check`, `npm run e2e`, `npm run e2e:auth` |
 | 36 | No CRM, investor portal, 20 APIs, gratuitous AI, self-decided thresholds, unapproved logic changes, invented market data | ✅ | |
@@ -74,7 +74,8 @@ request, kept verbatim). Every rule's provenance is also listed in-app on
 |---|---|
 | Default assumptions page (`/settings`) | Requested Oct 2026. Values are entered by Guy/Ben; new deals pre-fill and mark them "Default" |
 | Live calculated values in the form | Requested Oct 2026, "the numbers are manual" |
-| Hidden route on the website (`/vf-internal`) + Railway hosting + Basic Auth (fail-closed) | Requested for testing before moving to its own repo |
+| Hidden route on the website (`/vf-internal`) + Railway hosting + sign-in (fail-closed) | Requested for testing before moving to its own repo |
+| VF-03 Market Intelligence module, real accounts, versioned migrations, analysis snapshots, actual-result capture | VF-03 Implementation Spec v1 (Oct 2026) — see [VF03-ALIGNMENT.md](VF03-ALIGNMENT.md) |
 | CLAUDE.md, `vf-*` skills, docs-always-current rule | Requested |
 
 ## Gaps and open decisions (need Guy/Ben)

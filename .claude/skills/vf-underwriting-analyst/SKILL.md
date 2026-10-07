@@ -13,7 +13,8 @@ compiles, or tests because they pass.
 Read first:
 - `deal-analyzer/CLAUDE.md`
 - `deal-analyzer/docs/SPEC.md` §10–§26
-- `deal-analyzer/src/engine/config.ts` (the `METHODOLOGY` table)
+- `deal-analyzer/src/engine/config.ts` (the `METHODOLOGY` table; bump `ENGINE_VERSION` with any rule change so stored analysis snapshots show which rules produced them)
+- For VF-03 market scoring: `deal-analyzer/src/market/engine/config.ts` (`MARKET_METHODOLOGY`) and `engine.test.ts`; capital efficiency must stay ratios of `analyzeDeal()` outputs
 
 ## Hard boundaries
 

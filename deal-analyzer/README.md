@@ -1,4 +1,18 @@
-# ValeForge Deal Analyzer — MVP
+# ValeForge — Deal Analyzer + Market Intelligence (VF-03)
+
+One internal app, two separate modules with one login:
+
+- **Deal Analyzer**: property-level underwriting (this section, spec [docs/SPEC.md](docs/SPEC.md)).
+- **Market Intelligence (VF-03)**: where to search, for which opportunities, with which
+  strategy (see [Market Intelligence](#market-intelligence-vf-03), spec
+  [docs/VF03-SPEC.md](docs/VF03-SPEC.md), status and gap analysis
+  [docs/VF03-ALIGNMENT.md](docs/VF03-ALIGNMENT.md)).
+
+They connect only through a contract: a VF-03 candidate is handed to the Deal Analyzer as a
+new deal (`DealInputs`), market capital efficiency is computed by the Deal Analyzer engine
+itself, and actual results flow back. `src/market/boundary.test.ts` enforces the separation.
+
+## Deal Analyzer
 
 Internal underwriting engine for ValeForge. Enter a property and it evaluates
 the deal as **BRRRR, Hold, Flip and Hybrid** in parallel (*the deal chooses the
@@ -24,19 +38,23 @@ of the spec, including gaps and approved changes:
 ```bash
 cd deal-analyzer
 npm install
-npm run db:seed     # optional: 4 clearly-labelled [DEMO] deals (illustrative numbers, not market data)
-npm run dev         # http://localhost:3100
+npm run db:seed     # optional: [DEMO] deals and 6 [DEMO] markets (synthetic numbers, not market data)
+ADMIN_USERNAME=guy ADMIN_PASSWORD='choose-12+-chars' ADMIN_DISPLAY_NAME=Guy npm run dev   # http://localhost:3100
 ```
 
+Sign in at `/login` with that username and password: the first admin is created on the first
+sign-in while there are no users. Add the others on **Users** (`/admin/users`). In
+development a built-in session secret is used; production requires `SESSION_SECRET`.
+
 No database setup is needed: with no `DATABASE_URL`, the app uses **PGlite**
-(real PostgreSQL compiled to WASM), stored in `./.data/pglite`. The schema is
-applied automatically on first use.
+(real PostgreSQL compiled to WASM), stored in `./.data/pglite`. Pending migrations
+(`db/migrations/`) are applied automatically on first use.
 
 To use PostgreSQL / Supabase instead:
 
 ```bash
 cp .env.example .env.local      # set DATABASE_URL=postgres://…
-npm run db:migrate              # applies db/schema.sql (idempotent)
+npm run db:migrate              # applies pending versioned migrations
 npm run dev
 ```
 
@@ -48,12 +66,22 @@ npm run dev
 | `npm run build` / `npm start` | Production build / server on :3100 |
 | `TEST_DATABASE_URL=postgres://… npm test` | Also runs the repository tests against real PostgreSQL |
 | `npm run check` | typecheck + lint + tests |
-| `npm run e2e` | Isolated DB → seed → production build → Playwright acceptance suites (`e2e/`) |
-| `npm run e2e:auth` | Builds at `/` and at `/vf-internal`, then checks every kind of path demands the password |
+| `npm run e2e` | Isolated DB → seed → production build → Playwright suites (`e2e/`: deals, comps, markets), signing in for real |
+| `npm run e2e:auth` | Builds at `/` and at `/vf-internal`, then checks every kind of path requires a session; fail-closed without `SESSION_SECRET`; browser sign-in and revocation |
 
-Pick **Guy** or **Ben** in the header before editing; the name is recorded on
-every audit entry. Set `BASIC_AUTH_USER` and `BASIC_AUTH_PASSWORD` to put the
-whole app behind HTTP Basic Auth. Do this for any deployed instance.
+### Users and sign-in
+
+- Everyone has an account (`users`: username, display name, role, scrypt password hash).
+  The display name is what audit trails record. Roles: **admin** (manage users, change
+  VF-03 scoring thresholds) and **member** (everything else).
+- Sessions are an HMAC-signed, httpOnly cookie (7 days). Every page and action re-checks
+  that the account is still active and the session wasn't revoked; a password change,
+  deactivation or "Sign out on every device" ends all sessions. Five failed sign-ins lock
+  that username / address for 15 minutes.
+- Environment: `SESSION_SECRET` (32+ characters, required in production, else every
+  request gets 503), `ADMIN_USERNAME` / `ADMIN_PASSWORD` (+ optional `ADMIN_DISPLAY_NAME`)
+  to create the first admin. `AUTH_DISABLED=1` is open-access mode: no login, changes are
+  recorded as "Open access (login off)", no admin pages. Use only by the owner's decision.
 
 ---
 
@@ -78,8 +106,12 @@ src/
     analyze.ts         analyzeDeal(inputs) → full DealAnalysis, including "Why?" text
     fields.ts          (also) DEFAULTABLE_KEYS + applyDefaults(): which inputs may carry a ValeForge default
   lib/               ← infrastructure (no business rules)
-    db.ts              driver-agnostic Db: postgres.js (DATABASE_URL) or PGlite
-    deals-repo.ts      CRUD + per-field audit rows (+ which inputs are unconfirmed defaults)
+    db.ts              driver-agnostic Db: postgres.js (DATABASE_URL) or PGlite; transaction()
+    migrations.ts      versioned migrations runner (checksums, advisory lock, one transaction)
+    auth/              password (scrypt), token (signed session), throttle, bootstrap admin, safe-next
+    session.ts         currentUser / requireUser / requireAdmin; users.ts, users-repo.ts
+    deals-repo.ts      CRUD + per-field audit rows in one transaction, optimistic locking (version)
+    deal-snapshots.ts  stored analysis snapshots (engine version) on every save
     settings-repo.ts   ValeForge default assumptions + change history
     comp-summary.ts    keeps the deal's §8 comp summary in sync with its comps list
     comps-repo.ts      §32 comps: manual add/edit/delete + importComps() for automation, all audited
@@ -88,12 +120,17 @@ src/
     audit.ts           diff of inputs / notes / status
     parse-inputs.ts    FormData → DealInputs (blank → null, % → decimal, type/range checks only)
     format.ts          display helpers ("UNKNOWN", "∞ (no cash left)", "N/A (no debt)")
+  market/            ← VF-03 Market Intelligence (see below)
   app/               ← Next.js 15 App Router UI (server components + server actions)
-    page.tsx                 Deal Dashboard (filters, desktop table / mobile cards)
-    deals/new, deals/[id], deals/[id]/edit, deals/[id]/comps, deals/[id]/export,
-    settings (default assumptions), methodology
+    login/                   sign-in (public)
+    (app)/page.tsx           Deal Dashboard (filters, desktop table / mobile cards)
+    (app)/deals/new, deals/[id], deals/[id]/edit, deals/[id]/comps, deals/[id]/export,
+    (app)/settings (default assumptions), methodology, account, admin/users
+    (app)/markets/…          VF-03 screens
+    actions.ts · comps-actions.ts · settings-actions.ts · auth-actions.ts · market-actions.ts
   components/        AnalysisView (shared by deal page + export), DealForm (live preview), …
-db/schema.sql        PostgreSQL schema (Supabase-compatible)
+  middleware.ts      sign-in gate for every path (no matcher, on purpose)
+db/migrations/       0001 baseline (the V1 schema) · 0002 users · 0003 deal integrity · 0004 market intelligence
 ```
 
 Design points:
@@ -102,9 +139,16 @@ Design points:
   export all call `analyzeDeal()`. The form's live preview runs the same
   function in the browser. Nothing computes a financial number outside
   `src/engine`.
-- **Analysis is computed, not stored.** The DB holds only inputs, notes and
-  status. Every view recomputes, so a formula change applies to all deals
-  immediately and stale cached numbers can't exist.
+- **Analysis is computed live, and also snapshotted.** Every view recomputes
+  from the inputs, so a rule change applies to all deals immediately. Each
+  save also stores a snapshot of what the engine said then (with
+  `ENGINE_VERSION`), shown under "Analysis history": later rule changes
+  never rewrite history, and actual results can be compared with what was
+  predicted.
+- **Saves are transactional and locked.** The deal row, its audit rows and
+  the snapshot commit together. A form opened at an older version can't
+  overwrite someone else's save ("This deal was changed by … after you
+  opened it").
 - **Calculate with what's known (§29, approved).**
   - **Core drivers** (purchase price, rehab, ARV, rent, refi LTV/rate/term)
     are strict: if one is missing, results that need it show UNKNOWN.
@@ -123,15 +167,21 @@ Design points:
 
 ## Database schema
 
-`db/schema.sql`:
+Versioned migrations in `db/migrations/` (see "Database gotchas" in CLAUDE.md). Deal Analyzer tables:
 
 | Table | Columns |
 |---|---|
-| `deals` | `id uuid pk`, `address`, `city`, `state`, `zip`, `market`, `status` (CHECK: the 9 spec statuses), `inputs jsonb` (all `DealInputs`; unknown = JSON `null`), `notes jsonb` (§31 categories), `defaulted jsonb` (input keys still holding an unconfirmed ValeForge default), `created_by`, `updated_by`, `created_at`, `updated_at` |
-| `deal_audit` | `id`, `deal_id → deals`, `field`, `old_value jsonb`, `new_value jsonb`, `changed_by`, `changed_at` (comp changes use `field = 'comps'` with before/after snapshots) |
+| `deals` | `id uuid pk`, `address`, `city`, `state`, `zip`, `market`, `status` (CHECK: the 9 spec statuses), `inputs jsonb` (all `DealInputs`; unknown = JSON `null`), `notes jsonb` (§31 categories), `defaulted jsonb` (input keys still holding an unconfirmed ValeForge default), `version` (optimistic lock), `source_candidate_id → candidates` (VF-03 hand-off), `created_by`, `updated_by`, `created_at`, `updated_at` |
+| `deal_audit` | `id`, `deal_id → deals`, `field`, `old_value jsonb`, `new_value jsonb`, `changed_by`, `changed_at` (comp changes use `field = 'comps'`, actual results `field = 'outcome'`) |
+| `deal_analysis_snapshots` | `id`, `deal_id`, `deal_version`, `engine_version`, `inputs`, `comp_arv`, `result` (summary), `full_result` (analyzeDeal output), `created_by`, `created_at` |
+| `deal_outcomes` | actual result per deal (purchase, ARV, rehab, rent, timeline, exit, profit, cash flow, refi loan, capital recovered) + candidate / geography / avatar / predicted snapshot, `version`, recorded by/at |
 | `settings` | `key` (`deal_defaults`), `value jsonb` (the default assumptions), `updated_by`, `updated_at` |
 | `settings_history` | `id`, `key`, `field`, `old_value`, `new_value`, `changed_by`, `changed_at` (one row per changed default) |
 | `deal_comps` | `id`, `deal_id → deals` (cascade), `address`, `sale_price`, `sale_date`, `sqft`, `beds`, `baths`, `distance_miles`, `condition`, `renovation` (`renovated` / `unrenovated` / null = unknown), `sale_status` (`sold` / `pending` / `active` / null), `tier` (`standard` / `bestFit` / `superComp`), `share_override` (fraction 0–1, Super comps only, null = computed weight), `source`, `source_url`, `notes`, `included`, `origin` (`manual` / `import`), `external_id` (unique per deal + source, so re-imports never duplicate), created/updated by/at |
+| `users` / `user_audit` | accounts (username, display name, role, password hash, active, session_version) and who changed which account |
+| `schema_migrations` | version, name, checksum, applied_at |
+
+VF-03 tables are listed under [Market Intelligence](#market-intelligence-vf-03).
 
 The identity columns are copied out of `inputs` so the dashboard can filter in
 SQL by market, ZIP, status and created date. Filters on computed values
@@ -178,6 +228,10 @@ SQL by market, ZIP, status and created date. Filters on computed values
   recommendation, saved via the browser's "Save as PDF".
   [Sample PDF](docs/screenshots/05-export-sample.pdf).
 - Methodology page listing every rule and its provenance.
+- Accounts and sign-in, admin user management, account page (change password,
+  sign out everywhere).
+- Analysis history (stored snapshots) and an "Actual result" form on every deal
+  (feedback loop); deals created from a VF-03 candidate link back to their market.
 
 ## Acceptance criteria → evidence
 
@@ -198,7 +252,7 @@ SQL by market, ZIP, status and created date. Filters on computed values
 
 ## Formula / unit tests
 
-`npm test`: **199 tests, 14 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 56 browser checks; `npm run e2e:auth` adds 37 password checks across `/` and basePath builds, plus the fail-closed case.
+`npm test`: **282 tests, 20 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 91 browser checks (deals, comps, markets); `npm run e2e:auth` adds 69 sign-in checks across `/` and basePath builds, fail-closed and open-access mode.
 
 | File | Tests | Covers |
 |---|---|---|
@@ -211,10 +265,16 @@ SQL by market, ZIP, status and created date. Filters on computed values
 | `engine/defaults.test.ts` | 4 | defaults fill blanks only; an explicit 0 is kept; property facts can't be defaulted |
 | `lib/settings-repo.test.ts` | 3 | save + change history; form parsing; deals remember unconfirmed defaults |
 | `lib/parse-inputs.test.ts` | 6 | blank → null; explicit 0 kept; `$125,000` and `7.5%` parsing; validation; round-trip |
-| `lib/deals-repo.test.ts` | 6 | create/read; audit Old $125,000 → New $115,000 by Ben; no-op saves; filters; real `jsonb` storage |
+| `lib/deals-repo.test.ts` | 9 | create/read; audit Old $125,000 → New $115,000 by Ben; no-op saves; filters; real `jsonb` storage; optimistic locking (stale save refused, nothing written); a failure rolls back the change and its audit rows; analysis snapshots keep what was predicted |
 | `engine/comps.test.ts` | 22 | $/sqft guard; median; sale age; included-only stats; unknown prices skipped (not $0); renovated vs unrenovated; summary fields; weight decay; hand-calculated comp weight; comp ARV ($187.50/sf × 1,400 = $262,500); exclusions with reasons; UNKNOWN ARV; Super comp % override (50% fixed → $180/sf × 1,400 = $252,000), multiple overrides, > 100% → UNKNOWN, scale-up when alone, ignored on non-Super / unused comps |
 | `lib/comps-repo.test.ts` | 9 | validation (incl. unsafe links); tier/status defaults; % override validation (Super comps only, 0–100%); add/list/round-trip; audited edit/delete; cross-deal protection; import de-duplication; comp summary auto-sync (audited, no-op when in sync) |
-| `lib/db.test.ts` | 2 | schema file splits cleanly into statements (no `;` in inline comments) |
+| `lib/db.test.ts` | 14 | every migration splits cleanly (no `;` in inline comments, `$$` bodies kept); versions 1..n; applied once with checksums; an edited applied migration or an older build is refused; transactions roll back |
+| `lib/auth/auth.test.ts` | 13 | scrypt hashing; 12+ character passwords; signed session tokens (tampering, wrong secret, expiry); production requires `SESSION_SECRET`; sign-in throttle; safe post-sign-in redirect |
+| `lib/users-repo.test.ts` | 4 | first admin from env only while there are no users; authenticate; password change ends sessions; deactivation; audit without secrets; at least one active admin; unique names |
+| `market/engine/engine.test.ts` | 33 | VF-03 engine, hand-calculated: percentiles, partial roll-ups and bounds, risk bands, freshness policies, ACS margin of error → confidence, derived metrics, capital efficiency = ratios of `analyzeDeal` outputs, decisions (DRILL_DOWN / KEEP / DROP / WATCH), BLOCK, no false-precision ranking, thin peers, stale data, Strategy Fit roll-up, rent-by-room gate, change explanation, avatar fit, opportunity universe, hand-off contract, observation validation, configuration overrides |
+| `market/ingest/providers.test.ts` | 8 | Census ACS, HUD FMR/SAFMR, BLS LAUS, FRED parsers against recorded responses; keys redacted; missing release → growth UNKNOWN |
+| `market/lib/market.test.ts` | 7 | geography hierarchy; ingestion validation / duplicates / append-only; missing key; manual evidence needs a source; conditional drill-down + snapshots + change; capital efficiency from samples; hand-off + feedback loop |
+| `market/boundary.test.ts` | 3 | Deal Analyzer engine never imports VF-03; VF-03 uses only the DealInputs contract and analyzeDeal(); VF-03 engine is pure |
 | `lib/base-path.test.ts` | 3 | hidden-route basePath: empty/`/` → root, single segment accepted, anything else fails the build |
 
 Worked example (`engine/fixtures.ts`; illustrative inputs, not market data):
@@ -243,6 +303,13 @@ All captured from the running production build during the E2E run.
 | Comp-supported ARV: weights, shares, Apply | [13-comp-arv.png](docs/screenshots/13-comp-arv.png) |
 | Only Purchase / Rehab / ARV / Rent entered: results calculate, marked `*` | [14-basics-only-live.png](docs/screenshots/14-basics-only-live.png) |
 | New deal pre-filled from ValeForge defaults (Default badges) | [15-new-deal-defaults.png](docs/screenshots/15-new-deal-defaults.png) |
+| Users (admin) | [16-admin-users.png](docs/screenshots/16-admin-users.png) |
+| VF-03 market list ([DEMO] markets) | [17-markets-list.png](docs/screenshots/17-markets-list.png) |
+| VF-03 market detail: decision, dimensions, strategy matrix, risk, universe, drill-down, evidence | [18-market-detail.png](docs/screenshots/18-market-detail.png) |
+| VF-03 candidates | [19-candidates.png](docs/screenshots/19-candidates.png) |
+| Deal created from a candidate, with the actual-result form | [20-deal-from-candidate.png](docs/screenshots/20-deal-from-candidate.png) |
+| VF-03 data sources | [21-data-sources.png](docs/screenshots/21-data-sources.png) |
+| VF-03 markets on mobile | [22-markets-mobile.png](docs/screenshots/22-markets-mobile.png) |
 
 ## ⚠️ Decisions that need Guy/Ben approval
 
@@ -345,13 +412,103 @@ source and pass its results to `compsRepo.importComps()`. Imported comps then
 go through the same validation as manual entry, are stored with
 `origin = 'import'`, and are de-duplicated by `external_id` on re-import.
 
+## Market Intelligence (VF-03)
+
+Where should ValeForge search, for which opportunities, with which strategy?
+Built to [docs/VF03-SPEC.md](docs/VF03-SPEC.md); section-by-section status,
+the V1 gap analysis, conflicts and open decisions:
+[docs/VF03-ALIGNMENT.md](docs/VF03-ALIGNMENT.md). Every rule and its
+provenance: `/markets/methodology`.
+
+**Layers kept separate (§18):** Market ("this geography is attractive") →
+Opportunity Universe ("many properties match our thesis") → Candidate ("this
+property deserves underwriting") → Deal Analyzer ("BUY / INVESTIGATE / PASS")
+→ Actual result.
+
+**How a market is scored**
+- Seven independent dimensions: Market Quality, Opportunity Density, Capital
+  Efficiency, Strategy Fit, Risk, Confidence, Freshness.
+- Every metric becomes a 0–100 **percentile among peers** (MSAs vs MSAs; ZIPs
+  vs the other ZIPs of the same market). Raw values are kept and shown.
+- Core Market Priority = Quality × 25% + Opportunity × 30% + Capital × 25% +
+  Strategy × 20%, × the **risk modifier** (Low 1.00 · Moderate 0.95 ·
+  Elevated 0.85 · High 0.70 · Critical = BLOCK).
+- **UNKNOWN is never 0.** Each score has a point (known parts), bounds (unknowns
+  at 0 / 100) and completeness. Missing data lowers confidence, not
+  attractiveness. With low confidence, low completeness or fewer than 5 peers
+  the score is shown as a range (or ≈) and the market is **not ranked**.
+- **Capital Efficiency** reuses the Deal Analyzer: link a deal (or freeze a
+  copy) as a sample for a geography; VF-03 takes the median of ratios of
+  `analyzeDeal()`'s own outputs. No underwriting formula exists in VF-03.
+- **Strategy Fit** scores 9 strategies separately (BRRRR, Buy & Hold, Fix &
+  Flip, Section 8 / HCV, Rent by Room, Small Multifamily, Off-Market, Creative
+  Finance, Mid-Term Rental); Section 8 and Rent by Room are overlays. The
+  roll-up rewards several strong strategies (best 50% · 2nd 30% · 3rd 20%).
+- **Risk**: 11 factors shown separately, material risks called out, hard risk
+  flags (critical blocks regardless of score).
+- **Decision**: KEEP / WATCH / DROP / DRILL DOWN (never BUY/PASS), with the
+  reasons listed. Thresholds are admin-configurable and every change is recorded.
+- **Conditional drill-down**: submarkets and ZIPs are added and analyzed only
+  under a promoted parent; the promotion stores why it qualified.
+- **Snapshots and change detection**: every "Evaluate now" stores a snapshot;
+  the page explains a change in priority points per dimension and component,
+  plus the risk-modifier effect.
+- **Avatars** (defined by Guy/Ben, none built in) → avatar fit and estimated
+  matching units from ACS distributions (labelled estimates).
+- **Candidates → Deal Analyzer**: "Send to Deal Analyzer" creates a deal with
+  the property facts and asking price, in one transaction. ARV / rehab / rent
+  estimates go to the deal notes, not applied. The deal links back, and its
+  actual result is recorded on the deal page (feedback loop).
+
+**Data (V1: official / primary only, §14).** Census ACS 5-year (current release +
+the one five years earlier, with margins of error), HUD FMR / Small Area FMR,
+BLS LAUS metro, FRED (Realtor.com listings — labelled commercial — and the
+FHFA HPI). Plus local evidence entered by hand with a **required source** and an
+evidence level (official → anecdotal). No MLS, Zillow scraping, PropStream or
+paid data. Each run stores its raw payloads; each value is validated and stored
+append-only (a database trigger blocks updates); rejected values are kept with
+their reasons and never scored. The providers need free API keys (see
+Deploying). Their parsers are tested against recorded responses; Census variable
+codes were verified against the official metadata; HUD / BLS / FRED have not
+been called live from the build environment yet.
+
+**Code map**
+```
+src/market/
+  engine/      pure TS (no I/O): types · metrics (catalogue) · config (weights, thresholds, methodology)
+               freshness · derive (raw → evidence) · capital (via analyzeDeal) · evaluate (single entry point)
+               change · avatar · universe · handoff · validate · fixtures (synthetic test data)
+  ingest/      types (provider contract) · pipeline · registry · providers/{census-acs, hud-fmr, bls-laus, fred}
+  lib/         repo (all VF-03 tables) · service (evaluate + snapshot, drill-down, hand-off)
+  ui/          panels, badges, formatting
+src/app/(app)/markets/   list · [geoId] · avatars · candidates · ingestion (Data) · methodology
+```
+
+**Tables (migration 0004):** `geographies` (official-code keys, parent),
+`market_observations` (append-only evidence with provenance + validation),
+`ingestion_runs` + `ingestion_raw`, `market_hard_flags`, `market_deal_samples`,
+`market_config` (threshold overrides), `market_snapshots`, `geo_promotions`,
+`avatars`, `candidates`, `market_audit` (every VF-03 change), plus
+`deals.source_candidate_id` and `deal_outcomes` on the Deal Analyzer side.
+
+**Try it locally:** `npm run db:seed` creates six `[DEMO]` markets (synthetic
+evidence, codes 99901–99906 — not real CBSAs). Sign in → Market Intelligence →
+**Evaluate now** → open a market → **Promote for drill-down** → add a ZIP →
+add an avatar and a candidate → **Send to Deal Analyzer**.
+
+### VF-03 decisions that need Guy/Ben approval
+
+Listed with their current values in [docs/VF03-ALIGNMENT.md](docs/VF03-ALIGNMENT.md)
+§3 (M1–M10): initial weights, component-internal weights, Strategy Fit
+roll-up, risk bands, confidence scores, the precision rule, decision and
+drill-down thresholds, metric directions, freshness policies and the avatar
+independence assumption.
+
 ## Known limitations
 
-- **Auth.** There is no login, only a Guy/Ben selector (per §2) plus one
-  shared Basic Auth password for the whole app. It fails closed: a
-  production server without the password configured refuses every request
-  (503). Both users share that
-  password, so the audit trail relies on each person picking their own name.
+- **Sign-in throttle** is in memory (one app instance); it resets on restart.
+- **Static assets** (`/_next/static`) are public so the sign-in page can load;
+  they hold client code only, never data.
 - **PDF export.** The PDF comes from the browser's print dialog
   ("Save as PDF"), not server-side generation.
 - **Comps are manual for now.** Automated import is wired at the code level
@@ -369,6 +526,8 @@ go through the same validation as manual entry, are stored with
 - **Prepayment penalty** is stored as reference text and is not modeled.
 - **Seasoning** produces a warning when project months < requirement; it
   does not block the refi.
+- **Analysis snapshots start with this release.** Deals saved before it have
+  no history until their next save.
 - **Dashboard scale.** The dashboard computes analysis per deal on each
   request. That's fine for hundreds of deals; for many thousands, cache
   summaries.
@@ -384,7 +543,7 @@ removing the forward.
 
 ```
 browser → yoursite.com/vf-internal/* ──(site rewrite, Vercel)──▶ Railway: deal-analyzer /vf-internal/*
-                                                                   └ Basic Auth (middleware) → app → Railway Postgres
+                                                                   └ sign-in (middleware + session) → app → Railway Postgres
 ```
 
 **Current setup (Railway project `valeforge-deal-analyzer`, workspace "Guy Kuperly's Projects"):**
@@ -392,22 +551,32 @@ browser → yoursite.com/vf-internal/* ──(site rewrite, Vercel)──▶ Rai
 | Service | What | Settings |
 |---|---|---|
 | `Postgres` | Railway PostgreSQL template | Password generated by Railway |
-| `deal-analyzer` | This folder: repo `kuperly/investor-site`, branch `ccr-8ff946f6-4opti8`, root `/deal-analyzer`; redeploys on push | `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `ANALYZER_BASE_PATH=/vf-internal`, `NODE_ENV=production`, `BASIC_AUTH_PASSWORD=${{Postgres.BASIC_AUTH_PASSWORD}}` (a reference: the secret value was entered by Guy/Ben on the `Postgres` service), and **currently `AUTH_DISABLED=1` with `BASIC_AUTH_USER` empty** (see below) |
+| `deal-analyzer` | This folder: repo `kuperly/investor-site`, branch `ccr-8ff946f6-4opti8`, root `/deal-analyzer`; redeploys on push | `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `ANALYZER_BASE_PATH=/vf-internal`, `NODE_ENV=production`, `SESSION_SECRET` (random, set on the service), and **currently `AUTH_DISABLED=1`** (see below). Optional data keys: `CENSUS_API_KEY`, `HUD_API_TOKEN`, `BLS_API_KEY`, `FRED_API_KEY` |
 
 Public origin: `https://deal-analyzer-production.up.railway.app` (the app
-lives under `/vf-internal`).
+lives under `/vf-internal`). Pending migrations run automatically on the first
+request after each deploy.
 
 > ⚠️ **Login is currently OFF** (Guy's request, Oct 5 2026, for open
-> testing). Anyone with the URL can read and edit every deal.
-> **To turn it back on:** in Railway → `deal-analyzer` → Variables, set
-> `BASIC_AUTH_USER=valeforge` and delete `AUTH_DISABLED`. The password is
-> still stored on the `Postgres` service. Then check with a private window
-> that `/vf-internal` asks for it. If `BASIC_AUTH_PASSWORD` is ever missing (e.g.
-the referenced value is deleted), every request returns 503 (fail-closed).
-With login on (verified Oct 5, 2026): no password / wrong password → 401 on
-every path; the bypass header and server-action POSTs → 401. The website's preview
-deployments sit behind Vercel Authentication as well. The schema is applied automatically on the
-first request.
+> testing): `AUTH_DISABLED=1`. Anyone with the URL can read and edit, and
+> changes are recorded as "Open access (login off)".
+> **To turn real sign-in on:** in Railway → `deal-analyzer` → Variables:
+> 1. set `ADMIN_USERNAME` (e.g. `guy`), `ADMIN_PASSWORD` (12+ characters,
+>    typed by you, never shared in chat) and `ADMIN_DISPLAY_NAME` (e.g. `Guy`);
+> 2. delete `AUTH_DISABLED`.
+>
+> After the redeploy, sign in at `/vf-internal/login` with that username and
+> password, then add Ben on **Users**. Check in a private window that
+> `/vf-internal` sends you to the sign-in page. If `SESSION_SECRET` is ever
+> missing, every request returns 503 (fail-closed). The old
+> `BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD` variables are no longer used.
+
+**Market data keys (free).** Each data source shows "Not configured" on
+`/markets/ingestion` until its key is set on the `deal-analyzer` service:
+`CENSUS_API_KEY` (api.census.gov/data/key_signup.html), `HUD_API_TOKEN`
+(huduser.gov/hudapi/public/register), `FRED_API_KEY`
+(fredaccount.stlouisfed.org/apikeys); `BLS_API_KEY` is optional but strongly
+recommended (data.bls.gov/registrationEngine).
 
 **Website (Vercel project `investor-site`) environment variables:**
 - `ANALYZER_URL=https://deal-analyzer-production.up.railway.app`
@@ -420,8 +589,8 @@ variables for **Production** after the branch is merged into `main`.
 
 **After the branch merges**, switch the Railway service's branch to `main`.
 
-**Verify** in a private window: `…/vf-internal` must ask for the password
-before showing anything. `npm run e2e:auth` checks the same locally.
+**Verify** in a private window: `…/vf-internal` must redirect to the sign-in
+page before showing anything. `npm run e2e:auth` checks the same locally.
 
 "Hidden" only means unlinked and not indexed (`noindex` meta +
-`X-Robots-Tag`). The password is what protects the data.
+`X-Robots-Tag`). Sign-in is what protects the data.

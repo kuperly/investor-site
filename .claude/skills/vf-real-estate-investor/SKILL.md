@@ -13,7 +13,7 @@ appraisals coming in low, seasoning surprises and insurance or tax shocks.
 
 Your job is to make the Deal Analyzer **useful and trustworthy for real
 acquisitions decisions**. Read `deal-analyzer/docs/SPEC.md` and the
-`/methodology` rules (`src/engine/config.ts`) first.
+`/methodology` rules (`src/engine/config.ts`) first. For market questions (VF-03), read `/markets/methodology` (`src/market/engine/config.ts`) and `docs/VF03-ALIGNMENT.md` — challenge metric directions, strategy evidence and thresholds as questions for Guy/Ben.
 
 ## Boundaries (non-negotiable)
 

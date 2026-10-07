@@ -13,6 +13,8 @@ export interface DealRecord {
   notes: DealNotes
   /** Inputs filled from ValeForge defaults and not yet confirmed for this deal. */
   defaulted: DefaultableKey[]
+  /** Optimistic-lock version: bumped on every change to inputs, notes or status. */
+  version: number
   createdBy: string
   updatedBy: string
   createdAt: Date
@@ -38,6 +40,17 @@ export interface DealQuery {
 
 type Row = Record<string, unknown>
 
+/** Someone saved the deal after this form was opened (optimistic locking, VF-03 §22). */
+export class DealConflictError extends Error {
+  constructor(
+    public readonly updatedBy: string,
+    public readonly updatedAt: Date,
+  ) {
+    super(`This deal was changed by ${updatedBy} after you opened it.`)
+    this.name = 'DealConflictError'
+  }
+}
+
 function toRecord(r: Row): DealRecord {
   const parse = <T,>(v: unknown): T => (typeof v === 'string' ? JSON.parse(v) : v) as T
   return {
@@ -47,6 +60,7 @@ function toRecord(r: Row): DealRecord {
     inputs: { ...emptyInputs(), ...parse<Partial<DealInputs>>(r.inputs) },
     notes: parse<DealNotes>(r.notes) ?? {},
     defaulted: (parse<string[]>(r.defaulted) ?? []).filter(isDefaultable),
+    version: Number(r.version ?? 1),
     createdBy: r.created_by as string,
     updatedBy: r.updated_by as string,
     createdAt: new Date(r.created_at as string),
@@ -92,46 +106,59 @@ export function dealsRepo(db: Db) {
       user: User,
       defaulted: DefaultableKey[] = [],
     ): Promise<string> {
-      const rows = await db.query<{ id: string }>(
-        `insert into deals (address, city, state, zip, market, status, inputs, notes, defaulted, created_by, updated_by)
-         values ($1,$2,$3,$4,$5,$6,$7::text::jsonb,$8::text::jsonb,$9::text::jsonb,$10,$10) returning id`,
-        [...identity(inputs), status, JSON.stringify(inputs), JSON.stringify(notes), JSON.stringify(defaulted), user],
-      )
-      const id = rows[0].id
-      await db.query(
-        `insert into deal_audit (deal_id, field, old_value, new_value, changed_by) values ($1,'created',null,null,$2)`,
-        [id, user],
-      )
-      return id
+      return db.transaction(async (tx) => {
+        const rows = await tx.query<{ id: string }>(
+          `insert into deals (address, city, state, zip, market, status, inputs, notes, defaulted, created_by, updated_by)
+           values ($1,$2,$3,$4,$5,$6,$7::text::jsonb,$8::text::jsonb,$9::text::jsonb,$10,$10) returning id`,
+          [...identity(inputs), status, JSON.stringify(inputs), JSON.stringify(notes), JSON.stringify(defaulted), user],
+        )
+        const id = rows[0].id
+        await tx.query(
+          `insert into deal_audit (deal_id, field, old_value, new_value, changed_by) values ($1,'created',null,null,$2)`,
+          [id, user],
+        )
+        return id
+      })
     },
 
-    /** Saves and writes one audit row per changed field. Returns the number of changes. */
+    /**
+     * Saves and writes one audit row per changed field, in one transaction. With
+     * `expectedVersion`, refuses (DealConflictError) if anyone saved the deal since that version.
+     * Returns the number of changed fields.
+     */
     async update(
       id: string,
       next: { inputs?: DealInputs; notes?: DealNotes; status?: DealStatus },
       user: User,
+      opts: { expectedVersion?: number } = {},
     ): Promise<number> {
-      const current = await this.get(id)
-      if (!current) throw new Error('Deal not found')
-      const after = {
-        inputs: next.inputs ?? current.inputs,
-        notes: next.notes ?? current.notes,
-        status: next.status ?? current.status,
-      }
-      const changes = diffDeal(current, after)
-      if (changes.length === 0) return 0
-      await db.query(
-        `update deals set address=$2, city=$3, state=$4, zip=$5, market=$6, status=$7, inputs=$8::text::jsonb, notes=$9::text::jsonb,
-           updated_by=$10, updated_at=now() where id=$1`,
-        [id, ...identity(after.inputs), after.status, JSON.stringify(after.inputs), JSON.stringify(after.notes), user],
-      )
-      for (const c of changes) {
-        await db.query(
-          `insert into deal_audit (deal_id, field, old_value, new_value, changed_by) values ($1,$2,$3::text::jsonb,$4::text::jsonb,$5)`,
-          [id, c.field, JSON.stringify(c.oldValue ?? null), JSON.stringify(c.newValue ?? null), user],
+      if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error('Deal not found')
+      return db.transaction(async (tx) => {
+        const [row] = await tx.query<Row>('select * from deals where id = $1 for update', [id])
+        if (!row) throw new Error('Deal not found')
+        const current = toRecord(row)
+        if (opts.expectedVersion !== undefined && opts.expectedVersion !== current.version)
+          throw new DealConflictError(current.updatedBy, current.updatedAt)
+        const after = {
+          inputs: next.inputs ?? current.inputs,
+          notes: next.notes ?? current.notes,
+          status: next.status ?? current.status,
+        }
+        const changes = diffDeal(current, after)
+        if (changes.length === 0) return 0
+        await tx.query(
+          `update deals set address=$2, city=$3, state=$4, zip=$5, market=$6, status=$7, inputs=$8::text::jsonb, notes=$9::text::jsonb,
+             updated_by=$10, updated_at=now(), version=version+1 where id=$1`,
+          [id, ...identity(after.inputs), after.status, JSON.stringify(after.inputs), JSON.stringify(after.notes), user],
         )
-      }
-      return changes.length
+        for (const c of changes) {
+          await tx.query(
+            `insert into deal_audit (deal_id, field, old_value, new_value, changed_by) values ($1,$2,$3::text::jsonb,$4::text::jsonb,$5)`,
+            [id, c.field, JSON.stringify(c.oldValue ?? null), JSON.stringify(c.newValue ?? null), user],
+          )
+        }
+        return changes.length
+      })
     },
 
     /** Which inputs are still unconfirmed defaults (a marker only, not audited). */

@@ -62,24 +62,26 @@ const values = (c: Comp) => [
 ]
 
 export function compsRepo(db: Db) {
-  async function audit(dealId: string, oldV: unknown, newV: unknown, user: User) {
-    await db.query(
+  async function audit(q: Db, dealId: string, oldV: unknown, newV: unknown, user: User) {
+    await q.query(
       `insert into deal_audit (deal_id, field, old_value, new_value, changed_by) values ($1,'comps',$2::text::jsonb,$3::text::jsonb,$4)`,
       [dealId, JSON.stringify(oldV ?? null), JSON.stringify(newV ?? null), user],
     )
-    await db.query(`update deals set updated_at = now(), updated_by = $2 where id = $1`, [dealId, user])
+    await q.query(`update deals set updated_at = now(), updated_by = $2 where id = $1`, [dealId, user])
   }
 
-  async function insert(dealId: string, c: Comp, user: User, origin: 'manual' | 'import', externalId: string | null) {
-    const rows = await db.query<{ id: string }>(
-      `insert into deal_comps (deal_id, address, sale_price, sale_date, sqft, beds, baths, distance_miles,
-         condition, renovation, source, source_url, notes, included, sale_status, tier, share_override, origin, external_id, created_by, updated_by)
-       values ($1,$2,$3,$4::date,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$20) returning id`,
-      [dealId, ...values(c), origin, externalId, user],
-    )
-    await audit(dealId, null, compSnapshot(c), user)
-    return rows[0].id
-  }
+  /** Insert + audit row in one transaction. */
+  const insert = (dealId: string, c: Comp, user: User, origin: 'manual' | 'import', externalId: string | null) =>
+    db.transaction(async (tx) => {
+      const rows = await tx.query<{ id: string }>(
+        `insert into deal_comps (deal_id, address, sale_price, sale_date, sqft, beds, baths, distance_miles,
+           condition, renovation, source, source_url, notes, included, sale_status, tier, share_override, origin, external_id, created_by, updated_by)
+         values ($1,$2,$3,$4::date,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$20) returning id`,
+        [dealId, ...values(c), origin, externalId, user],
+      )
+      await audit(tx, dealId, null, compSnapshot(c), user)
+      return rows[0].id
+    })
 
   return {
     async list(dealId: string): Promise<CompRecord[]> {
@@ -105,21 +107,25 @@ export function compsRepo(db: Db) {
       const oldSnap = compSnapshot(before)
       const newSnap = compSnapshot(c)
       if (JSON.stringify(oldSnap) === JSON.stringify(newSnap)) return true
-      await db.query(
-        `update deal_comps set address=$3, sale_price=$4, sale_date=$5::date, sqft=$6, beds=$7, baths=$8,
-           distance_miles=$9, condition=$10, renovation=$11, source=$12, source_url=$13, notes=$14, included=$15,
-           sale_status=$16, tier=$17, share_override=$18, updated_by=$19, updated_at=now() where deal_id=$1 and id=$2`,
-        [dealId, id, ...values(c), user],
-      )
-      await audit(dealId, oldSnap, newSnap, user)
+      await db.transaction(async (tx) => {
+        await tx.query(
+          `update deal_comps set address=$3, sale_price=$4, sale_date=$5::date, sqft=$6, beds=$7, baths=$8,
+             distance_miles=$9, condition=$10, renovation=$11, source=$12, source_url=$13, notes=$14, included=$15,
+             sale_status=$16, tier=$17, share_override=$18, updated_by=$19, updated_at=now() where deal_id=$1 and id=$2`,
+          [dealId, id, ...values(c), user],
+        )
+        await audit(tx, dealId, oldSnap, newSnap, user)
+      })
       return true
     },
 
     async remove(dealId: string, id: string, user: User): Promise<boolean> {
       const before = await this.get(dealId, id)
       if (!before) return false
-      await db.query(`delete from deal_comps where deal_id = $1 and id = $2`, [dealId, id])
-      await audit(dealId, compSnapshot(before), null, user)
+      await db.transaction(async (tx) => {
+        await tx.query(`delete from deal_comps where deal_id = $1 and id = $2`, [dealId, id])
+        await audit(tx, dealId, compSnapshot(before), null, user)
+      })
       return true
     },
 

@@ -1,6 +1,6 @@
 ---
 name: vf-security
-description: Security review for the ValeForge Deal Analyzer (deal-analyzer/) — server actions, auth/basic-auth, user attribution, SQL injection, IDOR across deals/comps, XSS via links and notes, secrets, dependency/CVE status, deployment hardening. Use when changing server actions, repositories, SQL, middleware, env handling, anything rendering user-supplied URLs/HTML, adding dependencies, or before deploying the analyzer.
+description: Security review for the ValeForge Deal Analyzer + Market Intelligence (deal-analyzer/) — server actions, sign-in/sessions/users, user attribution, SQL injection, IDOR across deals/comps, XSS via links and notes, secrets, dependency/CVE status, deployment hardening. Use when changing server actions, repositories, SQL, middleware, env handling, anything rendering user-supplied URLs/HTML, adding dependencies, or before deploying the analyzer.
 ---
 
 # ValeForge Security Review
@@ -17,40 +17,50 @@ advice.
 
 ## Threat model
 
-- **Users.** Two trusted internal users (Guy, Ben). No real login: the user
-  picker is a cookie, for attribution, not authorization.
-- **Access control.** The only access control on a deployed instance is
-  `BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD` (`src/middleware.ts`) or Vercel
-  deployment protection.
-- **Untrusted input.** Every form field, URL parameter and cookie. In the
-  future (§30), also provider/import data (Zillow, MLS, CSV): treat imported
-  records as hostile.
+- **Users.** Internal accounts (`users`, scrypt hashes) with roles admin /
+  member. Sessions are HMAC-signed httpOnly cookies (`src/lib/auth/token.ts`);
+  the middleware checks the signature, `requireUser()` / `currentUser()` also
+  check the account is active and `session_version` matches (revocation).
+- **Access control.** Sign-in on every path (`src/middleware.ts`, no matcher).
+  Admin-only: `/admin/users`, VF-03 threshold changes (`saveMarketConfig`).
+- **Untrusted input.** Every form field, URL parameter and cookie, and every
+  market-data provider response (Census, HUD, BLS, FRED): treat them as hostile.
 
 ## Checklist
 
 ### Access and deployment
-- [ ] The deployed instance has Basic Auth env vars or platform protection.
-      If not, it's critical.
-- [ ] Auth **fails closed**: production without `BASIC_AUTH_*` → 503 on
-      every path. `AUTH_DISABLED` on a deployment requires the owner's
-      explicit decision; report it as a finding while it's on (check the
-      host's env vars). Status: on for Railway since Oct 5 2026, at Guy's
-      request.
-- [ ] `middleware.ts` has **no matcher** and protects every path. A
-      matcher once let the bare basePath root (`/vf-internal`, the dashboard)
-      through without a password. Run `npm run e2e:auth`, which covers both
-      `/` and basePath builds.
+- [ ] The deployed instance has `SESSION_SECRET` (32+ random characters) and
+      at least one admin. Sign-in **fails closed**: production without
+      `SESSION_SECRET` → 503 on every path. `AUTH_DISABLED=1` (open-access
+      mode) on a deployment requires the owner's explicit decision; report it
+      as a finding while it's on. Status: on for Railway since Oct 5 2026, at
+      Guy's request.
+- [ ] `middleware.ts` has **no matcher**; its public list stays minimal
+      (`/login`, `/_next/static`, `/_next/image`, favicon). A matcher once let
+      the bare basePath root through. Run `npm run e2e:auth` (both `/` and
+      basePath builds).
+- [ ] Every page under `src/app/(app)` calls `requireUser()` / `requireAdmin()`;
+      every server action checks `currentUser()`; admin actions check the role.
+- [ ] Passwords: scrypt only, ≥ 12 characters, never logged or audited
+      (`user_audit` stores no secrets); sign-in throttled; post-sign-in
+      redirect only via `safeNext()` (no open redirect).
+- [ ] Session cookie: httpOnly, SameSite=Lax, Secure in production, scoped to
+      the basePath. Password change / deactivation / "sign out everywhere"
+      bump `session_version`.
 - [ ] Hidden route (website rewrite → analyzer): "hidden" is not security.
-      The analyzer's own Basic Auth must answer through the proxy
-      (`yoursite.com/<base>` → 401 + `WWW-Authenticate`). `ANALYZER_URL` is a
-      fixed env value, never derived from the request (SSRF).
+      Through the proxy, `yoursite.com/<base>` must redirect to the analyzer's
+      sign-in. `ANALYZER_URL` is a fixed env value, never derived from the
+      request (SSRF).
 - [ ] `robots: noindex` stays in `layout.tsx`.
 - [ ] No secrets in code or commits (`git log -p | grep -iE "password|secret|api[_-]?key|postgres://"`).
       `.env*` stays gitignored.
 
 ### Server actions (`src/app/*actions.ts`)
-- [ ] Every mutating action checks `currentUser()` and returns early when it
-      is absent.
+- [ ] Every mutating action checks `currentUser()` / `currentActor()` and
+      returns early when it is absent.
+- [ ] Concurrency: deal / candidate / avatar / outcome updates pass the
+      version they were based on (optimistic locking); multi-row writes use
+      `db.transaction()`.
 - [ ] Inputs are parsed through `parseDealForm` / `parseComp` (never trust
       `formData` directly). IDs come from the form, so they're untrusted.
 - [ ] Ownership: every comp operation is scoped by **both** `deal_id` and
@@ -79,26 +89,31 @@ advice.
 ### Data integrity as a security property
 - [ ] The audit trail can't be bypassed: no writes to `deals` or
       `deal_comps` outside the repositories, and the repositories write
-      `deal_audit` in the same flow.
+      `deal_audit` in the same transaction. VF-03 writes go through
+      `src/market/lib/repo.ts`, which writes `market_audit`.
+- [ ] `market_observations` stays append-only (trigger in migration 0004);
+      rejected values are stored as rejected, never as 0.
+- [ ] Migrations: never edit an applied file (checksum check); no secrets in
+      migrations.
 - [ ] Length limits stay in the parsers (text ≤ 500, notes ≤ 10k,
       URL ≤ 2k), to avoid DB/DoS abuse.
 
 ### Dependencies
 - [ ] Next.js stays on a patched version, pinned exactly (no `^`). The
       analyzer is on `15.5.27`: 15.1.11 had dozens of advisories, including
-      a **middleware authorization bypass**, and our Basic Auth lives in
+      a **middleware authorization bypass**, and our sign-in gate lives in
       middleware. Before bumping, check https://nextjs.org/blog and
       `npm audit`.
-- [ ] Basic Auth check after any Next, middleware or routing change:
-      `npm run e2e:auth`. At `/` and under `/vf-internal`, it verifies 401
-      for:
-      - the bare root, the root with a trailing slash, and deep pages;
-      - a wrong password;
-      - a server-action POST;
-      - a static asset;
-      - the `x-middleware-subrequest` bypass header (CVE-2025-29927).
-
-      Right credentials must return 200.
+- [ ] Sign-in check after any Next, middleware, auth or routing change:
+      `npm run e2e:auth`. At `/` and under `/vf-internal`, it verifies:
+      - the bare root and deep pages redirect to `/login` without a session
+        or with a forged cookie;
+      - a server-action POST without a session → 401;
+      - the `x-middleware-subrequest` bypass header (CVE-2025-29927) is
+        still redirected;
+      - browser sign-in (wrong password refused), httpOnly/SameSite cookie,
+        and "sign out everywhere" revoking a copied cookie;
+      - production without `SESSION_SECRET` → 503; `AUTH_DISABLED=1` open.
 - [ ] Known accepted residual risk: Next bundles its own `postcss@8.4.31`
       (npm audit "high"). It only processes our own CSS at build time, so
       it isn't attacker-reachable. Re-check whenever Next is bumped.
@@ -107,9 +122,12 @@ advice.
       priority.
 - [ ] New dependencies need a reason. Prefer none.
 
-### Future integrations (§30): enforce when they land
-- [ ] Provider data goes through `compsRepo.importComps()` → `parseComp`
-      (same validation as manual entry). Never insert directly.
+### Integrations (VF-03 providers now; comp import §30 later)
+- [ ] Market data goes through `runIngestion()` → `validateObservation()`;
+      comp imports through `compsRepo.importComps()` → `parseComp`. Never
+      insert directly.
+- [ ] Stored request URLs are `redact()`ed (no `key=`, `api_key=`,
+      `registrationkey=`, `token=` values); HUD's token travels in a header.
 - [ ] API keys live only in env vars, are never sent to the client
       (no `NEXT_PUBLIC_` prefix) and are never logged.
 - [ ] Outbound fetches have timeouts and are limited to the provider's host

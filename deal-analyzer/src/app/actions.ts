@@ -1,18 +1,16 @@
 'use server'
 
-import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { DEAL_STATUSES, type DealStatus } from '@/engine/types'
 import { NOTE_CATEGORIES, type DealNotes } from '@/lib/notes'
 import { parseDealForm, type FieldErrors } from '@/lib/parse-inputs'
-import { repo } from '@/lib/repo'
 import { getDb } from '@/lib/db'
 import { compSummaryFor } from '@/lib/comp-summary'
+import { DealConflictError, dealsRepo } from '@/lib/deals-repo'
+import { snapshotDeal } from '@/lib/deal-snapshots'
 import { isDefaultable, type DefaultableKey } from '@/engine/fields'
-import { currentUser } from '@/lib/session'
-import { asUser, USER_COOKIE } from '@/lib/users'
-import { BASE_PATH } from '@/lib/base-path'
+import { currentActor } from '@/lib/session'
 
 export interface SaveState {
   error?: string
@@ -24,8 +22,8 @@ function readStatus(v: FormDataEntryValue | null): DealStatus {
 }
 
 export async function saveDeal(_prev: SaveState, formData: FormData): Promise<SaveState> {
-  const user = await currentUser()
-  if (!user) return { error: 'Choose who you are (Guy or Ben) in the header before saving — changes are attributed in the audit trail.' }
+  const user = await currentActor()
+  if (!user) return { error: 'Your session has ended — sign in again to save.' }
 
   const parsed = parseDealForm((k) => {
     const v = formData.get(k)
@@ -42,26 +40,42 @@ export async function saveDeal(_prev: SaveState, formData: FormData): Promise<Sa
   const status = readStatus(formData.get('status'))
   const id = String(formData.get('id') ?? '')
 
-  // Comp summary fields are never typed: they always come from the comps list.
-  const inputs = { ...parsed.inputs, ...(await compSummaryFor(await getDb(), id || null)) }
+  const versionRaw = String(formData.get('version') ?? '')
+  const expectedVersion = /^\d+$/.test(versionRaw) ? Number(versionRaw) : undefined
+  const db = await getDb()
 
-  // Fields still holding an unconfirmed ValeForge default (a marker only).
-  let defaulted: DefaultableKey[] = []
-  try {
-    const raw = JSON.parse(String(formData.get('defaulted') ?? '[]'))
-    if (Array.isArray(raw)) defaulted = raw.filter((k): k is DefaultableKey => typeof k === 'string' && isDefaultable(k) && inputs[k] !== null)
-  } catch {
-    defaulted = []
-  }
-
-  const r = await repo()
   let dealId = id
-  if (id) {
-    if (!(await r.get(id))) return { error: 'Deal not found.' }
-    await r.update(id, { inputs, notes, status }, user)
-    await r.setDefaulted(id, defaulted)
-  } else {
-    dealId = await r.create(inputs, notes, status, user, defaulted)
+  try {
+    // One transaction: deal row, audit rows and the analysis snapshot commit together.
+    const outcome = await db.transaction(async (tx) => {
+      const r = dealsRepo(tx)
+      // Comp summary fields are never typed: they always come from the comps list.
+      const inputs = { ...parsed.inputs, ...(await compSummaryFor(tx, id || null)) }
+      // Fields still holding an unconfirmed ValeForge default (a marker only).
+      let defaulted: DefaultableKey[] = []
+      try {
+        const raw = JSON.parse(String(formData.get('defaulted') ?? '[]'))
+        if (Array.isArray(raw)) defaulted = raw.filter((k): k is DefaultableKey => typeof k === 'string' && isDefaultable(k) && inputs[k] !== null)
+      } catch {
+        defaulted = []
+      }
+      if (id) {
+        if (!(await r.get(id))) return 'missing' as const
+        await r.update(id, { inputs, notes, status }, user, { expectedVersion })
+        await r.setDefaulted(id, defaulted)
+      } else {
+        dealId = await r.create(inputs, notes, status, user, defaulted)
+      }
+      await snapshotDeal(tx, dealId, user)
+      return 'saved' as const
+    })
+    if (outcome === 'missing') return { error: 'Deal not found.' }
+  } catch (e) {
+    if (e instanceof DealConflictError)
+      return {
+        error: `${e.message} Nothing was saved. Open the deal again to see their changes, then re-apply yours.`,
+      }
+    throw e
   }
   revalidatePath('/')
   revalidatePath(`/deals/${dealId}`)
@@ -69,17 +83,13 @@ export async function saveDeal(_prev: SaveState, formData: FormData): Promise<Sa
 }
 
 export async function setStatus(formData: FormData) {
-  const user = await currentUser()
+  const user = await currentActor()
   const id = String(formData.get('id') ?? '')
   if (!user || !id) return
-  await (await repo()).update(id, { status: readStatus(formData.get('status')) }, user)
+  const db = await getDb()
+  await db.transaction(async (tx) => {
+    if ((await dealsRepo(tx).update(id, { status: readStatus(formData.get('status')) }, user)) > 0) await snapshotDeal(tx, id, user)
+  })
   revalidatePath('/')
   revalidatePath(`/deals/${id}`)
-}
-
-export async function setUser(formData: FormData) {
-  const user = asUser(String(formData.get('user') ?? ''))
-  if (!user) return
-  ;(await cookies()).set(USER_COOKIE, user, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: BASE_PATH || '/', maxAge: 60 * 60 * 24 * 365 })
-  revalidatePath('/', 'layout')
 }

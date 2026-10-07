@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getDb } from '@/lib/db'
 import { parseDefaultsForm, type FieldErrors } from '@/lib/parse-inputs'
-import { currentUser } from '@/lib/session'
+import { currentActor } from '@/lib/session'
 import { settingsRepo } from '@/lib/settings-repo'
 
 export interface DefaultsState {
@@ -13,8 +13,8 @@ export interface DefaultsState {
 }
 
 export async function saveDefaults(_prev: DefaultsState, formData: FormData): Promise<DefaultsState> {
-  const user = await currentUser()
-  if (!user) return { error: 'Choose who you are (Guy or Ben) in the header first — changes to defaults are recorded.' }
+  const user = await currentActor()
+  if (!user) return { error: 'Your session has ended — sign in again.' }
   const { defaults, errors } = parseDefaultsForm((k) => {
     const v = formData.get(k)
     return typeof v === 'string' ? v : null

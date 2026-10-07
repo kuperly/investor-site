@@ -32,17 +32,19 @@ export function settingsRepo(db: Db) {
         (k) => JSON.stringify(current[k] ?? null) !== JSON.stringify(next[k] ?? null),
       )
       if (changed.length === 0) return 0
-      await db.query(
-        `insert into settings (key, value, updated_by) values ($1, $2::text::jsonb, $3)
-         on conflict (key) do update set value = excluded.value, updated_by = excluded.updated_by, updated_at = now()`,
-        [KEY, JSON.stringify(next), user],
-      )
-      for (const k of changed) {
-        await db.query(
-          `insert into settings_history (key, field, old_value, new_value, changed_by) values ($1,$2,$3::text::jsonb,$4::text::jsonb,$5)`,
-          [KEY, k, JSON.stringify(current[k] ?? null), JSON.stringify(next[k] ?? null), user],
+      await db.transaction(async (tx) => {
+        await tx.query(
+          `insert into settings (key, value, updated_by) values ($1, $2::text::jsonb, $3)
+           on conflict (key) do update set value = excluded.value, updated_by = excluded.updated_by, updated_at = now()`,
+          [KEY, JSON.stringify(next), user],
         )
-      }
+        for (const k of changed) {
+          await tx.query(
+            `insert into settings_history (key, field, old_value, new_value, changed_by) values ($1,$2,$3::text::jsonb,$4::text::jsonb,$5)`,
+            [KEY, k, JSON.stringify(current[k] ?? null), JSON.stringify(next[k] ?? null), user],
+          )
+        }
+      })
       return changed.length
     },
 

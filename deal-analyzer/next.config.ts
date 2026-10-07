@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   // doesn't pick the parent lockfile as the workspace root.
   outputFileTracingRoot: __dirname,
   serverExternalPackages: ['@electric-sql/pglite', 'postgres'],
-  outputFileTracingIncludes: { '/**': ['./db/schema.sql'] },
+  outputFileTracingIncludes: { '/**': ['./db/migrations/**'] },
   // Internal tool: keep it out of search engines even if a URL leaks.
   async headers() {
     return [{ source: '/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] }]
