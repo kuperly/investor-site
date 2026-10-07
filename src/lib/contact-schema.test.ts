@@ -1,17 +1,23 @@
 import { describe, it, expect } from 'vitest'
-import { contactFormSchema } from './contact-schema'
+import { contactFormSchema, contactIntents } from './contact-schema'
 
 const validPayload = {
-  intent: 'investor' as const,
+  intent: 'property' as const,
   name: 'Jamie Rivera',
   email: 'jamie@example.com',
-  message: 'I would like to learn more about your fund.',
+  message: 'I have a property opportunity to discuss.',
 }
 
 describe('contactFormSchema', () => {
   it('accepts a valid payload', () => {
     const result = contactFormSchema.safeParse(validPayload)
     expect(result.success).toBe(true)
+  })
+
+  it('accepts every contact category', () => {
+    for (const intent of contactIntents) {
+      expect(contactFormSchema.safeParse({ ...validPayload, intent }).success).toBe(true)
+    }
   })
 
   it('rejects an invalid intent', () => {

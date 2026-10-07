@@ -10,10 +10,10 @@ vi.mock('resend', () => ({
 }))
 
 const validPayload = {
-  intent: 'investor',
+  intent: 'capital',
   name: 'Jamie Rivera',
   email: 'jamie@example.com',
-  message: 'I would like to learn more about your fund.',
+  message: 'We are a lender interested in partnering on future acquisitions.',
 }
 
 function makeRequest(body: unknown) {
@@ -28,7 +28,6 @@ describe('POST /api/contact', () => {
   beforeEach(() => {
     sendMock.mockReset()
     vi.stubEnv('RESEND_API_KEY', 're_test_key')
-    vi.stubEnv('CONTACT_TO_EMAIL', 'founder@example.com')
     vi.stubEnv('CONTACT_FROM_EMAIL', 'site@example.com')
   })
 
@@ -57,11 +56,31 @@ describe('POST /api/contact', () => {
     expect(response.status).toBe(200)
     expect(sendMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        to: 'founder@example.com',
+        to: 'investment@valeforgecapital.com',
         from: 'site@example.com',
         replyTo: 'jamie@example.com',
       }),
     )
+  })
+
+  it.each([
+    ['property', 'deals@valeforgecapital.com'],
+    ['operating', 'deals@valeforgecapital.com'],
+    ['capital', 'investment@valeforgecapital.com'],
+    ['financing', 'investment@valeforgecapital.com'],
+    ['general', 'investment@valeforgecapital.com'],
+  ])('routes a %s inquiry to %s', async (intent, inbox) => {
+    sendMock.mockResolvedValue({ data: { id: 'abc' }, error: null })
+    const { POST } = await import('./route')
+    await POST(makeRequest({ ...validPayload, intent }))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({ to: inbox }))
+  })
+
+  it('returns 503 when the sender address is not configured', async () => {
+    vi.stubEnv('CONTACT_FROM_EMAIL', '')
+    const { POST } = await import('./route')
+    const response = await POST(makeRequest(validPayload))
+    expect(response.status).toBe(503)
   })
 
   it('returns 502 when Resend reports a send error', async () => {

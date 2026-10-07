@@ -1,104 +1,117 @@
-# Design system — G&B Capital
+# Design system — Vale Forge Capital
 
 The visual language of the site and the reasoning behind it. The site's job
-is **credibility with investors and deal partners**, not property listings —
-every decision below serves that.
+is to make a visitor think *"these people approach real estate like an
+investment business"* — not *"these people flip houses."* Every decision
+below serves that.
 
 ## Direction
 
-Institutional **champagne brass on deep ink** — the register of a boutique
-capital-partners firm, not a consumer real-estate portal. Typography-led,
-with no photography by design: on a listings site photos sell a property; on
-a firm's site generic stock imagery reads as less serious, so the site earns
-trust through type, restraint, and a single recurring motif (value
-compounding upward over time).
+A boutique real estate investment firm: **champagne brass on deep ink
+navy**, editorial typography, large margins. **Simple and inviting** — the
+site tells the story in plain words. Not a realtor site, not a guru site,
+not a SaaS landing page.
+
+- **Typography-led.** No stock photography. The only imagery is a quiet
+  skyline outline behind the hero. Generic stock photos read as less serious for an investment firm;
+  owned or properly licensed architectural photography could be added later.
+- **No diagrams, no fake proof.** Concepts (the model, underwriting, capital
+  efficiency, exit paths) are explained in text — heading, short paragraph,
+  a few short points. No flow charts, process diagrams, grids of labels,
+  charts, metrics, testimonials or logos.
+- **Restraint over cards.** Sections are separated by hairline rules and a
+  subtle tonal band (`Section tone="muted"`), not by card grids with shadows.
+  Lists are simple ruled rows.
 
 ## Color
 
 Semantic tokens only — defined once in `src/app/globals.css` as
 space-separated RGB channels (for Tailwind `<alpha-value>` support) and
 consumed via the Tailwind color names in `tailwind.config.ts`. Never hardcode
-hex in components.
+hex in components (the OG image and favicon are the only exceptions, since
+they render outside the page CSS).
 
 | Token | Dark (default) | Light |
 |---|---|---|
-| `background` | `#0A0F1C` deep ink | `#FAF8F3` warm paper |
+| `background` | `#0A0F1C` deep ink navy | `#FAF8F3` warm paper |
 | `foreground` | `#F4F2EC` warm paper-white | `#14192B` deep ink |
 | `primary` | `#C5A253` champagne brass | `#8A6D1F` dark bronze |
-| `secondary` | `#D9BE7E` lighter brass | `#6E5518` |
+| `secondary` | `#D9BE7E` lighter brass (hover) | `#6E5518` |
 | `card` | `#131A2C` | `#FFFFFF` |
 | `muted` / `muted-foreground` | `#1B2339` / `#9BA6BD` | `#F1EEE7` / `#545E76` |
 | `border` | `#29344F` | `#E5E0D5` |
 | `ring` | brass | bronze |
 
-Light and dark are designed as one identity inverted, not a colour flip.
-Every foreground/background pair is ≥4.5:1; `muted-foreground` is chosen to
-stay above the body-text threshold in both modes. Light-mode `primary` is
-deliberately darkened to bronze so brass-as-text still clears 4.5:1 on paper.
+This is the owner-approved palette — keep it. Every foreground/background
+pair is ≥4.5:1; light-mode `primary` is darkened to bronze so brass-as-text
+still clears 4.5:1 on paper.
 
 ## Typography
 
-- **Headings:** EB Garamond, weights 400–700 + italic (`next/font/google`).
-  Display headings use `.tracking-display` (−0.02em) and `.text-balance`.
-- **Body:** Source Sans 3, weights 400–600.
+- **Headings:** Fraunces (`font-heading`), weight ~400–500 — editorial, not
+  heavy. Display sizes use `.tracking-display` (−0.02em) and `.text-balance`.
+  Italic + brass is reserved for the second line of the philosophy statement.
+- **Body:** Source Sans 3, 400–600.
 - **Eyebrows:** the `Eyebrow` component — 12px, `.tracking-eyebrow` (0.22em),
-  uppercase, brass, preceded by a short gold rule.
-- Data/years use `.tabular-nums`.
+  uppercase, brass, preceded by a 32px brass rule.
+- Scale: hero h1 up to `text-8xl`; philosophy up to 6.5rem; page h1 up to
+  `text-7xl`; section h2 `text-5xl`; item h3 `text-2xl`–`3xl`.
 
 ## Motion
 
-Restrained ("elevated & tasteful", not showy — showy reads less
-institutional). Every animation collapses to its final frame under
-`prefers-reduced-motion` via the global rule in `globals.css`.
+Expensive, not flashy. Every animation collapses to its final frame under
+`prefers-reduced-motion` (the global rule zeroes duration *and* delay).
 
-- **Hero trendline draw-in** — the appreciation line strokes itself in
-  (`hero-draw` keyframe + `.hero-trendline`), endpoint fades in after.
-- **Hero parallax** — `HeroBackground` drifts the backdrop on scroll,
-  rAF-throttled and capped so it never detaches from the hero.
-- **Scroll reveals** — `Reveal` fades/rises blocks on enter with a
-  spring-like `cubic-bezier(0.16, 1, 0.3, 1)`, staggered ~90ms per item.
-- **Hover** — quiet: a gold hairline grows in + a small lift. No
-  attention-grabbing "dim the siblings" effects.
+- **Hero skyline draw-in** — building outlines stroke in (`.draw-line`,
+  `.draw-line-group`, `pathLength="1"`).
+- **Hero parallax** — `HeroBackground` drifts on scroll, rAF-throttled and
+  capped.
+- **Scroll reveals** — `Reveal` fades/rises blocks with
+  `cubic-bezier(0.16, 1, 0.3, 1)`, staggered 60–90ms.
+- **Hover** — quiet: strategy titles turn brass, CTA arrows slide 4px.
 
-## Layout primitives (what keeps pages aligned)
+## Layout primitives
 
-Every page is built from these so alignment and section styling are identical
-by construction — not by each page re-implementing them:
-
-- `PageContainer` — the one page-width wrapper (`max-w-6xl` + gutter). The
-  header, footer, and **every** page use it, so all content shares one left
-  edge and lines up vertically as you move between pages. Constrain text
-  inside with `max-w-2xl`/`max-w-3xl`; never center a page in a narrower
-  container (that breaks the shared left edge).
-- `PageHeader` — the one masthead for content pages (Approach/About/Contact):
-  eyebrow → h1 → optional intro, at a fixed type scale and spacing. The home
-  page uses its own larger hero by design.
-- `Card` — the one "section item" surface (rounded border + `bg-card/40` +
-  quiet hover lift/brass border). Home pillars, home audiences, and approach
-  criteria all use it, so those sections look identical everywhere.
+- `PageContainer` / `pageGutter` — the one full-width wrapper with the shared
+  gutter; header, footer and every section use it, so everything shares one
+  left edge.
+- `Section` — one section band: top hairline, `py-20/28/32` rhythm, optional
+  `tone="muted"` surface, `aria-labelledby` its heading.
+- `SectionHeading` — eyebrow → h2 → optional lead at one fixed scale.
+- `TextSection` — the standard content section: heading left, short
+  paragraph right, optional 3–4 short text points below. Use this for any
+  new concept rather than inventing a visual.
+- `PageHeader` — the masthead for inner pages (eyebrow → h1 → intro).
+- 12-column asymmetric grids (`lg:col-span-5` / `lg:col-start-7`) for
+  heading-left / content-right compositions.
 
 ## Components
 
-- `Logo` — the G&B Capital wordmark (Space Grotesk, ampersand in brass),
-  derived from `siteConfig.name`. Used in header + footer. Favicon is the
-  matching "GB" monogram at `src/app/icon.svg`.
-- `ThemeToggle` — light/dark switch (sets `data-theme`, persists, no-flash).
-- `Eyebrow` — section label; use above every page `<h1>` and section head.
-- `HeroBackground` — decorative, `aria-hidden`; skyline + trendline + faint
-  grid + brass radial wash. Home hero only.
-- `Reveal` — wrap blocks to reveal on scroll; `delay` prop for stagger.
+- `Logo` — the official Vale Forge Capital logo (pillar icon + "VALE FORGE /
+  CAPITAL"), from the brand kit in `public/brand/`. Renders both colourways;
+  CSS shows the one matching the theme. `BrandIcon` is the pillar icon as
+  SVG (used as a faint watermark in the partnership section). Favicon,
+  Apple icon and OG image all come from the same kit.
+- `ButtonLink` / `buttonClasses` / `TextLink` — the two CTA styles (solid
+  brass, outlined) with a sliding arrow; square-ish `rounded-sm` corners.
+- `ThemeToggle` — light/dark switch (sets `data-theme`, persists, no flash).
+- Sections (`src/components/sections/`): `Hero`, `Philosophy`,
+  `Strategies` (`withHeading` prop), `AboutIntro`, `PartnershipCta`;
+  everything else is a `TextSection`.
 
 ## Accessibility guardrails
 
-Unified `:focus-visible` ring (2px brass, 2px offset) on all interactive
-elements; skip link; active-nav `aria-current="page"`; ≥44px touch targets;
-`prefers-reduced-motion` respected. `src/app/a11y.test.tsx` runs jest-axe
-against all four pages — extend it when adding pages.
+Unified `:focus-visible` ring (2px brass, 2px offset); skip link; one h1 per
+page and no skipped heading levels; decorative numbers/glyphs/linework are
+`aria-hidden`; active nav `aria-current="page"`; ≥44px touch targets;
+`color-scheme` set per theme so native form controls match;
+`prefers-reduced-motion` respected. `src/app/a11y.test.tsx` runs jest-axe on
+every page plus header/footer — extend it when adding pages.
 
 ## When extending
 
-Build every new page from `PageContainer` + `PageHeader`, and every section
-item from `Card` — do not hand-roll a page's width, masthead, or card, or it
-will drift out of alignment. Reuse the tokens; keep to the type scale and the
-4/8px spacing rhythm. Do not introduce hardcoded colours, emoji icons, or
-photography. If a new visual pattern is needed, add it here.
+Build pages from `PageHeader` + sections; build sections from `Section` +
+`SectionHeading`. Put copy in `src/lib/content.ts`. Reuse the tokens; do not
+introduce hardcoded colours, emoji icons, stock photography, card-grid
+patterns, diagrams, or anything that implies a track record that doesn't
+exist.

@@ -3,9 +3,13 @@ import { render, screen } from '@testing-library/react'
 import ApproachPage from './page'
 
 describe('ApproachPage', () => {
-  it('renders the page heading and all four criteria headings', () => {
+  it('renders the philosophy as h1 and the approach sections', () => {
     render(<ApproachPage />)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('How we evaluate every deal')
-    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(4)
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      "We don't buy properties. We buy opportunities.",
+    )
+    for (const name of ['The Vale Forge Model', 'The Numbers Come First.', 'Capital should create more capital.']) {
+      expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument()
+    }
   })
 })

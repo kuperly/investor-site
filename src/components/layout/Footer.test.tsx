@@ -1,19 +1,38 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { Footer } from './Footer'
 import { siteConfig } from '@/lib/site-config'
 
 describe('Footer', () => {
-  it('renders the brand name and market focus', () => {
+  it('renders the brand and positioning line', () => {
     render(<Footer />)
-    expect(screen.getByRole('contentinfo')).toHaveTextContent(siteConfig.name)
-    expect(screen.getByText(siteConfig.marketFocus)).toBeInTheDocument()
+    const footer = screen.getByRole('contentinfo')
+    expect(screen.getAllByAltText(siteConfig.name).length).toBeGreaterThan(0)
+    expect(footer).toHaveTextContent(siteConfig.tagline)
+    expect(footer).toHaveTextContent(`© ${new Date().getFullYear()} ${siteConfig.name}`)
   })
 
-  it('does not duplicate header navigation or repeat the contact link', () => {
+  it('links to every section page except Home', () => {
     render(<Footer />)
-    // Footer is intentionally minimal on a 4-page site — nav/contact live in the header.
-    expect(screen.queryByRole('link', { name: 'Approach' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Contact' })).not.toBeInTheDocument()
+    const nav = screen.getByRole('navigation', { name: 'Footer' })
+    expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual([
+      'Approach',
+      'Strategies',
+      'About',
+      'Contact',
+    ])
+  })
+
+  it('links to the legal pages', () => {
+    render(<Footer />)
+    const nav = screen.getByRole('navigation', { name: 'Legal' })
+    for (const item of siteConfig.legal) {
+      expect(within(nav).getByRole('link', { name: item.label })).toHaveAttribute('href', item.href)
+    }
+  })
+
+  it('states that the site is not a solicitation', () => {
+    render(<Footer />)
+    expect(screen.getByText(/not an offer to sell/)).toBeInTheDocument()
   })
 })

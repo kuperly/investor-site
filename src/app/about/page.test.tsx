@@ -1,12 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import AboutPage from './page'
-import { siteConfig } from '@/lib/site-config'
+import { about } from '@/lib/content'
 
 describe('AboutPage', () => {
-  it('renders an h1 referencing the site name and the market focus in body copy', () => {
+  it('renders "Built to Compound." and the company principles', () => {
     render(<AboutPage />)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(siteConfig.name)
-    expect(screen.getByText(new RegExp(siteConfig.marketFocus))).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Built to Compound.')
+    for (const principle of about.principles) {
+      expect(screen.getByRole('heading', { level: 3, name: principle.title })).toBeInTheDocument()
+    }
   })
 })

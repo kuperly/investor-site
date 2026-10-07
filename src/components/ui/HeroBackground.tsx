@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from 'react'
 
+const GROUND = 520
+
 /**
- * Decorative, typography-led hero backdrop: a warm brass wash, a faint
- * baseline grid, a restrained skyline, and an appreciation trendline that
- * draws itself in — the visual thesis of the firm (value compounding
- * upward over time). Subtle scroll parallax adds depth. Purely decorative
- * and hidden from assistive tech; all motion respects reduced-motion.
+ * Decorative hero backdrop: a quiet skyline outline in fine brass linework
+ * on a ground line. It draws itself in on load and drifts subtly on scroll. No charts, no photography; purely
+ * decorative and hidden from assistive tech. Reduced motion collapses every
+ * animation to its final frame.
  */
 export function HeroBackground() {
   const layerRef = useRef<HTMLDivElement>(null)
@@ -23,7 +24,7 @@ export function HeroBackground() {
       if (frame) return
       frame = requestAnimationFrame(() => {
         // A gentle drift — capped so the backdrop never detaches from the hero.
-        const offset = Math.min(window.scrollY, 600) * 0.12
+        const offset = Math.min(window.scrollY, 700) * 0.1
         node!.style.transform = `translate3d(0, ${offset}px, 0)`
         frame = 0
       })
@@ -42,46 +43,42 @@ export function HeroBackground() {
         className="absolute inset-0"
         style={{
           background:
-            'radial-gradient(720px circle at 12% 8%, rgb(var(--color-primary) / 0.12), transparent 60%), ' +
-            'radial-gradient(560px circle at 88% 30%, rgb(var(--color-secondary) / 0.09), transparent 55%)',
+            'radial-gradient(900px circle at 85% 20%, rgb(var(--color-primary) / 0.10), transparent 60%), ' +
+            'linear-gradient(to bottom, transparent 70%, rgb(var(--color-background)) 100%)',
         }}
       />
       <svg
-        className="absolute inset-0 hidden h-full w-full sm:block"
-        viewBox="0 0 1000 400"
-        preserveAspectRatio="xMidYMid slice"
+        className="absolute inset-0 h-full w-full opacity-25 sm:opacity-100"
+        viewBox="0 0 1000 600"
+        preserveAspectRatio="xMaxYMax slice"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* faint baseline grid — structure, discipline */}
-        <g style={{ stroke: 'rgb(var(--color-foreground))' }} opacity={0.05} strokeWidth={1}>
-          <path d="M0 100 H1000 M0 200 H1000 M0 300 H1000" />
-          <path d="M200 0 V400 M400 0 V400 M600 0 V400 M800 0 V400" />
+        {/* module grid — structure, discipline */}
+        <g style={{ stroke: 'rgb(var(--color-foreground))' }} opacity={0.045} strokeWidth={1}>
+          {Array.from({ length: 12 }, (_, i) => (
+            <path key={i} d={`M${(i + 1) * 80} 0V600`} />
+          ))}
         </g>
 
-        {/* horizon */}
-        <path d="M0 344 H1000" style={{ stroke: 'rgb(var(--color-border))' }} strokeWidth={1} opacity={0.9} />
-
-        {/* skyline — grounded on the horizon */}
-        <g style={{ stroke: 'rgb(var(--color-primary))' }} fill="none" strokeWidth={1} opacity={0.35}>
-          <rect x="540" y="184" width="65" height="160" />
-          <path d="M625 344 V150 L672 116 L719 150 V344" />
-          <rect x="745" y="228" width="50" height="116" />
-          <rect x="815" y="128" width="95" height="216" />
-          <rect x="930" y="250" width="55" height="94" />
-        </g>
-
-        {/* appreciation trendline — the thesis, drawn in on load */}
+        {/* ground line */}
         <path
-          className="hero-trendline"
-          d="M520 322 L640 276 L730 296 L830 190 L985 104"
-          style={{ stroke: 'rgb(var(--color-secondary))' }}
-          strokeWidth={2.5}
-          fill="none"
-          opacity={0.9}
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          className="draw-line"
+          pathLength={1}
+          d={`M380 ${GROUND}H1000`}
+          style={{ stroke: 'rgb(var(--color-foreground))' }}
+          strokeWidth={1}
+          opacity={0.35}
         />
-        <circle className="hero-endpoint" cx="985" cy="104" r="4" style={{ fill: 'rgb(var(--color-secondary))' }} />
+
+        <g style={{ stroke: 'rgb(var(--color-primary))' }} fill="none" strokeWidth={1}>
+          {/* building outlines */}
+          <g className="draw-line-group" opacity={0.4}>
+            <path pathLength={1} d={`M520 ${GROUND}V340L565 305L610 340V${GROUND}`} />
+            <rect pathLength={1} x="630" y="130" width="150" height={GROUND - 130} />
+            <rect pathLength={1} x="800" y="230" width="170" height={GROUND - 230} />
+          </g>
+
+        </g>
       </svg>
     </div>
   )

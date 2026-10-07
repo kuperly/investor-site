@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { contactFormSchema } from '@/lib/contact-schema'
+import { contactFormSchema, contactIntentInbox, contactIntentLabel } from '@/lib/contact-schema'
 import { siteConfig } from '@/lib/site-config'
 
 export async function POST(request: Request) {
@@ -15,13 +15,10 @@ export async function POST(request: Request) {
   }
 
   const apiKey = process.env.RESEND_API_KEY
-  const toEmail = process.env.CONTACT_TO_EMAIL
   const fromEmail = process.env.CONTACT_FROM_EMAIL
 
-  if (!apiKey || !toEmail || !fromEmail) {
-    console.error(
-      'Contact form submitted but RESEND_API_KEY/CONTACT_TO_EMAIL/CONTACT_FROM_EMAIL is not configured.',
-    )
+  if (!apiKey || !fromEmail) {
+    console.error('Contact form submitted but RESEND_API_KEY/CONTACT_FROM_EMAIL is not configured.')
     return NextResponse.json(
       { message: 'The contact form is not configured yet. Please email us directly.' },
       { status: 503 },
@@ -30,7 +27,9 @@ export async function POST(request: Request) {
 
   const resend = new Resend(apiKey)
   const { intent, name, email, message } = parsed.data
-  const intentLabel = intent === 'investor' ? 'Investor inquiry' : 'Deal / listing submission'
+  const intentLabel = contactIntentLabel(intent)
+  // Deal flow and capital conversations go to separate inboxes.
+  const toEmail = siteConfig.emails[contactIntentInbox(intent)]
 
   const { error } = await resend.emails.send({
     from: fromEmail,
