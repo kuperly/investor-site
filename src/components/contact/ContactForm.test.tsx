@@ -6,7 +6,7 @@ function fillValidForm() {
   fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'Jamie Rivera' } })
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'jamie@example.com' } })
   fireEvent.change(screen.getByLabelText('Message'), {
-    target: { value: 'I would like to learn more about your fund.' },
+    target: { value: 'I have a duplex that may be a good fit.' },
   })
 }
 
@@ -20,6 +20,22 @@ describe('ContactForm', () => {
     const nameInput = screen.getByLabelText('Full name')
     fireEvent.blur(nameInput)
     expect(screen.getByText('Enter your full name.')).toBeInTheDocument()
+  })
+
+  it('submits the selected inquiry category', async () => {
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({ message: 'Sent' }),
+    })
+
+    render(<ContactForm />)
+    fireEvent.click(screen.getByRole('radio', { name: 'Property Opportunity' }))
+    fillValidForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
+
+    await screen.findByRole('status')
+    const body = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body)
+    expect(body.intent).toBe('property')
   })
 
   it('disables the submit button while submitting', async () => {

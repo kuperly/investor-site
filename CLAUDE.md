@@ -1,8 +1,12 @@
-# ValeForge Capital — Investor Site
+# ValeForge — Marketing Site
 
-A 4-page Next.js marketing site for a pre-launch real estate investment
-company, built for credibility with investors and real estate professionals
-(not active fundraising). Visual system and its rationale:
+A 5-page Next.js marketing site for ValeForge, an early-stage U.S. real
+estate investment company ("Building Value from Opportunity." / "We don't
+buy properties. We buy opportunities."). Built for credibility with
+operators, property owners, financing and capital partners — **not** active
+fundraising: no "invest with us" language, no securities solicitation.
+Strategy-agnostic positioning (value-add, fix & flip, BRRRR, buy & hold,
+small multifamily, creative financing are a *toolkit*, never claims). Visual system and its rationale:
 [docs/design-system.md](docs/design-system.md).
 
 ## Before launch — placeholder values to swap
@@ -10,10 +14,19 @@ company, built for credibility with investors and real estate professionals
 Everything below is a deliberate placeholder, documented so it's a one-line
 change rather than a hunt through the codebase:
 
-- **Company copy**: name is final (ValeForge Capital); copy still pending
-  from the owner. `src/lib/site-config.ts` — `siteConfig.name`,
-  `tagline`, `description`, `marketFocus`, `contactEmail`. This is the single
-  source of truth; nothing else in the app hardcodes the brand name.
+- **Brand config**: `src/lib/site-config.ts` — `name` (final: ValeForge),
+  `tagline`, `philosophy`, `description`, `nav`, `legal`, and
+  **`contactEmail` (still `hello@example.com` — placeholder)**. Nothing
+  else in the app hardcodes the brand name. Page copy lives in
+  `src/lib/content.ts`.
+- **Site URL**: set `NEXT_PUBLIC_SITE_URL` in Vercel once a custom domain
+  exists (drives canonical URLs, OG, sitemap, robots); otherwise falls back
+  to `VERCEL_PROJECT_PRODUCTION_URL`.
+- **Legal pages**: `/legal/privacy`, `/legal/terms`, `/legal/disclaimer`
+  (`src/app/legal/[slug]/page.tsx`) are honest "being prepared" placeholders
+  with `noindex`. Replace with counsel-approved text and drop the noindex.
+  The footer's non-solicitation line (`nonSolicitation` in `content.ts`)
+  should also get counsel review.
 - **Email delivery**: three env vars, set in Vercel (Project → Settings →
   Environment Variables), not in code:
   - `RESEND_API_KEY` — from resend.com
@@ -40,37 +53,47 @@ npm run lint     # eslint
 
 ## Structure
 
-- `src/app/` — routes: `/` (home), `/approach`, `/about`, `/contact`,
-  `/api/contact` (route handler)
+- `src/app/` — routes: `/` (home — the full long-form story), `/approach`,
+  `/strategies`, `/about`, `/contact`, `/legal/[slug]`, `/api/contact`
+  (route handler); plus `opengraph-image.tsx`, `robots.ts`, `sitemap.ts`,
+  `icon.svg`
+- `src/components/sections/` — reusable page sections (`Hero`,
+  `Philosophy`, `ValeForgeModel`, `Capabilities`, `Strategies`,
+  `CapitalEfficiency`, `Underwriting`, `ExitPaths`, `AboutIntro`,
+  `PartnershipCta`). Home composes all of them; inner pages reuse subsets.
 - `src/components/layout/` — `Header.tsx` (sticky nav, active-page
-  indicator, mobile drawer), `Footer.tsx`
+  indicator, mobile drawer below `md`), `Footer.tsx` (brand, nav, legal,
+  non-solicitation line)
 - `src/components/contact/` — `ContactForm.tsx` (client component, intent
   selector + inline validation + submit states)
-- `src/components/ui/` — presentational primitives: `Eyebrow.tsx` (tracked
-  label + gold rule, used on every page masthead), `HeroBackground.tsx`
-  (decorative skyline + appreciation trendline, client component for
-  parallax/draw-in), `Reveal.tsx` (IntersectionObserver scroll reveal)
+- `src/components/ui/` — primitives: `Section.tsx` (`Section` band +
+  `SectionHeading`), `PageHeader.tsx`, `PageContainer.tsx`, `ButtonLink.tsx`
+  (CTA styles + `TextLink`), `Eyebrow.tsx`, `Logo.tsx` (`Logo` +
+  `LogoMark`), `HeroBackground.tsx` (architectural elevation linework,
+  client component for parallax/draw-in), `Reveal.tsx`, `ThemeToggle.tsx`
+- `src/lib/content.ts` — all marketing copy (single-sourced, tested)
 - `src/lib/site-config.ts` — brand config (see above)
 - `src/lib/contact-schema.ts` — Zod schema shared by the form and the API
   route (includes an empty-only `honeypot` field for spam deterrence)
 
 ## Design tokens
 
-Institutional **champagne-brass-on-deep-ink** dark theme by default, with a
-warm-paper/dark-bronze light variant driven by `prefers-color-scheme` (no
-toggle — see `src/app/globals.css` CSS custom properties, mapped into
-Tailwind via `tailwind.config.ts`). Every foreground/background pair meets
-≥4.5:1 in both modes. Typography: EB Garamond (headings, weights 400–700 +
-italic) + Source Sans 3 (body), loaded via `next/font/google` in
-`src/app/layout.tsx`. No stock photography anywhere by design — the site is
-**typography-led** (deliberately reaffirmed; a listings-style photo direction
-was considered and rejected as off-brief for an investment firm).
+Institutional **muted-brass-on-warm-charcoal** dark theme by default, with a
+warm-paper/sand/dark-bronze light variant, driven by `prefers-color-scheme`
+and overridable via the header `ThemeToggle` (see `src/app/globals.css`
+CSS custom properties, mapped into Tailwind via `tailwind.config.ts`).
+Every foreground/background pair meets ≥4.5:1 in both modes. Typography:
+Fraunces (headings) + Source Sans 3 (body) + Space Grotesk (logo wordmark
+only), loaded via `next/font/google` in `src/app/layout.tsx`. No stock
+photography — the site is **typography-led** with architectural SVG
+linework. If real architectural photography (owned or properly licensed)
+becomes available, it can go in the hero behind `HeroBackground`.
 
 Full visual system — palette, type scale, motion, components, and the
 reasoning behind them — lives in
-[docs/design-system.md](docs/design-system.md). Motion (hero trendline
+[docs/design-system.md](docs/design-system.md). Motion (hero linework
 draw-in, subtle scroll parallax in `HeroBackground.tsx`, spring-eased scroll
-reveals in `Reveal.tsx`) is intentionally restrained and always collapses to
+reveals in `Reveal.tsx`, quiet hover hairlines) is intentionally restrained and always collapses to
 its final frame under `prefers-reduced-motion`.
 
 ## Known gotchas
@@ -97,8 +120,15 @@ its final frame under `prefers-reduced-motion`.
 ## Testing
 
 TDD throughout: every component/page/route has a co-located `*.test.tsx`.
-`src/app/a11y.test.tsx` runs jest-axe against all four pages as a WCAG
-regression guard — extend it if new pages are added. Global constraints
-(no fabricated claims, no stock photos, ≥44px touch targets, ≥4.5:1
-contrast) are enforced by convention and code review, not by automated
-tests beyond axe's structural checks.
+`src/app/a11y.test.tsx` runs jest-axe against all five pages plus the
+header/footer as a WCAG regression guard — extend it if new pages are
+added. `src/app/page.test.tsx` also guards against fabricated performance
+claims (%, IRR, AUM, testimonials, "passive income"…) on the home page.
+
+**No fabricated track record — ever.** ValeForge is early-stage: no deal
+counts, AUM, returns, investor counts, testimonials, logos, case studies or
+years-of-experience claims. Other constraints (≥44px touch targets, ≥4.5:1
+contrast) are enforced by convention and code review.
+
+A future public-safe "Investment Platform" nav item would slot into
+`siteConfig.nav`; don't expose internal deal-analysis tooling here.

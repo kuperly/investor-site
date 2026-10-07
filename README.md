@@ -1,12 +1,12 @@
-# ValeForge Capital — Investor Site
+# ValeForge — Marketing Site
 
-Marketing site for a real estate investment company. Four pages — Home,
-Approach, About, Contact — built to establish credibility with investors
-and real estate professionals ahead of an active launch.
+Public marketing site for ValeForge, an early-stage U.S. real estate
+investment company — *Building Value from Opportunity.* Five pages — Home,
+Approach, Strategies, About, Contact — plus placeholder legal pages.
 
-> **Note:** "ValeForge Capital" is the company name, set in
-> `src/lib/site-config.ts`. See [CLAUDE.md](CLAUDE.md) for what else needs
-> swapping before this goes live.
+> **Note:** brand settings live in `src/lib/site-config.ts` and page copy in
+> `src/lib/content.ts`. See [CLAUDE.md](CLAUDE.md) for the placeholders that
+> still need real values before launch.
 
 ## Stack
 

@@ -16,10 +16,10 @@ export function LogoMark({ className = '' }: { className?: string }) {
 }
 
 /**
- * The ValeForge Capital lockup — mark + Space Grotesk wordmark. Derived from
+ * The ValeForge lockup — mark + Space Grotesk wordmark. Derived from
  * `siteConfig.name` so the brand stays single-sourced: the first word is the
  * wordmark (a camel-cased second half, e.g. "Forge", is tinted brass) and any
- * remaining words become a small tracked descriptor ("CAPITAL").
+ * remaining words would become a small tracked descriptor.
  */
 export function Logo({ className = '' }: { className?: string }) {
   const [word, ...rest] = siteConfig.name.split(' ')

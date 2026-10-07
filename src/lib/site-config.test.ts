@@ -2,16 +2,14 @@ import { describe, it, expect } from 'vitest'
 import { siteConfig } from './site-config'
 
 describe('siteConfig', () => {
-  it('has a non-empty placeholder name and tagline', () => {
-    expect(siteConfig.name.length).toBeGreaterThan(0)
-    expect(siteConfig.tagline.length).toBeGreaterThan(0)
+  it('has the brand name and positioning line', () => {
+    expect(siteConfig.name).toBe('ValeForge')
+    expect(siteConfig.tagline).toBe('Building Value from Opportunity.')
   })
 
-  it('exposes exactly the four primary nav items with unique hrefs', () => {
-    expect(siteConfig.nav).toHaveLength(4)
+  it('exposes exactly the five primary nav items with unique hrefs', () => {
     const hrefs = siteConfig.nav.map((item) => item.href)
-    expect(new Set(hrefs).size).toBe(4)
-    expect(hrefs).toEqual(expect.arrayContaining(['/', '/approach', '/about', '/contact']))
+    expect(hrefs).toEqual(['/', '/approach', '/strategies', '/about', '/contact'])
   })
 
   it('has a plausible contact email', () => {

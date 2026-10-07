@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Fraunces, Source_Sans_3, Space_Grotesk } from 'next/font/google'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -23,7 +23,7 @@ const sourceSans3 = Source_Sans_3({
   display: 'swap',
 })
 
-// Brand font — used only for the ValeForge Capital logo wordmark.
+// Brand font — used only for the ValeForge logo wordmark.
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   weight: ['500', '600', '700'],
@@ -31,12 +31,35 @@ const spaceGrotesk = Space_Grotesk({
   display: 'swap',
 })
 
+const defaultTitle = `${siteConfig.name} | U.S. Real Estate Investment`
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: {
-    default: siteConfig.name,
-    template: `%s — ${siteConfig.name}`,
+    default: defaultTitle,
+    template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
+  applicationName: siteConfig.name,
+  openGraph: {
+    type: 'website',
+    siteName: siteConfig.name,
+    title: defaultTitle,
+    description: siteConfig.description,
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: defaultTitle,
+    description: siteConfig.description,
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#121110' },
+    { media: '(prefers-color-scheme: light)', color: '#F6F3EC' },
+  ],
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,20 +1,43 @@
 /**
  * Single source of truth for site-wide, brand-dependent content.
  * `name` drives the logo lockup too (see `Logo.tsx`). Nothing else in the
- * codebase should hardcode it.
+ * codebase should hardcode it. Page copy lives in `content.ts`.
  */
 export const siteConfig = {
-  name: 'ValeForge Capital',
-  tagline: 'Disciplined real estate investment.',
+  name: 'ValeForge',
+  tagline: 'Building Value from Opportunity.',
+  philosophy: "We don't buy properties. We buy opportunities.",
   description:
-    'ValeForge Capital acquires and manages real estate for long-term capital appreciation, with a select number of disciplined renovation projects.',
-  marketFocus: 'Texas and select U.S. markets',
+    'ValeForge is a U.S. real estate investment company focused on acquiring, improving and operating opportunities where disciplined execution can create meaningful equity and recurring cash flow.',
+  // Placeholder — swap for the real inbox before launch.
   contactEmail: 'hello@example.com',
+  /**
+   * Canonical origin for metadata/OG/sitemap. Set NEXT_PUBLIC_SITE_URL in
+   * Vercel once a custom domain exists; falls back to the Vercel production
+   * URL, then localhost for dev.
+   */
+  url:
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : 'http://localhost:3000'),
+  /**
+   * Primary navigation. A future public-safe "Investment Platform" entry
+   * slots in here (before Contact) — don't add it until there's a public
+   * version to link to.
+   */
   nav: [
     { label: 'Home', href: '/' },
     { label: 'Approach', href: '/approach' },
+    { label: 'Strategies', href: '/strategies' },
     { label: 'About', href: '/about' },
     { label: 'Contact', href: '/contact' },
+  ],
+  /** Legal pages are placeholders until counsel provides the documents. */
+  legal: [
+    { label: 'Privacy', href: '/legal/privacy' },
+    { label: 'Terms', href: '/legal/terms' },
+    { label: 'Disclaimer', href: '/legal/disclaimer' },
   ],
 } as const
 

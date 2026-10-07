@@ -10,7 +10,7 @@ vi.mock('resend', () => ({
 }))
 
 const validPayload = {
-  intent: 'investor',
+  intent: 'capital',
   name: 'Jamie Rivera',
   email: 'jamie@example.com',
   message: 'I would like to learn more about your fund.',

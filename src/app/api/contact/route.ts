@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { contactFormSchema } from '@/lib/contact-schema'
+import { contactFormSchema, contactIntentLabel } from '@/lib/contact-schema'
 import { siteConfig } from '@/lib/site-config'
 
 export async function POST(request: Request) {
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
   const resend = new Resend(apiKey)
   const { intent, name, email, message } = parsed.data
-  const intentLabel = intent === 'investor' ? 'Investor inquiry' : 'Deal / listing submission'
+  const intentLabel = contactIntentLabel(intent)
 
   const { error } = await resend.emails.send({
     from: fromEmail,
