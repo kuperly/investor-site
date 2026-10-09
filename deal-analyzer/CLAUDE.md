@@ -1,13 +1,17 @@
-# ValeForge Deal Analyzer + Market Intelligence — CLAUDE.md
+# ValeForge: Market Intelligence → Deal Sourcing → Deal Analyzer — CLAUDE.md
 
 Internal app for ValeForge (US real-estate investing). Users: Guy and Ben, each
-with their own account. Two **separate modules, one deployment, one login**:
+with their own account. Three **separate modules, one deployment, one login**,
+working as **one chain of layers** ([docs/LAYERS.md](docs/LAYERS.md)):
 
-- **Deal Analyzer** (`src/engine`, `src/lib`, `/`, `/deals/*`): property-level
-  underwriting. Core principle: **the deal chooses the strategy**, so every
-  deal is evaluated as BRRRR, Hold, Flip and Hybrid.
-- **Market Intelligence, VF-03** (`src/market`, `/markets/*`): where to search,
-  for which opportunities, with which strategy. See "VF-03 rules" below.
+- **Market Intelligence, VF-03** (layers 1–2; `src/market`, `/markets/*`): where to
+  search. See "VF-03 rules" below.
+- **Deal Sourcing** (layers 3–4; `src/sourcing`, `/sourcing/*`): sourcing targets
+  (area × buy box) and leads, screened against the buy box. See "Layer rules".
+- **Deal Analyzer** (layers 5–6; `src/engine`, `src/lib`, `/`, `/deals/*`):
+  property-level underwriting and actual results. Core principle: **the deal
+  chooses the strategy**, so every deal is evaluated as BRRRR, Hold, Flip and
+  Hybrid.
 
 - Spec (source of truth, § numbers used in code): [docs/SPEC.md](docs/SPEC.md);
   VF-03: [docs/VF03-SPEC.md](docs/VF03-SPEC.md), status + gaps + open decisions:
@@ -81,12 +85,32 @@ with their own account. Two **separate modules, one deployment, one login**:
     `currentActor()` and refuse without one. The middleware only checks the
     cookie signature. The audit name is the user's display name.
 
+## Layer rules (all modules)
+
+1. **Work moves down only through a gate** (`src/sourcing/engine/gates.ts`):
+   target only where the market's latest decision allows it (KEEP / DRILL_DOWN;
+   WATCH with a reason; never DROP / blocked); leads only under an active target;
+   a lead outside its buy box needs a written reason to reach underwriting.
+2. **A layer reads the decision above, never recomputes it, and never decides
+   for the layer below.** Sourcing reads stored market snapshots; its screen and
+   indicative check are triage — BUY / INVESTIGATE / PASS exists only in the
+   Deal Analyzer.
+3. **Dependencies point up the chain only**: `src/engine` imports neither
+   `src/market` nor `src/sourcing`; `src/market` never imports `src/sourcing`;
+   both use only `@/engine/types`, `@/engine/fields`, `@/engine/analyze` from the
+   Deal Analyzer. `src/boundary.test.ts` enforces it. The app layer
+   (`src/app`, `src/components`) may compose all three.
+4. **Every crossing is recorded** (`market_audit`, `deal_audit`), including the
+   market decision a target was opened under and any override reason.
+5. **The buy box is the avatar.** Screening applies only the avatar's own ranges
+   (a missing fact is "unknown"); never add a screening threshold of our own.
+
 ## VF-03 rules (Market Intelligence)
 
 1. **Separate but connected.** `src/market` may import from the Deal Analyzer
    only `@/engine/types`, `@/engine/fields` (the DealInputs contract) and
    `@/engine/analyze` (`analyzeDeal`). `src/engine` never imports `src/market`.
-   `src/market/boundary.test.ts` enforces both. **Never re-implement an
+   `src/boundary.test.ts` enforces both (and the sourcing rules above). **Never re-implement an
    underwriting formula in VF-03**: capital efficiency is ratios of
    `analyzeDeal()` outputs over deal samples.
 2. **All scoring numbers live in `src/market/engine/config.ts`**, tagged
@@ -114,8 +138,9 @@ with their own account. Two **separate modules, one deployment, one login**:
 7. **Decisions are KEEP / WATCH / DROP / DRILL_DOWN** — never BUY/PASS for
    markets. Children (submarket, ZIP) are analyzed only under a promoted parent
    (`analyzable()` in `service.ts`).
-8. **Hand-off fills property facts and asking price only**; ARV / rehab / rent
-   estimates go to the deal notes. The Deal Analyzer stays the source of truth.
+8. **Hand-off (in `src/sourcing`) fills property facts and asking price only**;
+   ARV / rehab / rent estimates go to the deal notes. The Deal Analyzer stays
+   the source of truth.
 
 ## Commands
 
@@ -124,7 +149,7 @@ npm run dev          # http://localhost:3100 (PGlite in .data/pglite unless DATA
 npm run check        # typecheck + lint + unit/integration tests — run before every commit
 npm test             # vitest (unit + integration)
 TEST_DATABASE_URL=postgres://… npm test   # repo tests against real PostgreSQL too
-npm run e2e          # isolated DB + prod build + Playwright suites (app, comps, markets), real sign-in
+npm run e2e          # isolated DB + prod build + Playwright suites (app, comps, markets → sourcing → deal), real sign-in
 npm run e2e:auth     # sign-in must cover every path, at / and under a basePath; fail-closed; revocation
 E2E_OUT=docs/screenshots npm run e2e      # refresh the README screenshots
 npm run db:seed      # [DEMO] deals + comps + 6 [DEMO] markets (illustrative only)
@@ -153,9 +178,11 @@ src/lib/      db (postgres.js | PGlite, transaction) · migrations · auth/{pass
               session · users · users-repo · deals-repo (locking) · deal-snapshots · comps-repo
               comps/{parse-comp,provider} · settings-repo · comp-summary · parse-inputs · audit · format
 src/market/   engine/ (pure VF-03 scoring) · ingest/ (providers + pipeline) · lib/ (repo, service) · ui/
+src/sourcing/ engine/ (pure: layers, gates, screen, leads/CSV, funnel, handoff) · lib/ (repo, service)
 src/app/      login · (app)/ = signed-in area: / dashboard · deals/* · settings · methodology · account
-              admin/users · markets/{,[geoId],avatars,candidates,ingestion,methodology}
-              actions · comps-actions · settings-actions · auth-actions · market-actions
+              admin/users · markets/{,[geoId],avatars,ingestion,methodology} · sourcing/{,targets,leads}
+              actions · comps-actions · settings-actions · auth-actions · market-actions · sourcing-actions
+src/boundary.test.ts  dependency direction between the three modules
 src/middleware.ts  sign-in gate (no matcher)
 db/migrations/     NNNN_name.sql, applied in order at startup
 e2e/          run.sh + login.mjs + app/comps/markets.e2e.mjs · auth-check.sh + auth.e2e.mjs
@@ -256,6 +283,7 @@ against the change. **Add** what's new, **update** what changed, and
 | `docs/SPEC-ALIGNMENT.md` | Any change to behaviour vs the spec: status per section, approved changes, open gaps |
 | `docs/SPEC.md`, `docs/VF03-SPEC.md` | Never edited, except to add a new spec version from Guy/Ben verbatim |
 | `docs/VF03-ALIGNMENT.md` | Any VF-03 behaviour change vs its spec; open decisions M1–M10; deferred items |
+| `docs/LAYERS.md` + `src/sourcing/engine/layers.ts` | A layer, gate or module boundary changes; open decisions S1–S3 |
 | `src/market/engine/config.ts` → `MARKET_METHODOLOGY` | Any VF-03 rule added or changed (VF03-SPEC / PROVISIONAL / INTERPRETATION) |
 | `docs/screenshots/` | UI changed visibly: `E2E_OUT=docs/screenshots npm run e2e` |
 | `../CLAUDE.md` (repo root) | The analyzer's location, skills list or isolation from the site changes |

@@ -20,9 +20,33 @@ function files(dir: string): string[] {
 const imports = (file: string) => [...readFileSync(file, 'utf8').matchAll(/from\s+'([^']+)'/g)].map((m) => m[1])
 const rel = (f: string) => path.relative(root, f)
 
-describe('module boundary', () => {
-  it('src/engine never imports src/market', () => {
-    const bad = files(path.join(root, 'engine')).flatMap((f) => imports(f).filter((i) => i.includes('market')).map((i) => `${rel(f)} → ${i}`))
+describe('module boundary (layers: market → sourcing → deal analyzer)', () => {
+  it('src/engine (Deal Analyzer) never imports Market Intelligence or Deal Sourcing', () => {
+    const bad = files(path.join(root, 'engine')).flatMap((f) => imports(f).filter((i) => /market|sourcing/.test(i)).map((i) => `${rel(f)} → ${i}`))
+    expect(bad).toEqual([])
+  })
+
+  it('src/market never imports src/sourcing (a layer never depends on the one below it)', () => {
+    const bad = files(path.join(root, 'market')).flatMap((f) => imports(f).filter((i) => i.includes('sourcing')).map((i) => `${rel(f)} → ${i}`))
+    expect(bad).toEqual([])
+  })
+
+  it('src/sourcing uses only the Deal Analyzer contract / entry point and market engine types', () => {
+    const allowed = new Set(['@/engine/types', '@/engine/fields', '@/engine/analyze'])
+    const bad = files(path.join(root, 'sourcing'))
+      .filter((f) => !f.endsWith('.test.ts'))
+      .flatMap((f) => imports(f).filter((i) => i.startsWith('@/engine') && !allowed.has(i)).map((i) => `${rel(f)} → ${i}`))
+    expect(bad).toEqual([])
+  })
+
+  it('the sourcing engine is pure', () => {
+    const bad = files(path.join(root, 'sourcing', 'engine'))
+      .filter((f) => !f.endsWith('.test.ts'))
+      .flatMap((f) => {
+        const src = readFileSync(f, 'utf8')
+        const io = imports(f).filter((i) => /^(node:|react|next|postgres|@electric-sql|@\/lib|@\/market\/(lib|ingest|ui))/.test(i))
+        return [...io.map((i) => `${rel(f)} imports ${i}`), ...(/Date\.now\(|new Date\(\)/.test(src) ? [`${rel(f)} reads the clock`] : [])]
+      })
     expect(bad).toEqual([])
   })
 

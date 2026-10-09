@@ -1,14 +1,14 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { sampleInputs } from '@/engine/fixtures'
 import { getDb, type Db } from '@/lib/db'
-import { dealsRepo } from '@/lib/deals-repo'
-import { listSnapshots } from '@/lib/deal-snapshots'
+import { explainChange } from '../engine/change'
+import { DEFAULT_MARKET_CONFIG } from '../engine/config'
 import { rankedGeo } from '../engine/fixtures'
 import type { Geography } from '../engine/types'
 import { recordManualObservation, runIngestion } from '../ingest/pipeline'
 import type { MarketDataProvider } from '../ingest/types'
-import { candidatesRepo, geoRepo, observationsRepo, outcomesRepo, samplesRepo } from './repo'
-import { canAddChild, evaluateAll, handOff, marketRows, promote } from './service'
+import { geoRepo, observationsRepo, samplesRepo } from './repo'
+import { canAddChild, evaluateAll, marketRows, promote } from './service'
 
 process.env.PGLITE_DIR = 'memory://'
 if (process.env.TEST_DATABASE_URL) process.env.DATABASE_URL = process.env.TEST_DATABASE_URL
@@ -116,10 +116,13 @@ describe(`VF-03 data layer (${process.env.DATABASE_URL ? 'PostgreSQL' : 'PGlite'
     expect(run2.skipped.some((s) => s.geo.id === orphanSub)).toBe(true)
     expect(run2.evaluations.find((e) => e.geoId === msaIds[5])!.decision.state).toBe('KEEP') // promoted → KEEP
 
-    const rows = await marketRows(db)
-    const row = rows.find((r) => r.geo.id === msaIds[5])!
+    // Compare this test's own two runs (other suites may evaluate the shared DB in between).
+    const before = run1.evaluations.find((e) => e.geoId === msaIds[5])!
+    const after = run2.evaluations.find((e) => e.geoId === msaIds[5])!
+    expect(explainChange(before, after, DEFAULT_MARKET_CONFIG).decision).toEqual({ from: 'DRILL_DOWN', to: 'KEEP' })
+    const row = (await marketRows(db)).find((r) => r.geo.id === msaIds[5])!
     expect(row.latest!.decision).toBe('KEEP')
-    expect(row.change!.decision).toEqual({ from: 'DRILL_DOWN', to: 'KEEP' })
+    expect(row.change).not.toBeNull()
     expect(row.promoted).toBe(true)
   })
 
@@ -129,32 +132,5 @@ describe(`VF-03 data layer (${process.env.DATABASE_URL ? 'PostgreSQL' : 'PGlite'
     const e = run.evaluations.find((x) => x.geoId === msaIds[2])!
     expect(e.evidence['ce.capital_recycled'].source).toMatch(/Deal Analyzer on 1 sample: Typical 3\/1/)
     expect(e.evidence['ce.capital_recycled'].confidence).toBe('single_secondary')
-  })
-
-  it('hand-off creates a Deal Analyzer deal (facts only), links both ways, and is idempotent', async () => {
-    const zip = (await geoRepo(db).list({ level: 'zcta', parentId: msaIds[5] }))[0]
-    const cid = await candidatesRepo(db).create(
-      { geoId: zip.id, avatarId: null, address: `${base} Hand-off St`, city: 'Dallas', state: 'TX', zip: zip.code, propertyType: 'SFR', beds: 3, baths: 1, sqft: 1200, yearBuilt: 1960, askingPrice: 120_000, condition: 'Dated', estArv: 210_000, estRehab: 40_000, estRent: 1_500, source: 'Driving for dollars', sourceUrl: null, notes: null },
-      'Ben',
-    )
-    const c = (await candidatesRepo(db).get(cid))!
-    const r = await handOff(db, cid, c.version, 'Ben')
-    expect(r.dealId).toBeDefined()
-    const deal = (await dealsRepo(db).get(r.dealId!))!
-    expect(deal.inputs).toMatchObject({ address: `${base} Hand-off St`, askingPrice: 120_000, beds: 3, arvBase: null, rehabEstimate: null, marketRent: null, purchasePrice: null })
-    expect(deal.notes.general).toMatch(/NOT applied/)
-    const [link] = await db.query<{ source_candidate_id: string }>('select source_candidate_id from deals where id = $1', [r.dealId])
-    expect(link.source_candidate_id).toBe(cid)
-    expect((await candidatesRepo(db).get(cid))!).toMatchObject({ status: 'handed_off', dealId: r.dealId })
-    expect(await listSnapshots(db, r.dealId!)).toHaveLength(1)
-    expect(await handOff(db, cid, c.version, 'Ben')).toEqual({ dealId: r.dealId }) // already handed off → same deal
-
-    // Feedback loop: actual result next to the predicted snapshot.
-    const [snap] = await listSnapshots(db, r.dealId!)
-    await outcomesRepo(db).save(r.dealId!, { candidateId: cid, geoId: zip.id, avatarId: null, predictedSnapshotId: snap.id, propertyType: 'SFR', purchasePrice: 115_000, arv: 205_000, rehab: 45_000, rent: 1_450, timelineMonths: 7, exitStrategy: 'BRRRR', actualProfit: null, actualAnnualCashFlow: 2_400, actualRefiLoan: 150_000, actualCapitalRecovered: 52_000, notes: null }, 'Guy')
-    const o = (await outcomesRepo(db).get(r.dealId!))!
-    expect(o).toMatchObject({ purchasePrice: 115_000, actualProfit: null, predictedSnapshotId: snap.id, version: 1 })
-    await expect(outcomesRepo(db).save(r.dealId!, { ...o, actualProfit: 10_000 }, 'Ben', 99)).rejects.toThrow(/changed by someone else/)
-    expect((await dealsRepo(db).audit(r.dealId!)).some((a) => a.field === 'outcome')).toBe(true)
   })
 })

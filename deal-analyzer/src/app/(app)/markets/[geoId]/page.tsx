@@ -26,9 +26,13 @@ import { CONFIDENCE_LABELS, CONFIDENCE_LEVELS, GEO_LEVEL_LABELS, PARENT_LEVELS, 
 import { opportunityUniverse } from '@/market/engine/universe'
 import { PROVIDERS } from '@/market/ingest/registry'
 import { configured } from '@/market/ingest/types'
-import { avatarsRepo, candidatesRepo, flagsRepo, geoRepo, observationsRepo, promotionsRepo, runsRepo, samplesRepo, snapshotsRepo } from '@/market/lib/repo'
+import { avatarsRepo, flagsRepo, geoRepo, observationsRepo, promotionsRepo, runsRepo, samplesRepo, snapshotsRepo } from '@/market/lib/repo'
 import { canAddChild, currentConfig } from '@/market/lib/service'
 import { DecisionBadge, RiskText, Sparkline } from '@/market/ui/Badges'
+import { openTargetAction } from '@/app/sourcing-actions'
+import { targetGate } from '@/sourcing/engine/gates'
+import { candidatesRepo, targetsRepo } from '@/sourcing/lib/repo'
+import type { Db } from '@/lib/db'
 import { AvatarFitPanel, ChangePanel, DimensionCard, EvidenceTable, RiskPanel, StrategyMatrix, UniversePanel } from '@/market/ui/Panels'
 import { metricValue, priorityText } from '@/market/ui/format'
 
@@ -43,7 +47,7 @@ export default async function MarketPage({ params }: { params: Promise<{ geoId: 
   const geos = geoRepo(db)
   const geo = await geos.get(geoId)
   if (!geo) notFound()
-  const [ancestors, children, history, flags, samples, avatars, promotions, runs, observations, rejected, candidates, deals, { config }] = await Promise.all([
+  const [ancestors, children, history, flags, samples, avatars, promotions, runs, observations, rejected, sourcing, deals, { config }] = await Promise.all([
     geos.ancestors(geoId),
     geos.list({ parentId: geoId }),
     snapshotsRepo(db).history(geoId),
@@ -54,7 +58,7 @@ export default async function MarketPage({ params }: { params: Promise<{ geoId: 
     runsRepo(db).list({ geoId, limit: 10 }),
     observationsRepo(db).forGeo(geoId),
     observationsRepo(db).forGeo(geoId, { includeRejected: true }).then((o) => o.filter((x) => x.validationStatus === 'rejected')),
-    candidatesRepo(db).list({ geoId }),
+    pipelineForGeo(db, geoId),
     dealsRepo(db).list(),
     currentConfig(db),
   ])
@@ -298,19 +302,48 @@ export default async function MarketPage({ params }: { params: Promise<{ geoId: 
       </section>
 
       <section className="card">
-        <h2 className="h2">Candidates here</h2>
-        {candidates.length === 0 ? (
-          <p className="text-sm text-ink-muted">None yet.</p>
-        ) : (
-          <ul className="text-sm">
-            {candidates.map((c) => (
-              <li key={c.id}>
-                {c.address} — {c.status === 'handed_off' && c.dealId ? <Link href={`/deals/${c.dealId}`} className="underline">in the Deal Analyzer</Link> : c.status}
-              </li>
-            ))}
-          </ul>
-        )}
-        <Link href={`/markets/candidates?geoId=${encodeURIComponent(geoId)}`} className="mt-1 inline-block text-sm text-brand underline">Add a candidate</Link>
+        <h2 className="h2">Deal Sourcing (layer 3 → 4)</h2>
+        {(() => {
+          const gate = targetGate(e ? { decision: e.decision.state, blocked: e.priority.blocked } : null)
+          return (
+            <div className="space-y-2 text-sm">
+              <p>
+                <strong>{gate.allowed ? (gate.needsReason ? 'Sourcing allowed with a reason' : 'Sourcing allowed') : 'Sourcing closed'}</strong> — {gate.message}
+              </p>
+              {sourcing.targets.length > 0 && (
+                <ul className="space-y-0.5">
+                  {sourcing.targets.map((t) => (
+                    <li key={t.id}>
+                      <Link href={`/sourcing/leads?targetId=${t.id}`} className="text-brand underline">
+                        Target: {avatars.find((a) => a.id === t.avatarId)?.name ?? 'no buy box'}
+                      </Link>{' '}
+                      <span className="text-xs text-ink-muted">
+                        {t.status} · {t.leads} lead{t.leads === 1 ? '' : 's'} ({t.open} open) · opened under {t.gateDecision}
+                        {t.overrideReason && ` — reason: ${t.overrideReason}`}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {gate.allowed && (
+                <details>
+                  <summary className="cursor-pointer text-brand">Open a sourcing target here</summary>
+                  <ActionForm action={openTargetAction} submitLabel="Open target" className="mt-2 grid max-w-2xl grid-cols-2 gap-2">
+                    <input type="hidden" name="geoId" value={geoId} />
+                    <select name="avatarId" className="input" aria-label="Buy box (avatar)">
+                      <option value="">No buy box (leads are not screened)</option>
+                      {avatars.map((a) => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </select>
+                    <input name="notes" className="input" placeholder="Notes (optional)" aria-label="Notes" />
+                    {gate.needsReason && <input name="reason" className="input col-span-2" placeholder="Why search here while the market is WATCH? (required)" aria-label="Reason" required />}
+                  </ActionForm>
+                </details>
+              )}
+            </div>
+          )
+        })()}
       </section>
 
       <section className="card">
@@ -481,4 +514,16 @@ export default async function MarketPage({ params }: { params: Promise<{ geoId: 
       )}
     </div>
   )
+}
+
+/** Targets in this geography with their lead counts (Deal Sourcing, layer 3). */
+async function pipelineForGeo(db: Db, geoId: string) {
+  const [targets, leads] = await Promise.all([targetsRepo(db).list({ geoId }), candidatesRepo(db).list({ geoId })])
+  return {
+    targets: targets.map((t) => ({
+      ...t,
+      leads: leads.filter((l) => l.targetId === t.id).length,
+      open: leads.filter((l) => l.targetId === t.id && l.status === 'new').length,
+    })),
+  }
 }

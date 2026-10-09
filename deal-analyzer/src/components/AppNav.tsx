@@ -4,13 +4,34 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 /**
- * Two separate modules in one deployment: the Deal Analyzer (property underwriting) and
- * VF-03 Market Intelligence (where to search). Each has its own section of the nav.
+ * Three modules in one deployment, in layer order: Market Intelligence (where to search) →
+ * Deal Sourcing (what to chase there) → Deal Analyzer (whether, and at what price).
  */
 const MODULES = [
   {
+    key: 'markets',
+    label: '1 · Markets',
+    home: '/markets',
+    links: [
+      { href: '/markets', label: 'Markets' },
+      { href: '/markets/avatars', label: 'Avatars' },
+      { href: '/markets/ingestion', label: 'Data' },
+      { href: '/markets/methodology', label: 'Methodology' },
+    ],
+  },
+  {
+    key: 'sourcing',
+    label: '2 · Sourcing',
+    home: '/sourcing',
+    links: [
+      { href: '/sourcing', label: 'Pipeline' },
+      { href: '/sourcing/targets', label: 'Targets' },
+      { href: '/sourcing/leads', label: 'Leads' },
+    ],
+  },
+  {
     key: 'deals',
-    label: 'Deal Analyzer',
+    label: '3 · Deal Analyzer',
     home: '/',
     links: [
       { href: '/', label: 'Deals' },
@@ -19,23 +40,17 @@ const MODULES = [
       { href: '/methodology', label: 'Methodology' },
     ],
   },
-  {
-    key: 'markets',
-    label: 'Market Intelligence',
-    home: '/markets',
-    links: [
-      { href: '/markets', label: 'Markets' },
-      { href: '/markets/avatars', label: 'Avatars' },
-      { href: '/markets/candidates', label: 'Candidates' },
-      { href: '/markets/ingestion', label: 'Data' },
-      { href: '/markets/methodology', label: 'Methodology' },
-    ],
-  },
 ] as const
 
 export function AppNav({ isAdmin }: { isAdmin: boolean }) {
   const path = usePathname() ?? '/'
-  const active = path.startsWith('/markets') ? 'markets' : path.startsWith('/admin') || path.startsWith('/account') ? null : 'deals'
+  const active = path.startsWith('/markets')
+    ? 'markets'
+    : path.startsWith('/sourcing')
+      ? 'sourcing'
+      : path.startsWith('/admin') || path.startsWith('/account')
+        ? null
+        : 'deals'
   const current = MODULES.find((m) => m.key === active)
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">

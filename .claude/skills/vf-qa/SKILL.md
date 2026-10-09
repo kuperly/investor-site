@@ -40,7 +40,7 @@ failed to connect shows up as skips.
 ## 3. End-to-end (when anything user-facing changed)
 
 ```bash
-npm run e2e                                # isolated DB, prod build, app + comps + markets suites, real sign-in
+npm run e2e                                # isolated DB, prod build, app + comps + markets→sourcing→deal suites, real sign-in
 npm run e2e:auth                           # sign-in required on every path (/ and basePath builds), fail-closed, revocation
 E2E_OUT=docs/screenshots npm run e2e       # only when README screenshots should be refreshed
 ```
@@ -92,7 +92,7 @@ When you add a feature, **extend `e2e/*.e2e.mjs`** with assertions for it
 
 ## 5b. VF-03 Market Intelligence checks (when `src/market` or `/markets` changed)
 
-- `src/market/boundary.test.ts` green: no underwriting formula in VF-03, no `src/engine` → `src/market` import.
+- `src/boundary.test.ts` green: no underwriting formula in VF-03, no `src/engine` → `src/market` import.
 - UNKNOWN is never 0: a market with missing evidence shows UNKNOWN / ranges, not 0.
 - Low confidence, low completeness or < 5 peers → no precise score and no rank.
 - Markets never show BUY / PASS; decisions are KEEP / WATCH / DROP / DRILL DOWN with reasons.
@@ -100,6 +100,14 @@ When you add a feature, **extend `e2e/*.e2e.mjs`** with assertions for it
 - Hand-off: the new deal has property facts + asking price only; estimates are in notes.
 - `docs/VF03-ALIGNMENT.md` and `/markets/methodology` still match the code.
 - Rules changed → `MARKET_ENGINE_VERSION` bumped; Deal Analyzer rules changed → `ENGINE_VERSION` bumped.
+
+## 5c. Layer checks (when `src/sourcing`, gates or cross-module links changed)
+
+- `src/boundary.test.ts` green: dependencies point up the chain only (engine ← market ← sourcing).
+- Gates hold: no target on a DROP / blocked / unevaluated geography; WATCH only with a reason; no lead under a paused or closed target; a lead outside its buy box reaches the Deal Analyzer only with a reason.
+- Screening uses only the avatar's ranges; a missing fact shows as unknown, never pass/fail.
+- No BUY / PASS anywhere before layer 5; the indicative check is never written to a deal.
+- `docs/LAYERS.md`, `layers.ts` and the Pipeline page still describe the same chain.
 
 ## 6. Documentation check (always: stale docs fail QA)
 

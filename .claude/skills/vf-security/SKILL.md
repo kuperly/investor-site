@@ -122,6 +122,12 @@ advice.
       priority.
 - [ ] New dependencies need a reason. Prefer none.
 
+### Lead imports (Deal Sourcing)
+- [ ] CSV lead lists are hostile input: parsed by `parseLeadsCsv` (size ≤ 2 MB, ≤ 500 rows),
+      every row through `validateCandidate` (http(s) links only), never into SQL unbound.
+- [ ] Gates are enforced server-side in `src/sourcing/lib/service.ts`, not only in the UI
+      (target gate, lead gate, hand-off reason).
+
 ### Integrations (VF-03 providers now; comp import §30 later)
 - [ ] Market data goes through `runIngestion()` → `validateObservation()`;
       comp imports through `compsRepo.importComps()` → `parseComp`. Never

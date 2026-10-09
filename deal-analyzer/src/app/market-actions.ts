@@ -2,13 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { PROPERTY_TYPES, type PropertyType } from '@/engine/types'
 import { getDb } from '@/lib/db'
 import { dealsRepo } from '@/lib/deals-repo'
 import { currentUser } from '@/lib/session'
 import { AVATAR_PROPERTY_TYPES, validateAvatar, type Avatar, type AvatarPropertyType } from '@/market/engine/avatar'
 import { CONFIGURABLE, STRATEGY_KEYS, type StrategyKey } from '@/market/engine/config'
-import { validateCandidate } from '@/market/engine/handoff'
 import { MANUAL_METRICS, METRICS } from '@/market/engine/metrics'
 import { CONFIDENCE_LEVELS, HARD_FLAG_SEVERITIES, type ConfidenceLevel, type GeoLevel, type HardFlagSeverity } from '@/market/engine/types'
 import { liveContext, recordManualObservation, runIngestion } from '@/market/ingest/pipeline'
@@ -16,7 +14,6 @@ import { censusName } from '@/market/ingest/providers/census-acs'
 import { providerById } from '@/market/ingest/registry'
 import {
   avatarsRepo,
-  candidatesRepo,
   CODE_RULES,
   configRepo,
   flagsRepo,
@@ -26,7 +23,8 @@ import {
   samplesRepo,
   VersionConflictError,
 } from '@/market/lib/repo'
-import { analyzable, canAddChild, evaluateAll, handOff, promote } from '@/market/lib/service'
+import { analyzable, canAddChild, evaluateAll, promote } from '@/market/lib/service'
+import { candidatesRepo } from '@/sourcing/lib/repo'
 
 export interface FormState {
   ok?: string
@@ -233,7 +231,7 @@ export async function revokePromotion(fd: FormData): Promise<void> {
   refreshMarkets(str(fd, 'geoId'))
 }
 
-// ---------------------------------------------------------------- avatars & candidates
+// ---------------------------------------------------------------- avatars
 
 export async function saveAvatar(_prev: FormState, fd: FormData): Promise<FormState> {
   const user = await currentUser()
@@ -266,71 +264,6 @@ export async function saveAvatar(_prev: FormState, fd: FormData): Promise<FormSt
   }
   revalidatePath('/markets/avatars')
   redirect('/markets/avatars')
-}
-
-export async function createCandidate(_prev: FormState, fd: FormData): Promise<FormState> {
-  const user = await currentUser()
-  if (!user) return { error: NO_USER }
-  const db = await getDb()
-  const geo = await geoRepo(db).get(str(fd, 'geoId'))
-  if (!geo) return { error: 'Choose the geography.' }
-  const errors: Record<string, string> = {}
-  const n = (k: string) => {
-    const v = numOrNull(fd, k)
-    if (v === 'invalid') {
-      errors[k] = 'Not a number'
-      return null
-    }
-    return v
-  }
-  const c = {
-    geoId: geo.id,
-    avatarId: opt(fd, 'avatarId'),
-    address: str(fd, 'address'),
-    city: opt(fd, 'city'),
-    state: opt(fd, 'state')?.toUpperCase() ?? geo.state,
-    zip: opt(fd, 'zip') ?? (geo.level === 'zcta' ? geo.code : null),
-    propertyType: (oneOf(str(fd, 'propertyType'), PROPERTY_TYPES) as PropertyType | null) ?? null,
-    beds: n('beds'),
-    baths: n('baths'),
-    sqft: n('sqft'),
-    yearBuilt: n('yearBuilt'),
-    askingPrice: n('askingPrice'),
-    condition: opt(fd, 'condition'),
-    estArv: n('estArv'),
-    estRehab: n('estRehab'),
-    estRent: n('estRent'),
-    source: str(fd, 'source'),
-    sourceUrl: opt(fd, 'sourceUrl'),
-    notes: opt(fd, 'notes'),
-  }
-  Object.assign(errors, validateCandidate(c))
-  if (Object.keys(errors).length) return { error: 'Please fix the highlighted fields.', errors }
-  await candidatesRepo(db).create(c, user.displayName)
-  revalidatePath('/markets/candidates')
-  refreshMarkets(geo.id)
-  return { ok: `Candidate ${c.address} added.` }
-}
-
-export async function handOffCandidate(fd: FormData): Promise<void> {
-  const user = await currentUser()
-  if (!user) return
-  const v = Number(str(fd, 'version'))
-  const r = await handOff(await getDb(), str(fd, 'id'), v, user.displayName)
-  revalidatePath('/markets/candidates')
-  revalidatePath('/')
-  if (r.dealId) redirect(`/deals/${r.dealId}`)
-}
-
-export async function rejectCandidate(fd: FormData): Promise<void> {
-  const user = await currentUser()
-  if (!user) return
-  try {
-    await candidatesRepo(await getDb()).setStatus(str(fd, 'id'), 'rejected', Number(str(fd, 'version')), user.displayName)
-  } catch (e) {
-    if (!(e instanceof VersionConflictError)) throw e
-  }
-  revalidatePath('/markets/candidates')
 }
 
 // ---------------------------------------------------------------- configuration (admin)

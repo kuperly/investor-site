@@ -1,24 +1,17 @@
 /**
- * VF-03 orchestration: loads evidence, runs the engine, stores snapshots, promotes for
- * drill-down and hands candidates to the Deal Analyzer. The scoring itself is in ../engine.
+ * VF-03 orchestration (layers 1–2): loads evidence, runs the engine, stores snapshots and
+ * promotes for drill-down. Candidates and the hand-off live in src/sourcing (layers 3–4). The scoring itself is in ../engine.
  */
-import { applyDefaults, emptyInputs } from '@/engine/fields'
+import { emptyInputs } from '@/engine/fields'
 import type { DealInputs } from '@/engine/types'
-import { compSummaryFor } from '@/lib/comp-summary'
 import type { Db } from '@/lib/db'
-import { snapshotDeal } from '@/lib/deal-snapshots'
 import { dealsRepo } from '@/lib/deals-repo'
-import { settingsRepo } from '@/lib/settings-repo'
 import type { SampleInput } from '../engine/capital'
 import { explainChange, type ChangeExplanation } from '../engine/change'
 import { resolveConfig, type MarketConfig } from '../engine/config'
 import { evaluateMarkets, type GeoInput, type MarketEvaluation } from '../engine/evaluate'
-import { candidateToDeal } from '../engine/handoff'
 import type { Geography } from '../engine/types'
 import {
-  audit,
-  avatarsRepo,
-  candidatesRepo,
   configRepo,
   flagsRepo,
   geoRepo,
@@ -26,7 +19,6 @@ import {
   promotionsRepo,
   samplesRepo,
   snapshotsRepo,
-  VersionConflictError,
   type SnapshotRow,
 } from './repo'
 
@@ -148,30 +140,4 @@ export async function promote(db: Db, geoId: string, by: string): Promise<{ erro
     by,
   )
   return {}
-}
-
-/** Candidate → new Deal Analyzer deal, in one transaction. Returns the deal id. */
-export async function handOff(db: Db, candidateId: string, expectedVersion: number, by: string): Promise<{ dealId?: string; error?: string }> {
-  try {
-    return await db.transaction(async (tx) => {
-      const c = await candidatesRepo(tx).get(candidateId)
-      if (!c) return { error: 'Candidate not found.' }
-      if (c.status === 'handed_off' && c.dealId) return { dealId: c.dealId }
-      const geo = await geoRepo(tx).get(c.geoId)
-      const avatar = c.avatarId ? await avatarsRepo(tx).get(c.avatarId) : null
-      const { inputs, note } = candidateToDeal({ ...c, geoName: geo?.name ?? c.geoId, avatarName: avatar?.name ?? null })
-      const { inputs: withDefaults, filled: defaulted } = applyDefaults({ ...emptyInputs(), ...inputs }, await settingsRepo(tx).getDefaults())
-      const deals = dealsRepo(tx)
-      const dealInputs = { ...withDefaults, ...(await compSummaryFor(tx, null)) }
-      const dealId = await deals.create(dealInputs, { general: note }, 'Lead', by, defaulted)
-      await tx.query('update deals set source_candidate_id = $2 where id = $1', [dealId, c.id])
-      await candidatesRepo(tx).setStatus(c.id, 'handed_off', expectedVersion, by, dealId)
-      await audit(tx, 'candidate', c.id, 'handed_off', null, { dealId }, by)
-      await snapshotDeal(tx, dealId, by)
-      return { dealId }
-    })
-  } catch (e) {
-    if (e instanceof VersionConflictError) return { error: e.message }
-    throw e
-  }
 }

@@ -1,5 +1,5 @@
 /**
- * Candidate → Deal Analyzer hand-off contract (VF-03 §19).
+ * Layer 4 → 5: Candidate → Deal Analyzer hand-off contract (VF-03 §19).
  *
  * A Candidate ("this specific property deserves underwriting") becomes a new deal whose
  * inputs are the DealInputs contract of the Deal Analyzer. Only property facts and the asking

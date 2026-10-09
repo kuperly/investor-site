@@ -111,17 +111,19 @@ its final frame under `prefers-reduced-motion`.
   (`prj_4zjmuFVpXvpOdFjPqAaAbKu1wM69`), connected to the `kuperly/investor-site`
   GitHub repo for auto-deploy on push to `main`.
 
-## ValeForge Deal Analyzer + Market Intelligence (`deal-analyzer/`)
+## ValeForge internal app (`deal-analyzer/`)
 
-A separate internal Next.js app (own `package.json`, tests, and README) with two
-separate modules behind one login: the Deal Analyzer (property underwriting) and
-VF-03 Market Intelligence (`src/market/`, `/markets`; spec
-`deal-analyzer/docs/VF03-SPEC.md`). It is excluded from this site's `tsconfig.json`
+A separate internal Next.js app (own `package.json`, tests, and README) with three
+modules behind one login, working as one chain of layers
+(`deal-analyzer/docs/LAYERS.md`): Market Intelligence (VF-03, `src/market/`,
+`/markets`) → Deal Sourcing (`src/sourcing/`, `/sourcing`) → Deal Analyzer
+(`src/engine/`, `/`). It is excluded from this site's `tsconfig.json`
 and `vitest.config.ts`, so it never affects the marketing site's build or
 deploy. See [deal-analyzer/README.md](deal-analyzer/README.md) and its own
 [deal-analyzer/CLAUDE.md](deal-analyzer/CLAUDE.md). Business rules live only
-in `deal-analyzer/src/engine/` (deals) and `deal-analyzer/src/market/engine/`
-(markets); thresholds there change only with Guy/Ben approval.
+in `deal-analyzer/src/engine/` (deals), `deal-analyzer/src/market/engine/`
+(markets) and `deal-analyzer/src/sourcing/engine/` (gates, buy-box screen);
+thresholds there change only with Guy/Ben approval.
 
 **Hidden route.** `next.config.ts` (`analyzerRewrites`) forwards
 `<ANALYZER_BASE_PATH>/*` (e.g. `/vf-internal`) to the analyzer's own

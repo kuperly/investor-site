@@ -1,16 +1,20 @@
-# ValeForge — Deal Analyzer + Market Intelligence (VF-03)
+# ValeForge — Market Intelligence → Deal Sourcing → Deal Analyzer
 
-One internal app, two separate modules with one login:
+One internal app, three modules with one login, working as **one chain of layers**
+(full operating model: [docs/LAYERS.md](docs/LAYERS.md); live map and funnel on
+**Sourcing → Pipeline**):
 
-- **Deal Analyzer**: property-level underwriting (this section, spec [docs/SPEC.md](docs/SPEC.md)).
-- **Market Intelligence (VF-03)**: where to search, for which opportunities, with which
-  strategy (see [Market Intelligence](#market-intelligence-vf-03), spec
-  [docs/VF03-SPEC.md](docs/VF03-SPEC.md), status and gap analysis
-  [docs/VF03-ALIGNMENT.md](docs/VF03-ALIGNMENT.md)).
+| Layers | Module | Decides |
+|---|---|---|
+| 1–2 | **Market Intelligence (VF-03)** — `src/market`, `/markets` | *Where* to search: KEEP / WATCH / DROP / DRILL DOWN per market and ZIP. Spec [docs/VF03-SPEC.md](docs/VF03-SPEC.md), status [docs/VF03-ALIGNMENT.md](docs/VF03-ALIGNMENT.md) |
+| 3–4 | **Deal Sourcing** — `src/sourcing`, `/sourcing` | *What to chase there*: targets (area × buy box), leads, buy-box screening |
+| 5–6 | **Deal Analyzer** — `src/engine`, `/`, `/deals` | *Whether and at what price*: BUY / INVESTIGATE / PASS, then actual results. Spec [docs/SPEC.md](docs/SPEC.md) |
 
-They connect only through a contract: a VF-03 candidate is handed to the Deal Analyzer as a
-new deal (`DealInputs`), market capital efficiency is computed by the Deal Analyzer engine
-itself, and actual results flow back. `src/market/boundary.test.ts` enforces the separation.
+Work moves down only through each layer's gate (a target only where the market is KEEP /
+DRILL DOWN, leads only under an active target, a lead outside its buy box needs a written
+reason to reach underwriting). Each layer reads the decision of the one above and never
+recomputes it; underwriting math exists only in the Deal Analyzer engine.
+`src/boundary.test.ts` enforces the direction of dependencies.
 
 ## Deal Analyzer
 
@@ -120,17 +124,19 @@ src/
     audit.ts           diff of inputs / notes / status
     parse-inputs.ts    FormData → DealInputs (blank → null, % → decimal, type/range checks only)
     format.ts          display helpers ("UNKNOWN", "∞ (no cash left)", "N/A (no debt)")
-  market/            ← VF-03 Market Intelligence (see below)
+  market/            ← VF-03 Market Intelligence, layers 1–2 (see below)
+  sourcing/          ← Deal Sourcing, layers 3–4 (see below)
   app/               ← Next.js 15 App Router UI (server components + server actions)
     login/                   sign-in (public)
     (app)/page.tsx           Deal Dashboard (filters, desktop table / mobile cards)
     (app)/deals/new, deals/[id], deals/[id]/edit, deals/[id]/comps, deals/[id]/export,
     (app)/settings (default assumptions), methodology, account, admin/users
     (app)/markets/…          VF-03 screens
-    actions.ts · comps-actions.ts · settings-actions.ts · auth-actions.ts · market-actions.ts
+    (app)/sourcing/…         pipeline · targets · leads
+    actions.ts · comps-actions.ts · settings-actions.ts · auth-actions.ts · market-actions.ts · sourcing-actions.ts
   components/        AnalysisView (shared by deal page + export), DealForm (live preview), …
   middleware.ts      sign-in gate for every path (no matcher, on purpose)
-db/migrations/       0001 baseline (the V1 schema) · 0002 users · 0003 deal integrity · 0004 market intelligence
+db/migrations/       0001 baseline (the V1 schema) · 0002 users · 0003 deal integrity · 0004 market intelligence · 0005 deal sourcing
 ```
 
 Design points:
@@ -171,7 +177,7 @@ Versioned migrations in `db/migrations/` (see "Database gotchas" in CLAUDE.md). 
 
 | Table | Columns |
 |---|---|
-| `deals` | `id uuid pk`, `address`, `city`, `state`, `zip`, `market`, `status` (CHECK: the 9 spec statuses), `inputs jsonb` (all `DealInputs`; unknown = JSON `null`), `notes jsonb` (§31 categories), `defaulted jsonb` (input keys still holding an unconfirmed ValeForge default), `version` (optimistic lock), `source_candidate_id → candidates` (VF-03 hand-off), `created_by`, `updated_by`, `created_at`, `updated_at` |
+| `deals` | `id uuid pk`, `address`, `city`, `state`, `zip`, `market`, `status` (CHECK: the 9 spec statuses), `inputs jsonb` (all `DealInputs`; unknown = JSON `null`), `notes jsonb` (§31 categories), `defaulted jsonb` (input keys still holding an unconfirmed ValeForge default), `version` (optimistic lock), `source_candidate_id → candidates` (Deal Sourcing hand-off), `created_by`, `updated_by`, `created_at`, `updated_at` |
 | `deal_audit` | `id`, `deal_id → deals`, `field`, `old_value jsonb`, `new_value jsonb`, `changed_by`, `changed_at` (comp changes use `field = 'comps'`, actual results `field = 'outcome'`) |
 | `deal_analysis_snapshots` | `id`, `deal_id`, `deal_version`, `engine_version`, `inputs`, `comp_arv`, `result` (summary), `full_result` (analyzeDeal output), `created_by`, `created_at` |
 | `deal_outcomes` | actual result per deal (purchase, ARV, rehab, rent, timeline, exit, profit, cash flow, refi loan, capital recovered) + candidate / geography / avatar / predicted snapshot, `version`, recorded by/at |
@@ -231,7 +237,7 @@ SQL by market, ZIP, status and created date. Filters on computed values
 - Accounts and sign-in, admin user management, account page (change password,
   sign out everywhere).
 - Analysis history (stored snapshots) and an "Actual result" form on every deal
-  (feedback loop); deals created from a VF-03 candidate link back to their market.
+  (feedback loop); deals created from a Deal Sourcing lead link back to their market, target and buy-box screen.
 
 ## Acceptance criteria → evidence
 
@@ -252,7 +258,7 @@ SQL by market, ZIP, status and created date. Filters on computed values
 
 ## Formula / unit tests
 
-`npm test`: **282 tests, 20 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 91 browser checks (deals, comps, markets); `npm run e2e:auth` adds 69 sign-in checks across `/` and basePath builds, fail-closed and open-access mode.
+`npm test`: **305 tests, 22 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 99 browser checks (deals, comps, markets → sourcing → deal); `npm run e2e:auth` adds 69 sign-in checks across `/` and basePath builds, fail-closed and open-access mode.
 
 | File | Tests | Covers |
 |---|---|---|
@@ -268,13 +274,15 @@ SQL by market, ZIP, status and created date. Filters on computed values
 | `lib/deals-repo.test.ts` | 9 | create/read; audit Old $125,000 → New $115,000 by Ben; no-op saves; filters; real `jsonb` storage; optimistic locking (stale save refused, nothing written); a failure rolls back the change and its audit rows; analysis snapshots keep what was predicted |
 | `engine/comps.test.ts` | 22 | $/sqft guard; median; sale age; included-only stats; unknown prices skipped (not $0); renovated vs unrenovated; summary fields; weight decay; hand-calculated comp weight; comp ARV ($187.50/sf × 1,400 = $262,500); exclusions with reasons; UNKNOWN ARV; Super comp % override (50% fixed → $180/sf × 1,400 = $252,000), multiple overrides, > 100% → UNKNOWN, scale-up when alone, ignored on non-Super / unused comps |
 | `lib/comps-repo.test.ts` | 9 | validation (incl. unsafe links); tier/status defaults; % override validation (Super comps only, 0–100%); add/list/round-trip; audited edit/delete; cross-deal protection; import de-duplication; comp summary auto-sync (audited, no-op when in sync) |
-| `lib/db.test.ts` | 14 | every migration splits cleanly (no `;` in inline comments, `$$` bodies kept); versions 1..n; applied once with checksums; an edited applied migration or an older build is refused; transactions roll back |
+| `lib/db.test.ts` | 16 | every migration splits cleanly (no `;` in inline comments, `$$` bodies kept); versions 1..n; applied once with checksums; an edited applied migration or an older build is refused; transactions roll back |
 | `lib/auth/auth.test.ts` | 13 | scrypt hashing; 12+ character passwords; signed session tokens (tampering, wrong secret, expiry); production requires `SESSION_SECRET`; sign-in throttle; safe post-sign-in redirect |
 | `lib/users-repo.test.ts` | 4 | first admin from env only while there are no users; authenticate; password change ends sessions; deactivation; audit without secrets; at least one active admin; unique names |
-| `market/engine/engine.test.ts` | 33 | VF-03 engine, hand-calculated: percentiles, partial roll-ups and bounds, risk bands, freshness policies, ACS margin of error → confidence, derived metrics, capital efficiency = ratios of `analyzeDeal` outputs, decisions (DRILL_DOWN / KEEP / DROP / WATCH), BLOCK, no false-precision ranking, thin peers, stale data, Strategy Fit roll-up, rent-by-room gate, change explanation, avatar fit, opportunity universe, hand-off contract, observation validation, configuration overrides |
+| `market/engine/engine.test.ts` | 31 | VF-03 engine, hand-calculated: percentiles, partial roll-ups and bounds, risk bands, freshness policies, ACS margin of error → confidence, derived metrics, capital efficiency = ratios of `analyzeDeal` outputs, decisions (DRILL_DOWN / KEEP / DROP / WATCH), BLOCK, no false-precision ranking, thin peers, stale data, Strategy Fit roll-up, rent-by-room gate, change explanation, avatar fit, opportunity universe, observation validation, configuration overrides |
 | `market/ingest/providers.test.ts` | 8 | Census ACS, HUD FMR/SAFMR, BLS LAUS, FRED parsers against recorded responses; keys redacted; missing release → growth UNKNOWN |
-| `market/lib/market.test.ts` | 7 | geography hierarchy; ingestion validation / duplicates / append-only; missing key; manual evidence needs a source; conditional drill-down + snapshots + change; capital efficiency from samples; hand-off + feedback loop |
-| `market/boundary.test.ts` | 3 | Deal Analyzer engine never imports VF-03; VF-03 uses only the DealInputs contract and analyzeDeal(); VF-03 engine is pure |
+| `market/lib/market.test.ts` | 6 | geography hierarchy; ingestion validation / duplicates / append-only; missing key; manual evidence needs a source; conditional drill-down + snapshots + change; capital efficiency from samples |
+| `sourcing/engine/sourcing.test.ts` | 17 | layer map; the three gates (market → target, target → lead, lead → deal); buy-box screen (pass / fail / unknown, nothing invented); indicative check = `analyzeDeal` on the estimates; address key; CSV parsing and lead import validation; funnel counts; hand-off contract |
+| `sourcing/lib/sourcing.test.ts` | 4 | targets follow the market decision (DROP refused, WATCH needs a reason, duplicates refused); leads screened on entry, duplicates and paused targets refused; CSV import; failed screen needs a reason to reach the Deal Analyzer; deal links back; pipeline funnel incl. actual results |
+| `boundary.test.ts` | 6 | dependencies point up the chain only: Deal Analyzer engine imports neither market nor sourcing; market never imports sourcing; market and sourcing use only the DealInputs contract and analyzeDeal(); both engines are pure |
 | `lib/base-path.test.ts` | 3 | hidden-route basePath: empty/`/` → root, single segment accepted, anything else fails the build |
 
 Worked example (`engine/fixtures.ts`; illustrative inputs, not market data):
@@ -306,10 +314,11 @@ All captured from the running production build during the E2E run.
 | Users (admin) | [16-admin-users.png](docs/screenshots/16-admin-users.png) |
 | VF-03 market list ([DEMO] markets) | [17-markets-list.png](docs/screenshots/17-markets-list.png) |
 | VF-03 market detail: decision, dimensions, strategy matrix, risk, universe, drill-down, evidence | [18-market-detail.png](docs/screenshots/18-market-detail.png) |
-| VF-03 candidates | [19-candidates.png](docs/screenshots/19-candidates.png) |
+| Deal Sourcing leads: buy-box screen + indicative check | [19-leads.png](docs/screenshots/19-leads.png) |
 | Deal created from a candidate, with the actual-result form | [20-deal-from-candidate.png](docs/screenshots/20-deal-from-candidate.png) |
 | VF-03 data sources | [21-data-sources.png](docs/screenshots/21-data-sources.png) |
 | VF-03 markets on mobile | [22-markets-mobile.png](docs/screenshots/22-markets-mobile.png) |
+| Pipeline: the six layers and the funnel per market | [23-pipeline.png](docs/screenshots/23-pipeline.png) |
 
 ## ⚠️ Decisions that need Guy/Ben approval
 
@@ -455,10 +464,9 @@ property deserves underwriting") → Deal Analyzer ("BUY / INVESTIGATE / PASS")
   plus the risk-modifier effect.
 - **Avatars** (defined by Guy/Ben, none built in) → avatar fit and estimated
   matching units from ACS distributions (labelled estimates).
-- **Candidates → Deal Analyzer**: "Send to Deal Analyzer" creates a deal with
-  the property facts and asking price, in one transaction. ARV / rehab / rent
-  estimates go to the deal notes, not applied. The deal links back, and its
-  actual result is recorded on the deal page (feedback loop).
+- **Next layer**: candidates and the hand-off to the Deal Analyzer live in
+  [Deal Sourcing](#deal-sourcing-layers-34); a market page shows whether
+  sourcing is allowed there and its targets.
 
 **Data (V1: official / primary only, §14).** Census ACS 5-year (current release +
 the one five years earlier, with margins of error), HUD FMR / Small Area FMR,
@@ -477,24 +485,26 @@ been called live from the build environment yet.
 src/market/
   engine/      pure TS (no I/O): types · metrics (catalogue) · config (weights, thresholds, methodology)
                freshness · derive (raw → evidence) · capital (via analyzeDeal) · evaluate (single entry point)
-               change · avatar · universe · handoff · validate · fixtures (synthetic test data)
+               change · avatar · universe · validate · fixtures (synthetic test data)
   ingest/      types (provider contract) · pipeline · registry · providers/{census-acs, hud-fmr, bls-laus, fred}
   lib/         repo (all VF-03 tables) · service (evaluate + snapshot, drill-down, hand-off)
   ui/          panels, badges, formatting
-src/app/(app)/markets/   list · [geoId] · avatars · candidates · ingestion (Data) · methodology
+src/app/(app)/markets/   list · [geoId] · avatars · ingestion (Data) · methodology (candidates → /sourcing/leads)
 ```
 
 **Tables (migration 0004):** `geographies` (official-code keys, parent),
 `market_observations` (append-only evidence with provenance + validation),
 `ingestion_runs` + `ingestion_raw`, `market_hard_flags`, `market_deal_samples`,
 `market_config` (threshold overrides), `market_snapshots`, `geo_promotions`,
-`avatars`, `candidates`, `market_audit` (every VF-03 change), plus
+`avatars`, `candidates` (used by Deal Sourcing), `market_audit` (every VF-03 and
+sourcing change), plus
 `deals.source_candidate_id` and `deal_outcomes` on the Deal Analyzer side.
 
 **Try it locally:** `npm run db:seed` creates six `[DEMO]` markets (synthetic
 evidence, codes 99901–99906 — not real CBSAs). Sign in → Market Intelligence →
 **Evaluate now** → open a market → **Promote for drill-down** → add a ZIP →
-add an avatar and a candidate → **Send to Deal Analyzer**.
+evaluate again → add an avatar → on the ZIP page **Open a sourcing target** →
+**Leads**: add a lead → **Send to Deal Analyzer** → **Sourcing → Pipeline**.
 
 ### VF-03 decisions that need Guy/Ben approval
 
@@ -503,6 +513,35 @@ Listed with their current values in [docs/VF03-ALIGNMENT.md](docs/VF03-ALIGNMENT
 roll-up, risk bands, confidence scores, the precision rule, decision and
 drill-down thresholds, metric directions, freshness policies and the avatar
 independence assumption.
+
+## Deal Sourcing (layers 3–4)
+
+The layer between "this market is worth it" and "this deal is a BUY" (operating model:
+[docs/LAYERS.md](docs/LAYERS.md)).
+
+- **Targets** (`/sourcing/targets`, opened from a market page): a geography × a buy box
+  (avatar). The gate reads the market's latest decision: KEEP / DRILL DOWN open freely,
+  WATCH needs a written reason, DROP or a blocked market never. The decision it was opened
+  under is stored; the Targets page flags targets whose market decision has since changed,
+  so they can be paused or closed.
+- **Leads** (`/sourcing/leads`): added one by one or imported from a CSV list (up to 500
+  rows; blank = UNKNOWN; invalid rows listed by line; the same property can't enter twice —
+  normalized address + ZIP). Each lead is screened against its target's buy box (the
+  avatar's own ranges; a missing fact is "unknown", never pass/fail) and gets an
+  **indicative check**: the Deal Analyzer engine on its estimates + ValeForge defaults
+  (All-in, equity, Max Offer vs asking, DSCR, flip profit) — triage only, never written to a
+  deal, no BUY / PASS.
+- **Send to Deal Analyzer**: one transaction creates the deal (property facts + asking price;
+  estimates in the notes, not applied), links lead ↔ deal and snapshots the analysis. A lead
+  outside the buy box needs a written reason, recorded on the lead and in the deal notes.
+- **Pipeline** (`/sourcing`): the layer map and a funnel per market — active targets, leads
+  (fits / incomplete / outside, rejected), deals in the Deal Analyzer (BUY / INVESTIGATE /
+  PASS), closed, with actual results.
+- Code: `src/sourcing/engine` (pure: layers, gates, screen, leads/CSV, funnel, hand-off
+  contract) · `src/sourcing/lib` (repo, service) · `src/app/sourcing-actions.ts` ·
+  `src/app/(app)/sourcing/*`. Tables (migration 0005): `sourcing_targets`, plus
+  `candidates.target_id`, `address_key`, `screening`, `screened_at`, `override_reason`.
+- Decisions to confirm: S1–S3 in [docs/LAYERS.md](docs/LAYERS.md).
 
 ## Known limitations
 

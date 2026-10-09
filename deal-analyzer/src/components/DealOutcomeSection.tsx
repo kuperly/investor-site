@@ -3,11 +3,12 @@ import { saveOutcome } from '@/app/market-actions'
 import { getDb } from '@/lib/db'
 import type { AnalysisSnapshot } from '@/lib/deal-snapshots'
 import { money } from '@/lib/format'
-import { candidatesRepo, geoRepo, outcomesRepo } from '@/market/lib/repo'
+import { geoRepo, outcomesRepo } from '@/market/lib/repo'
+import { candidatesRepo, targetsRepo } from '@/sourcing/lib/repo'
 import { ActionForm } from './ActionForm'
 
 /**
- * Connection to VF-03 on the deal page: where the deal came from (candidate → market) and the
+ * Layers 1–4 → 5 → 6 on the deal page: where the deal came from (market → target → lead) and the
  * actual result, kept next to the analysis that was predicted (feedback loop, VF-03 §20).
  */
 export async function DealOutcomeSection({ dealId, snapshots }: { dealId: string; snapshots: AnalysisSnapshot[] }) {
@@ -18,6 +19,7 @@ export async function DealOutcomeSection({ dealId, snapshots }: { dealId: string
   ])
   const cand = link?.source_candidate_id ? await candidatesRepo(db).get(link.source_candidate_id) : null
   const geo = cand ? await geoRepo(db).get(cand.geoId) : null
+  const target = cand?.targetId ? await targetsRepo(db).get(cand.targetId) : null
   const predicted = snapshots.find((s) => s.id === outcome?.predictedSnapshotId) ?? snapshots[0]
   const v = (k: keyof NonNullable<typeof outcome>) => (outcome?.[k] === null || outcome?.[k] === undefined ? '' : String(outcome[k]))
   const fields: [string, string][] = [
@@ -37,7 +39,15 @@ export async function DealOutcomeSection({ dealId, snapshots }: { dealId: string
       {cand && (
         <p className="mb-2 text-sm">
           From Market Intelligence: candidate <strong>{cand.address}</strong> in{' '}
-          <Link href={`/markets/${encodeURIComponent(cand.geoId)}`} className="text-brand underline">{geo?.name ?? cand.geoId}</Link>.
+          <Link href={`/markets/${encodeURIComponent(cand.geoId)}`} className="text-brand underline">{geo?.name ?? cand.geoId}</Link>
+          {target && (
+            <>
+              {' '}via{' '}
+              <Link href={`/sourcing/leads?targetId=${target.id}`} className="text-brand underline">its sourcing target</Link>
+            </>
+          )}
+          {cand.screening && <> · buy-box screen: {cand.screening.overall.replace('_', ' ')}</>}
+          {cand.overrideReason && <> · sent despite the screen: “{cand.overrideReason}”</>}.
         </p>
       )}
       <p className="mb-2 text-xs text-ink-muted">

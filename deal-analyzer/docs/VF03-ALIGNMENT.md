@@ -21,7 +21,7 @@ What the V1 audit found, and how each gap was closed:
 | No stored / versioned analysis | Deal analysis snapshots on every save (`ENGINE_VERSION`); market snapshots on every evaluation | `deal_analysis_snapshots`, `market_snapshots` |
 | No Market Intelligence module | Built: `src/market/` (engine, ingestion, data, UI), `/markets/*` | |
 | No ingestion infrastructure | Source-agnostic pipeline: provider → validate → append-only observations, every run recorded with raw payloads | `src/market/ingest/*` |
-| Deal Analyzer engine well separated — preserve | Unchanged: no formula, threshold or rule in `src/engine` was modified. A boundary test enforces that VF-03 only uses the `DealInputs` contract and `analyzeDeal()` | `src/market/boundary.test.ts` |
+| Deal Analyzer engine well separated — preserve | Unchanged: no formula, threshold or rule in `src/engine` was modified. A boundary test enforces that VF-03 only uses the `DealInputs` contract and `analyzeDeal()` | `src/boundary.test.ts` |
 
 ### Conflicts and how they were resolved (spec §26)
 
@@ -54,8 +54,8 @@ What the V1 audit found, and how each gap was closed:
 | 15 | Ingestion: raw payload, normalized metric, geography, asOf, retrievedAt, source, confidence, freshness policy, validation status, methodology/version; never overwrite | ✅ | Append-only (DB trigger blocks updates), duplicates skipped by fingerprint, rejected values kept with reasons (never stored as 0) |
 | 16 | Snapshots; explain significant changes | ✅ | `market_snapshots`; `change.ts` splits a change into dimension / component points, risk modifier and coverage |
 | 17 | Conditional drill-down with an explicit promotion reason | ✅ | Children are analyzed only under a promoted parent; the promotion stores the checks that passed |
-| 18 | Market / Opportunity Universe / Candidate / Deal Analyzer kept separate | ✅ | Separate tables and screens |
-| 19 | Hand-off through a contract compatible with DealInputs; no duplicated formulas | ✅ | `handoff.ts` → `deals-repo.create` in one transaction; deal links back (`source_candidate_id`) |
+| 18 | Market / Opportunity Universe / Candidate / Deal Analyzer kept separate | ✅ | Separate tables and screens. Candidates now live in their own module, **Deal Sourcing** (layers 3–4: targets and leads), between Market Intelligence and the Deal Analyzer — see [LAYERS.md](LAYERS.md) |
+| 19 | Hand-off through a contract compatible with DealInputs; no duplicated formulas | ✅ | `src/sourcing/engine/handoff.ts` → `deals-repo.create` in one transaction; deal links back (`source_candidate_id`). Gated: the lead's target must have been opened where the market allows sourcing; a lead outside its buy box needs a reason |
 | 20 | Feedback loop: capture actuals | ✅ ⬜ | `deal_outcomes` + form on the deal page, linked to the predicted analysis snapshot. The comparison model is future (per spec) |
 | 21 | Market list columns; market detail; geography detail; never hide raw evidence | ✅ | `/markets`, `/markets/[geoId]` |
 | 22 | Real users, no spoofable picker, authorization for edits, audit trail, transactions, optimistic locking, versioned migrations, env secrets | ✅ | Admin-only: user management, scoring thresholds. Members edit deals and market data |

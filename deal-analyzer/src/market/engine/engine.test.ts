@@ -9,7 +9,6 @@ import { deriveEvidence, moeAdjusted } from './derive'
 import { evaluateMarkets, partial, percentile, riskLevelFor } from './evaluate'
 import { EVAL_DATE, geo, obs, rankedGeo } from './fixtures'
 import { FRESHNESS_POLICIES, freshness } from './freshness'
-import { candidateToDeal, validateCandidate, type Candidate } from './handoff'
 import { opportunityUniverse } from './universe'
 import { validateObservation } from './validate'
 
@@ -302,26 +301,6 @@ describe('avatars and the opportunity universe', () => {
     expect(u.find((l) => l.key === 'absentee')).toMatchObject({ value: 2_000, estimate: true }) // .2 × 10,000
     expect(u.find((l) => l.key === 'foreclosure')!.value).toBeNull()
     expect(u.find((l) => l.key === 'avatar:a1')!.value).toBe(1_500)
-  })
-})
-
-describe('hand-off to the Deal Analyzer', () => {
-  const c: Candidate = {
-    id: 'c1', geoId: 'zcta:1', geoName: 'ZIP 75201', avatarName: 'Test avatar', address: '1 Main St', city: 'Dallas', state: 'TX', zip: '75201',
-    propertyType: 'SFR', beds: 3, baths: 1, sqft: 1_200, yearBuilt: 1955, askingPrice: 120_000, condition: 'Dated', estArv: 200_000, estRehab: 40_000, estRent: 1_500,
-    source: 'Driving for dollars', sourceUrl: null, notes: null,
-  }
-  it('fills property facts and asking price only; estimates go to the note', () => {
-    const h = candidateToDeal(c)
-    expect(h.inputs).toMatchObject({ address: '1 Main St', zip: '75201', beds: 3, askingPrice: 120_000, market: 'ZIP 75201' })
-    for (const k of ['arvBase', 'arvConservative', 'arvUpside', 'rehabEstimate', 'marketRent', 'purchasePrice'] as const) expect(h.inputs[k]).toBeUndefined()
-    expect(h.note).toMatch(/NOT applied/)
-    expect(h.note).toMatch(/ARV ≈ \$200,000/)
-  })
-  it('validates candidates', () => {
-    expect(validateCandidate({ ...c, address: ' ', source: '' })).toMatchObject({ address: expect.any(String), source: expect.any(String) })
-    expect(validateCandidate({ ...c, sourceUrl: 'javascript:alert(1)' }).sourceUrl).toBeDefined()
-    expect(validateCandidate(c)).toEqual({})
   })
 })
 

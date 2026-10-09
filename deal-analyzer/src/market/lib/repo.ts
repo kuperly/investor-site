@@ -8,7 +8,6 @@ import type { Db } from '@/lib/db'
 import type { Avatar } from '../engine/avatar'
 import type { ConfigOverrides } from '../engine/config'
 import type { MarketEvaluation } from '../engine/evaluate'
-import type { Candidate } from '../engine/handoff'
 import {
   PARENT_LEVELS,
   type ConfidenceLevel,
@@ -520,7 +519,7 @@ export function promotionsRepo(db: Db) {
   }
 }
 
-// ---------------------------------------------------------------- avatars, candidates, outcomes
+// ---------------------------------------------------------------- avatars, outcomes
 
 type AvatarCriteria = Omit<Avatar, 'id' | 'name' | 'description' | 'strategies' | 'active'>
 
@@ -572,82 +571,6 @@ export function avatarsRepo(db: Db) {
         await audit(tx, 'avatar', id, 'updated', toAvatar(cur), a, by)
         return id
       })
-    },
-  }
-}
-
-export type CandidateRow = Omit<Candidate, 'geoName' | 'avatarName'> & {
-  avatarId: string | null
-  status: 'new' | 'handed_off' | 'rejected'
-  dealId: string | null
-  version: number
-  createdBy: string
-  createdAt: Date
-}
-
-const toCandidate = (r: Row): CandidateRow => ({
-  id: r.id as string,
-  geoId: r.geo_id as string,
-  avatarId: (r.avatar_id as string) ?? null,
-  address: r.address as string,
-  city: (r.city as string) ?? null,
-  state: (r.state as string) ?? null,
-  zip: (r.zip as string) ?? null,
-  propertyType: (r.property_type as Candidate['propertyType']) ?? null,
-  beds: num(r.beds),
-  baths: num(r.baths),
-  sqft: num(r.sqft),
-  yearBuilt: num(r.year_built),
-  askingPrice: num(r.asking_price),
-  condition: (r.condition as string) ?? null,
-  estArv: num(r.est_arv),
-  estRehab: num(r.est_rehab),
-  estRent: num(r.est_rent),
-  source: r.source as string,
-  sourceUrl: (r.source_url as string) ?? null,
-  notes: (r.notes as string) ?? null,
-  status: r.status as CandidateRow['status'],
-  dealId: (r.deal_id as string) ?? null,
-  version: Number(r.version),
-  createdBy: r.created_by as string,
-  createdAt: new Date(r.created_at as string),
-})
-
-export function candidatesRepo(db: Db) {
-  return {
-    async list(filter: { geoId?: string; status?: string } = {}) {
-      const where: string[] = []
-      const params: unknown[] = []
-      if (filter.geoId) where.push(`geo_id = $${params.push(filter.geoId)}`)
-      if (filter.status) where.push(`status = $${params.push(filter.status)}`)
-      const rows = await db.query<Row>(`select * from candidates ${where.length ? 'where ' + where.join(' and ') : ''} order by created_at desc`, params)
-      return rows.map(toCandidate)
-    },
-    async get(id: string) {
-      if (!isUuid(id)) return null
-      const [r] = await db.query<Row>('select * from candidates where id = $1', [id])
-      return r ? toCandidate(r) : null
-    },
-    async create(c: Omit<CandidateRow, 'id' | 'status' | 'dealId' | 'version' | 'createdBy' | 'createdAt'>, by: string): Promise<string> {
-      return db.transaction(async (tx) => {
-        const [r] = await tx.query<{ id: string }>(
-          `insert into candidates (geo_id, avatar_id, address, city, state, zip, property_type, beds, baths, sqft, year_built, asking_price, condition,
-             est_arv, est_rehab, est_rent, source, source_url, notes, created_by, updated_by)
-           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$20) returning id`,
-          [c.geoId, c.avatarId, c.address, c.city, c.state, c.zip, c.propertyType, c.beds, c.baths, c.sqft, c.yearBuilt, c.askingPrice, c.condition, c.estArv, c.estRehab, c.estRent, c.source, c.sourceUrl, c.notes, by],
-        )
-        await audit(tx, 'candidate', r.id, 'created', null, c, by)
-        return r.id
-      })
-    },
-    /** Status change with optimistic locking. */
-    async setStatus(id: string, status: CandidateRow['status'], expectedVersion: number, by: string, dealId: string | null = null) {
-      const rows = await db.query<{ id: string }>(
-        `update candidates set status=$2, deal_id=coalesce($3, deal_id), version=version+1, updated_by=$4, updated_at=now() where id=$1 and version=$5 returning id`,
-        [id, status, dealId, by, expectedVersion],
-      )
-      if (!rows.length) throw new VersionConflictError('candidate')
-      await audit(db, 'candidate', id, `status:${status}`, null, { dealId }, by)
     },
   }
 }
