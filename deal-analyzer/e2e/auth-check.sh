@@ -22,7 +22,7 @@ expect() { # name expected actual
 code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
 location() { curl -s -o /dev/null -w '%{redirect_url}' "$@"; }
 
-for BP in "" "/vf-internal"; do
+for BP in "" "/apps"; do
   echo "── basePath '${BP:-/}' ──"
   rm -rf "$PGLITE_DIR"
   ANALYZER_BASE_PATH="$BP" npx next build >/dev/null

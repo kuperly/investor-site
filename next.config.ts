@@ -5,7 +5,7 @@ import type { NextConfig } from 'next'
  * The analyzer is a separate app and deployment; this site only proxies
  * yoursite.com<ANALYZER_BASE_PATH>/* to it. Inert unless BOTH env vars are set:
  *   ANALYZER_URL        e.g. https://deal-analyzer-production.up.railway.app (no trailing slash)
- *   ANALYZER_BASE_PATH  e.g. /vf-internal — must equal the analyzer's own ANALYZER_BASE_PATH
+ *   ANALYZER_BASE_PATH  e.g. /apps — must equal the analyzer's own ANALYZER_BASE_PATH
  * Access control (sign-in) is enforced by the analyzer itself, not here.
  */
 export function analyzerRewrites(env: Record<string, string | undefined> = process.env) {
@@ -13,7 +13,7 @@ export function analyzerRewrites(env: Record<string, string | undefined> = proce
   const base = env.ANALYZER_BASE_PATH?.trim()
   if (!url || !base) return []
   if (!/^https?:\/\/[^/\s]+$/.test(url)) throw new Error(`ANALYZER_URL must be an origin like https://app.example.com (got "${url}")`)
-  if (!/^\/[a-z0-9][a-z0-9-]*$/i.test(base)) throw new Error(`ANALYZER_BASE_PATH must look like "/vf-internal" (got "${base}")`)
+  if (!/^\/[a-z0-9][a-z0-9-]*$/i.test(base)) throw new Error(`ANALYZER_BASE_PATH must look like "/apps" (got "${base}")`)
   return [
     { source: base, destination: `${url}${base}` },
     { source: `${base}/:path*`, destination: `${url}${base}/:path*` },

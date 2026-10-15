@@ -2,7 +2,7 @@ import type { NextConfig } from 'next'
 import { BASE_PATH } from './src/lib/base-path'
 
 const nextConfig: NextConfig = {
-  // Set ANALYZER_BASE_PATH (e.g. "/vf-internal") when the investor website exposes
+  // Set ANALYZER_BASE_PATH (e.g. "/apps") when the investor website exposes
   // this app as a hidden route via a rewrite. Unset = served at "/".
   basePath: BASE_PATH,
   // This app lives inside the marketing-site repo; pin the tracing root so Next

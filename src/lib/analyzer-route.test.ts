@@ -5,12 +5,12 @@ describe('hidden analyzer route (next.config rewrites)', () => {
   it('is inert unless both env vars are set', () => {
     expect(analyzerRewrites({})).toEqual([])
     expect(analyzerRewrites({ ANALYZER_URL: 'https://a.vercel.app' })).toEqual([])
-    expect(analyzerRewrites({ ANALYZER_BASE_PATH: '/vf-internal' })).toEqual([])
+    expect(analyzerRewrites({ ANALYZER_BASE_PATH: '/apps' })).toEqual([])
   })
   it('proxies the base path and everything under it', () => {
-    expect(analyzerRewrites({ ANALYZER_URL: 'https://a.vercel.app/', ANALYZER_BASE_PATH: '/vf-internal' })).toEqual([
-      { source: '/vf-internal', destination: 'https://a.vercel.app/vf-internal' },
-      { source: '/vf-internal/:path*', destination: 'https://a.vercel.app/vf-internal/:path*' },
+    expect(analyzerRewrites({ ANALYZER_URL: 'https://a.vercel.app/', ANALYZER_BASE_PATH: '/apps' })).toEqual([
+      { source: '/apps', destination: 'https://a.vercel.app/apps' },
+      { source: '/apps/:path*', destination: 'https://a.vercel.app/apps/:path*' },
     ])
   })
   it('rejects malformed values instead of proxying somewhere unexpected', () => {

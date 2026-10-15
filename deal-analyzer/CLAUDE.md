@@ -210,7 +210,7 @@ e2e/          run.sh + login.mjs + app/comps/markets.e2e.mjs · auth-check.sh + 
 - `next.config.ts` sets `outputFileTracingRoot` because the repo root has
   its own lockfile.
 - **Hidden route / basePath.** `ANALYZER_BASE_PATH` (build time) serves the
-  app under e.g. `/vf-internal`; the website rewrites that path to this
+  app under e.g. `/apps`; the website rewrites that path to this
   deployment (README → "Deploying"). Use `Link` / `redirect()` for internal
   URLs, never hand-built `/…` strings: they handle the basePath. The session
   cookie is scoped to the basePath.
@@ -222,7 +222,7 @@ e2e/          run.sh + login.mjs + app/comps/markets.e2e.mjs · auth-check.sh + 
   "Deploying" explains how to switch real sign-in on. `npm start` honours
   `$PORT`.
 - **`src/middleware.ts` has no `matcher`, on purpose.** With a basePath,
-  a matcher silently skipped the bare `/vf-internal` (the dashboard).
+  a matcher silently skipped the bare basePath root (the dashboard).
   Public paths are listed in the middleware (`/login`, `/_next/static`,
   `/_next/image`, favicon). `npm run e2e:auth` guards this. Run it after any
   middleware, auth, basePath or Next.js change.

@@ -126,7 +126,7 @@ in `deal-analyzer/src/engine/` (deals), `deal-analyzer/src/market/engine/`
 thresholds there change only with Guy/Ben approval.
 
 **Hidden route.** `next.config.ts` (`analyzerRewrites`) forwards
-`<ANALYZER_BASE_PATH>/*` (e.g. `/vf-internal`) to the analyzer's own
+`<ANALYZER_BASE_PATH>/*` (e.g. `/apps`) to the analyzer's own
 deployment at `ANALYZER_URL` (Railway project `valeforge-deal-analyzer`). It's inert unless both env vars are set, and
 tested in `src/lib/analyzer-route.test.ts`. Access control is the analyzer's
 own sign-in, not this site. Setup steps: deal-analyzer/README.md →

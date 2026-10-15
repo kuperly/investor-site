@@ -105,7 +105,7 @@ advice.
       middleware. Before bumping, check https://nextjs.org/blog and
       `npm audit`.
 - [ ] Sign-in check after any Next, middleware, auth or routing change:
-      `npm run e2e:auth`. At `/` and under `/vf-internal`, it verifies:
+      `npm run e2e:auth`. At `/` and under `/apps`, it verifies:
       - the bare root and deep pages redirect to `/login` without a session
         or with a forged cookie;
       - a server-action POST without a session → 401;

@@ -74,7 +74,7 @@ request, kept verbatim). Every rule's provenance is also listed in-app on
 |---|---|
 | Default assumptions page (`/settings`) | Requested Oct 2026. Values are entered by Guy/Ben; new deals pre-fill and mark them "Default" |
 | Live calculated values in the form | Requested Oct 2026, "the numbers are manual" |
-| Hidden route on the website (`/vf-internal`) + Railway hosting + sign-in (fail-closed) | Requested for testing before moving to its own repo |
+| Hidden route on the website (`/apps`) + Railway hosting + sign-in (fail-closed) | Requested for testing before moving to its own repo |
 | VF-03 Market Intelligence module, real accounts, versioned migrations, analysis snapshots, actual-result capture | VF-03 Implementation Spec v1 (Oct 2026) — see [VF03-ALIGNMENT.md](VF03-ALIGNMENT.md) |
 | CLAUDE.md, `vf-*` skills, docs-always-current rule | Requested |
 
