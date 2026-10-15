@@ -31,8 +31,9 @@ describe('module boundary (layers: market → sourcing → deal analyzer)', () =
     expect(bad).toEqual([])
   })
 
-  it('src/sourcing uses only the Deal Analyzer contract / entry point and market engine types', () => {
-    const allowed = new Set(['@/engine/types', '@/engine/fields', '@/engine/analyze'])
+  it('src/sourcing uses only the Deal Analyzer contract / entry points and market engine types', () => {
+    // Entry points: analyzeDeal, and feasibilityAt (analyzeDeal at a given price — no formula of its own).
+    const allowed = new Set(['@/engine/types', '@/engine/fields', '@/engine/analyze', '@/engine/feasibility'])
     const bad = files(path.join(root, 'sourcing'))
       .filter((f) => !f.endsWith('.test.ts'))
       .flatMap((f) => imports(f).filter((i) => i.startsWith('@/engine') && !allowed.has(i)).map((i) => `${rel(f)} → ${i}`))

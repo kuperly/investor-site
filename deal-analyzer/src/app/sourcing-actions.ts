@@ -9,7 +9,8 @@ import { VersionConflictError } from '@/market/lib/repo'
 import type { LeadInput } from '@/sourcing/engine/leads'
 import { validateCandidate } from '@/sourcing/engine/handoff'
 import { candidatesRepo, targetsRepo, type TargetStatus } from '@/sourcing/lib/repo'
-import { addLead, handOff, importLeads, openTarget, rescreen } from '@/sourcing/lib/service'
+import { NEGOTIATION_KINDS, type NegotiationKind } from '@/sourcing/engine/negotiation'
+import { addLead, handOff, importLeads, openTarget, recordNegotiation, rescreen } from '@/sourcing/lib/service'
 
 export interface FormState {
   ok?: string
@@ -145,4 +146,28 @@ export async function rescreenLead(fd: FormData): Promise<void> {
   if (!user) return
   await rescreen(await getDb(), str(fd, 'id'), user.displayName)
   refresh()
+}
+
+// ---------------------------------------------------------------- negotiation log (layers 4–5)
+
+export async function recordNegotiationAction(_prev: FormState, fd: FormData): Promise<FormState> {
+  const user = await currentUser()
+  if (!user) return { error: NO_USER }
+  const kind = str(fd, 'kind') as NegotiationKind
+  if (!NEGOTIATION_KINDS.includes(kind)) return { error: 'Choose what happened.' }
+  const raw = str(fd, 'amount').replace(/[$,\s]/g, '')
+  const amount = raw === '' ? null : Number(raw)
+  if (amount !== null && !Number.isFinite(amount)) return { error: 'Amount must be a number.' }
+  const candidateId = opt(fd, 'candidateId')
+  const dealId = opt(fd, 'dealId')
+  const today = new Date().toISOString().slice(0, 10)
+  const r = await recordNegotiation(
+    await getDb(),
+    { candidateId, dealId, kind, amount, eventDate: str(fd, 'eventDate') || today, note: opt(fd, 'note') },
+    user.displayName,
+    today,
+  )
+  refresh()
+  if (dealId) revalidatePath(`/deals/${dealId}`)
+  return r.error ? { error: r.error } : { ok: 'Recorded.' }
 }

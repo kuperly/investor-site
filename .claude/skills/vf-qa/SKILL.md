@@ -104,9 +104,11 @@ When you add a feature, **extend `e2e/*.e2e.mjs`** with assertions for it
 ## 5c. Layer checks (when `src/sourcing`, gates or cross-module links changed)
 
 - `src/boundary.test.ts` green: dependencies point up the chain only (engine ← market ← sourcing).
-- Gates hold: no target on a DROP / blocked / unevaluated geography; WATCH only with a reason; no lead under a paused or closed target; a lead outside its buy box reaches the Deal Analyzer only with a reason.
-- Screening uses only the avatar's ranges; a missing fact shows as unknown, never pass/fail.
-- No BUY / PASS anywhere before layer 5; the indicative check is never written to a deal.
+- Gates hold: no target on a DROP / blocked / unevaluated geography; WATCH only with a reason; no lead under a paused or closed target; a lead outside its buy box (physical facts) reaches the Deal Analyzer only with a reason.
+- Screening uses only the avatar's ranges; a missing fact shows as unknown, never pass/fail. The asking price is informational and never rejects a lead.
+- Feasibility at asking / at target comes only from `feasibilityAt` (= `analyzeDeal` at a price); gap shown in $ and %; no new threshold.
+- Negotiation events are append-only facts; the likelihood is shown as UNKNOWN (not scored) until a rule is approved.
+- No BUY / PASS anywhere before layer 5; the feasibility check is never written to a deal.
 - `docs/LAYERS.md`, `layers.ts` and the Pipeline page still describe the same chain.
 
 ## 6. Documentation check (always: stale docs fail QA)

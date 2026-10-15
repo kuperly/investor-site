@@ -7,7 +7,7 @@ import { handoffGate, leadGate, targetGate } from './gates'
 import { candidateToDeal, validateCandidate, type Candidate } from './handoff'
 import { LAYERS } from './layers'
 import { addressKey, parseCsv, parseLeadsCsv } from './leads'
-import { indicativeCheck, screenBuyBox } from './screen'
+import { leadFeasibility, leadInputs, leadQuality, priorityCompare, screenBuyBox } from './screen'
 
 const avatar: Avatar = {
   id: 'a1', name: '3BR SFH', description: '', propertyTypes: ['sfh_detached'], bedsMin: 3, bedsMax: 3, yearBuiltMin: 1940, yearBuiltMax: 1980,
@@ -53,11 +53,19 @@ describe('buy-box screen (the avatar’s own ranges, nothing invented)', () => {
     expect(s.overall).toBe('pass')
     expect(s.criteria.map((c) => c.label)).toEqual(['Property type', 'Bedrooms', 'Year built', 'Square feet', 'Asking price', 'Estimated ARV', 'Estimated rehab', 'Estimated rent ($/mo)'])
   })
-  it('one fact outside → fail, with the reason', () => {
-    const s = screenBuyBox({ ...lead, askingPrice: 175_000 }, avatar)
-    expect(s.overall).toBe('fail')
-    expect(s.criteria.find((c) => c.label === 'Asking price')).toMatchObject({ result: 'fail', detail: '$175,000 vs $80,000–$150,000' })
+  it('one physical fact outside → fail, with the reason', () => {
     expect(screenBuyBox({ ...lead, propertyType: 'Duplex' }, avatar).overall).toBe('fail')
+    expect(screenBuyBox({ ...lead, beds: 5 }, avatar).criteria.find((c) => c.label === 'Bedrooms')).toMatchObject({ result: 'fail', detail: '5 vs 3–3' })
+  })
+  it('asking price outside the range never rejects a lead: informational only', () => {
+    const s = screenBuyBox({ ...lead, askingPrice: 175_000 }, avatar)
+    expect(s.overall).toBe('pass')
+    expect(s.criteria.find((c) => c.label === 'Asking price')).toMatchObject({
+      result: 'info',
+      detail: '$175,000 — outside the buy-box price range $80,000–$150,000 (informational; see feasibility)',
+    })
+    // An unknown asking price does not make the screen incomplete either.
+    expect(screenBuyBox({ ...lead, askingPrice: null }, avatar).overall).toBe('pass')
   })
   it('a missing fact is UNKNOWN (incomplete), never a pass or a fail', () => {
     const s = screenBuyBox({ ...lead, sqft: null, estRent: null }, avatar)
@@ -72,22 +80,55 @@ describe('buy-box screen (the avatar’s own ranges, nothing invented)', () => {
   })
 })
 
-describe('indicative check = the Deal Analyzer engine on the estimates', () => {
+describe('lead feasibility = the Deal Analyzer engine at the asking and target prices', () => {
   it('matches analyzeDeal on the same inputs (no duplicated formula)', () => {
-    const ind = indicativeCheck(lead, {})
+    const f = leadFeasibility(lead, {})
     const ref = analyzeDeal({
       ...emptyInputs(),
       propertyType: 'SFR', beds: 3, baths: 1, sqft: 1_200, yearBuilt: 1955, askingPrice: 120_000, purchasePrice: 120_000,
       rehabEstimate: 40_000, arvBase: 200_000, marketRent: 1_500,
     })
-    expect(ind.allIn).toBe(ref.base.totalProjectCost)
-    expect(ind.equity).toBe(ref.base.equityCreated)
-    expect(ind.incomplete).toBe(true) // no closing %, financing etc. without defaults
+    expect(leadInputs(lead, {}).purchasePrice).toBe(120_000)
+    expect(f.atAsking.allIn).toBe(ref.base.totalProjectCost)
+    expect(f.atAsking.incomplete).toBe(true) // no closing %, financing etc. without defaults
   })
-  it('asking vs Max Offer: positive = asking above what the target allows', () => {
-    const ind = indicativeCheck(lead, {})
-    expect(ind.askingOverMaxOffer).toBe(lead.askingPrice - (ind.maxOfferBase as number))
-    expect(indicativeCheck({ ...lead, estArv: null }, {}).maxOfferBase).toBeNull() // UNKNOWN, never 0
+  it('gap in $ and %: positive = asking above what the target allows', () => {
+    const f = leadFeasibility(lead, {})
+    const mo = f.atAsking.maxOffer.base as number
+    expect(f.atAsking.gapUsd).toBe(lead.askingPrice - mo)
+    expect(f.atAsking.gapPct).toBeCloseTo((lead.askingPrice - mo) / lead.askingPrice, 12)
+    expect(leadFeasibility({ ...lead, estArv: null }, {}).atAsking.maxOffer.base).toBeNull() // UNKNOWN, never 0
+  })
+  it('target = our latest offer when one is recorded, else the base Max Offer', () => {
+    const f = leadFeasibility(lead, {})
+    expect(f.targetSource).toBe('base Max Offer')
+    expect(f.atTarget.price).toBe(f.atAsking.maxOffer.base)
+    const g = leadFeasibility(lead, {}, 95_000)
+    expect(g.targetSource).toBe('latest offer')
+    expect(g.atTarget.price).toBe(95_000)
+  })
+  it('missing estimates are listed', () => {
+    expect(leadFeasibility({ ...lead, estRent: null, askingPrice: null }, {}).missing).toEqual(['askingPrice', 'marketRent'])
+  })
+})
+
+describe('lead quality', () => {
+  it("a lead's own figures are estimates, never verified", () => {
+    const q = leadQuality({ ...lead, source: 'Wholesaler email', estRehab: null }, screenBuyBox(lead, avatar))
+    expect(q.fit).toBe('pass')
+    expect(q.evidence.map((e) => e.status)).toEqual(['estimate', 'estimate', 'missing'])
+    expect(q.evidence[0].detail).toContain('Wholesaler email')
+    expect([q.factsKnown, q.factsTotal]).toEqual([5, 5])
+  })
+})
+
+describe('lead priority order (an ordering, not a threshold)', () => {
+  const f = (askingPct: number | null) => ({ atAsking: { gapPct: askingPct } }) as unknown as Parameters<typeof priorityCompare>[0]
+  it('smallest required discount off asking first; unknown gaps (and no check) last', () => {
+    const list = [f(0.3), f(null), f(-0.05), f(0.1), null]
+    const sorted = [...list].sort(priorityCompare)
+    expect(sorted.slice(0, 3)).toEqual([list[2], list[3], list[0]])
+    expect(sorted.slice(3)).toEqual(expect.arrayContaining([list[1], null]))
   })
 })
 

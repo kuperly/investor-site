@@ -189,6 +189,12 @@ export interface CoreResult {
   // §15–19 BRRRR (post-refi)
   refi: {
     refiLoan: Num
+    /** LTV × ARV. */
+    ltvLoan: Num
+    /** Loan the NOI covers at the lender's sizing DSCR; null when no sizing DSCR is entered. */
+    dscrLoanCap: Num
+    /** Which limit set the loan. */
+    sizedBy: 'LTV' | 'DSCR' | null
     refiClosingCosts: Num
     otherRefiCosts: Num
     existingDebtPayoff: Num
@@ -391,7 +397,24 @@ export function underwriteCore(inputs: DealInputs, opts: CoreOptions = {}, reade
 
   // §15–19 BRRRR
   const refiLtv = reader.num('refiLtv')
-  const refiLoan = lift(F.refiLoan, arv, refiLtv)
+  const ltvLoan = lift(F.refiLoan, arv, refiLtv)
+  // DSCR cap (approved by Guy/Ben, Oct 15 2026): when the lender's sizing DSCR is entered, the
+  // loan is the lower of LTV × ARV and the loan this NOI covers at that DSCR. Not entered →
+  // LTV-only sizing (analyzeDeal shows a notice). A cap that cannot be evaluated (NOI, rate or
+  // term UNKNOWN) makes the loan UNKNOWN — never silently LTV-only.
+  const sizingDscr = inputs.refiSizingDscr !== null && inputs.refiSizingDscr > 0 ? inputs.refiSizingDscr : null
+  const dscrCapActive = refiLtv !== 0 && sizingDscr !== null
+  const dscrLoanCap: Num = dscrCapActive
+    ? lift(
+        (n, r, t) => F.dscrCapLoan(n, sizingDscr, r, t),
+        noi,
+        reader.num('refiInterestRate'),
+        lift((y) => Math.round(y * 12), reader.num('refiTermYears')),
+      )
+    : null
+  const refiLoan = dscrCapActive ? lift(Math.min, ltvLoan, dscrLoanCap) : ltvLoan
+  const refiSizedBy: 'LTV' | 'DSCR' | null =
+    refiLoan === null ? null : dscrCapActive && dscrLoanCap !== null && ltvLoan !== null && dscrLoanCap < ltvLoan ? 'DSCR' : 'LTV'
   const refiClosingCosts =
     refiLtv === 0 ? 0 : lift(F.refiClosingCosts, refiLoan, reader.optional('refiClosingCostPct'))
   const otherRefiCosts = refiLtv === 0 ? 0 : reader.optional('refiOtherCosts')
@@ -440,6 +463,11 @@ export function underwriteCore(inputs: DealInputs, opts: CoreOptions = {}, reade
   const inc = Object.fromEntries(
     Object.entries(RESULT_DEPS).map(([k, deps]) => [k, (deps as readonly InputKey[]).filter((d) => reader.omitted.has(d))]),
   ) as Incomplete
+  if (dscrCapActive) {
+    // A partial NOI overstates the DSCR-capped loan, so every loan-dependent result is partial too.
+    const noiMissing = G.noi.filter((d) => reader.omitted.has(d))
+    for (const k of ['refiCash', 'cashLeft', 'coc'] as const) inc[k] = [...new Set([...inc[k], ...noiMissing])]
+  }
 
   return {
     purchasePrice,
@@ -465,6 +493,9 @@ export function underwriteCore(inputs: DealInputs, opts: CoreOptions = {}, reade
     rental,
     refi: {
       refiLoan,
+      ltvLoan,
+      dscrLoanCap,
+      sizedBy: refiSizedBy,
       refiClosingCosts,
       otherRefiCosts,
       existingDebtPayoff,

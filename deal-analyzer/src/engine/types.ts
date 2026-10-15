@@ -99,6 +99,8 @@ export interface DealInputs {
   refiPrepaymentPenalty: string | null
   refiSeasoningMonths: Num
   refiMinDscr: Num
+  /** Lender DSCR used to SIZE the refi loan (loan capped so NOI / debt service ≥ this). null = LTV-only sizing. */
+  refiSizingDscr: Num
 
   // §8 Value
   arvConservative: Num

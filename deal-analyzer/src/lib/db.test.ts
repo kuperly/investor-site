@@ -34,7 +34,9 @@ describe(`migration runner (${process.env.DATABASE_URL ? 'PostgreSQL' : 'PGlite'
     expect(status.map((s) => s.version)).toEqual(ms.map((m) => m.version))
     // Running again is a no-op.
     expect((await runMigrations(db, ms)).applied).toEqual([])
-  })
+    // The first getDb() in this file starts PGlite and applies every migration: slower than the
+    // 5 s default on a busy machine (other DB tests do this in beforeAll, which allows 10 s).
+  }, 30_000)
 
   it('refuses to start when an applied migration was edited', async () => {
     const db = await getDb()

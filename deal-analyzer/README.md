@@ -136,7 +136,7 @@ src/
     actions.ts · comps-actions.ts · settings-actions.ts · auth-actions.ts · market-actions.ts · sourcing-actions.ts
   components/        AnalysisView (shared by deal page + export), DealForm (live preview), …
   middleware.ts      sign-in gate for every path (no matcher, on purpose)
-db/migrations/       0001 baseline (the V1 schema) · 0002 users · 0003 deal integrity · 0004 market intelligence · 0005 deal sourcing
+db/migrations/       0001 baseline (the V1 schema) · 0002 users · 0003 deal integrity · 0004 market intelligence · 0005 deal sourcing · 0006 negotiation log
 ```
 
 Design points:
@@ -185,6 +185,7 @@ Versioned migrations in `db/migrations/` (see "Database gotchas" in CLAUDE.md). 
 | `settings_history` | `id`, `key`, `field`, `old_value`, `new_value`, `changed_by`, `changed_at` (one row per changed default) |
 | `deal_comps` | `id`, `deal_id → deals` (cascade), `address`, `sale_price`, `sale_date`, `sqft`, `beds`, `baths`, `distance_miles`, `condition`, `renovation` (`renovated` / `unrenovated` / null = unknown), `sale_status` (`sold` / `pending` / `active` / null), `tier` (`standard` / `bestFit` / `superComp`), `share_override` (fraction 0–1, Super comps only, null = computed weight), `source`, `source_url`, `notes`, `included`, `origin` (`manual` / `import`), `external_id` (unique per deal + source, so re-imports never duplicate), created/updated by/at |
 | `users` / `user_audit` | accounts (username, display name, role, password hash, active, session_version) and who changed which account |
+| `negotiation_events` | `id`, `candidate_id → candidates` and/or `deal_id → deals`, `kind` (our offer, seller counter / accepted / rejected / no response, price cut, under contract, closed, lost), `amount`, `event_date`, `note`, `created_by`, `created_at`. Append-only (trigger) |
 | `schema_migrations` | version, name, checksum, applied_at |
 
 VF-03 tables are listed under [Market Intelligence](#market-intelligence-vf-03).
@@ -225,7 +226,17 @@ SQL by market, ZIP, status and created date. Filters on computed values
   - Strategy engine cards, ARV scenarios with Max Offer for all three ARVs,
     the 5 stress tests, score breakdown and hard gates.
   - All-in / rental / refi breakdowns, conservative case, notes and audit
-    trail.
+    trail. The refi card shows the LTV loan, the DSCR cap and which one sized
+    the loan.
+  - **Feasibility by price & negotiation** (Oct 15 2026): the same underwriting
+    at the asking price and at the target price (our latest offer, else the
+    planned offer, else the base Max Offer), each with the gap to Max Offer in
+    $ and % and which strategies work there. Max Offer is a metric, not a
+    rejection. Next to it, the negotiation log of the deal and of the lead it
+    came from.
+- **Refinance sizing** (approved Oct 15 2026): enter the lender's sizing DSCR
+  and the refi loan becomes the lower of LTV × ARV and the loan the NOI covers
+  at that DSCR. Without it the loan is LTV-only and the page says so.
 - Status workflow: all 9 statuses, settable from the deal page or the form.
 - Audit trail (§33): one row per changed input, note or status, showing
   old → new, who changed it and when.
@@ -258,7 +269,7 @@ SQL by market, ZIP, status and created date. Filters on computed values
 
 ## Formula / unit tests
 
-`npm test`: **305 tests, 22 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 99 browser checks (deals, comps, markets → sourcing → deal); `npm run e2e:auth` adds 69 sign-in checks across `/` and basePath builds, fail-closed and open-access mode.
+`npm test`: **338 tests, 25 files**, all passing (also against real PostgreSQL 16 via `TEST_DATABASE_URL`). `npm run e2e` adds 103 browser checks (deals, comps, markets → sourcing → deal); `npm run e2e:auth` adds 69 sign-in checks across `/` and basePath builds, fail-closed and open-access mode.
 
 | File | Tests | Covers |
 |---|---|---|
@@ -268,21 +279,24 @@ SQL by market, ZIP, status and created date. Filters on computed values
 | `engine/score.test.ts` | 10 | each component's scaling and clamps; risk factor unknowns; partial pass → UNKNOWN, partial fail → 0; total / max achievable |
 | `engine/recommendation.test.ts` | 12 | threshold boundaries; gate FAIL overrides; UNKNOWN blocks BUY; "can't reach 65" → PASS |
 | `engine/analyze.test.ts` | 55 | end-to-end BUY deal; strategies; Max Offer ×3; stress; every computed gate; spec warning text; empty deal; Base-vs-comp-ARV "Why?" text; AC2 basics-only deal; partial fail proven / partial pass not; **property test over every line item** (blanking it never changes a result unflagged) |
+| `engine/refi-cap.test.ts` | 11 | annuity inverse round-trips `monthlyPayment`; DSCR cap = PV of NOI / DSCR / 12 ($12,124.80 at 1.25, 7 %, 30 y → $121,496.61); binding cap lowers the loan and raises cash left to $40,733.32; non-binding cap keeps LTV; NOI UNKNOWN → loan UNKNOWN; partial NOI flags refi-dependent results; no cap → LTV-only + notice |
+| `engine/feasibility.test.ts` | 7 | feasibility at a price via `analyzeDeal`: gap to Max Offer in $ and % (asking $100,000 vs $81,901 → $18,099 = 18.1 %); at Max Offer All-in = 70 % of ARV; Max Offer independent of the price tested; no price → unknown; partial Max Offer proves "above", never "within"; ÷0 guard; target-price precedence |
 | `engine/defaults.test.ts` | 4 | defaults fill blanks only; an explicit 0 is kept; property facts can't be defaulted |
 | `lib/settings-repo.test.ts` | 3 | save + change history; form parsing; deals remember unconfirmed defaults |
 | `lib/parse-inputs.test.ts` | 6 | blank → null; explicit 0 kept; `$125,000` and `7.5%` parsing; validation; round-trip |
 | `lib/deals-repo.test.ts` | 9 | create/read; audit Old $125,000 → New $115,000 by Ben; no-op saves; filters; real `jsonb` storage; optimistic locking (stale save refused, nothing written); a failure rolls back the change and its audit rows; analysis snapshots keep what was predicted |
 | `engine/comps.test.ts` | 22 | $/sqft guard; median; sale age; included-only stats; unknown prices skipped (not $0); renovated vs unrenovated; summary fields; weight decay; hand-calculated comp weight; comp ARV ($187.50/sf × 1,400 = $262,500); exclusions with reasons; UNKNOWN ARV; Super comp % override (50% fixed → $180/sf × 1,400 = $252,000), multiple overrides, > 100% → UNKNOWN, scale-up when alone, ignored on non-Super / unused comps |
 | `lib/comps-repo.test.ts` | 9 | validation (incl. unsafe links); tier/status defaults; % override validation (Super comps only, 0–100%); add/list/round-trip; audited edit/delete; cross-deal protection; import de-duplication; comp summary auto-sync (audited, no-op when in sync) |
-| `lib/db.test.ts` | 16 | every migration splits cleanly (no `;` in inline comments, `$$` bodies kept); versions 1..n; applied once with checksums; an edited applied migration or an older build is refused; transactions roll back |
+| `lib/db.test.ts` | 18 | every migration splits cleanly (no `;` in inline comments, `$$` bodies kept); versions 1..n; applied once with checksums; an edited applied migration or an older build is refused; transactions roll back |
 | `lib/auth/auth.test.ts` | 13 | scrypt hashing; 12+ character passwords; signed session tokens (tampering, wrong secret, expiry); production requires `SESSION_SECRET`; sign-in throttle; safe post-sign-in redirect |
 | `lib/users-repo.test.ts` | 4 | first admin from env only while there are no users; authenticate; password change ends sessions; deactivation; audit without secrets; at least one active admin; unique names |
 | `market/engine/engine.test.ts` | 31 | VF-03 engine, hand-calculated: percentiles, partial roll-ups and bounds, risk bands, freshness policies, ACS margin of error → confidence, derived metrics, capital efficiency = ratios of `analyzeDeal` outputs, decisions (DRILL_DOWN / KEEP / DROP / WATCH), BLOCK, no false-precision ranking, thin peers, stale data, Strategy Fit roll-up, rent-by-room gate, change explanation, avatar fit, opportunity universe, observation validation, configuration overrides |
 | `market/ingest/providers.test.ts` | 8 | Census ACS, HUD FMR/SAFMR, BLS LAUS, FRED parsers against recorded responses; keys redacted; missing release → growth UNKNOWN |
 | `market/lib/market.test.ts` | 6 | geography hierarchy; ingestion validation / duplicates / append-only; missing key; manual evidence needs a source; conditional drill-down + snapshots + change; capital efficiency from samples |
-| `sourcing/engine/sourcing.test.ts` | 17 | layer map; the three gates (market → target, target → lead, lead → deal); buy-box screen (pass / fail / unknown, nothing invented); indicative check = `analyzeDeal` on the estimates; address key; CSV parsing and lead import validation; funnel counts; hand-off contract |
-| `sourcing/lib/sourcing.test.ts` | 4 | targets follow the market decision (DROP refused, WATCH needs a reason, duplicates refused); leads screened on entry, duplicates and paused targets refused; CSV import; failed screen needs a reason to reach the Deal Analyzer; deal links back; pipeline funnel incl. actual results |
-| `boundary.test.ts` | 6 | dependencies point up the chain only: Deal Analyzer engine imports neither market nor sourcing; market never imports sourcing; market and sourcing use only the DealInputs contract and analyzeDeal(); both engines are pure |
+| `sourcing/engine/sourcing.test.ts` | 22 | layer map; the three gates (market → target, target → lead, lead → deal); buy-box screen (pass / fail / unknown on physical facts, nothing invented; asking price informational, never a fail); lead feasibility at asking and at target = `analyzeDeal` on the estimates; lead quality (estimates never "verified"); priority order by required discount; address key; CSV parsing and lead import validation; funnel counts; hand-off contract |
+| `sourcing/engine/negotiation.test.ts` | 7 | event validation (amounts, dates, a lost deal needs a reason); stage follows the latest step by date; price cuts → current asking and % below original (UNKNOWN when the original is unknown); likelihood never scored |
+| `sourcing/lib/sourcing.test.ts` | 5 | targets follow the market decision (DROP refused, WATCH needs a reason, duplicates refused); leads screened on entry (asking outside the range still fits), duplicates and paused targets refused; negotiation log (validated, append-only in the DB, original asking never overwritten, lead history visible on its deal); CSV import; failed screen needs a reason to reach the Deal Analyzer; deal links back; pipeline funnel incl. actual results |
+| `boundary.test.ts` | 6 | dependencies point up the chain only: Deal Analyzer engine imports neither market nor sourcing; market never imports sourcing; market and sourcing use only the DealInputs contract and analyzeDeal() (sourcing also `feasibilityAt`, which is analyzeDeal at a price); both engines are pure |
 | `lib/base-path.test.ts` | 3 | hidden-route basePath: empty/`/` → root, single segment accepted, anything else fails the build |
 
 Worked example (`engine/fixtures.ts`; illustrative inputs, not market data):
@@ -314,7 +328,7 @@ All captured from the running production build during the E2E run.
 | Users (admin) | [16-admin-users.png](docs/screenshots/16-admin-users.png) |
 | VF-03 market list ([DEMO] markets) | [17-markets-list.png](docs/screenshots/17-markets-list.png) |
 | VF-03 market detail: decision, dimensions, strategy matrix, risk, universe, drill-down, evidence | [18-market-detail.png](docs/screenshots/18-market-detail.png) |
-| Deal Sourcing leads: buy-box screen + indicative check | [19-leads.png](docs/screenshots/19-leads.png) |
+| Deal Sourcing leads: lead quality, feasibility at asking / target, negotiation | [19-leads.png](docs/screenshots/19-leads.png) |
 | Deal created from a candidate, with the actual-result form | [20-deal-from-candidate.png](docs/screenshots/20-deal-from-candidate.png) |
 | VF-03 data sources | [21-data-sources.png](docs/screenshots/21-data-sources.png) |
 | VF-03 markets on mobile | [22-markets-mobile.png](docs/screenshots/22-markets-mobile.png) |
@@ -371,9 +385,25 @@ approved.**
     - Closing $ is used only when Closing % is blank.
     - Inspection, attorney, title and other acquisition costs go into "Other
       Project Costs."
-    - Refi is sized on Base ARV and fully amortizing.
+    - Refi is sized on Base ARV and fully amortizing (plus the approved DSCR
+      cap when a sizing DSCR is entered).
     - Max Offer recomputes price-linked costs at the offer price.
     - Score is rounded to 0.1 before classification.
+12. **BUY evidence guardrails (decided in principle Oct 15 2026, rule not yet
+    set).** BUY needs supporting evidence for critical assumptions; a typed ARV
+    or rent marked High is not enough, and the constraints differ for BRRRR,
+    Buy & Hold and Flip. The proposal (rule per strategy, rationale, tests) is
+    in the Phase 1 plan; nothing is implemented until approved. Today's BUY
+    rule is unchanged.
+13. **Refi without a sizing DSCR.** Today: LTV-only loan plus a notice.
+    Proposed: mark the refi results incomplete (that blocks BUY) until the
+    lender's sizing DSCR is entered.
+14. **"Feasible at a price"** (INTERPRETATION): the price is at or below the
+    base Max Offer AND at least one of BRRRR / Hold / Flip is viable there;
+    proven "not feasible" when above Max Offer or no strategy works; otherwise
+    "not proven". No new number — it reuses §21 and §26.
+15. **Negotiation likelihood.** Not scored (shown as UNKNOWN). A rule needs
+    recorded offers and outcomes first, then your approval.
 
 ## Comparable properties (§32)
 
@@ -527,21 +557,34 @@ The layer between "this market is worth it" and "this deal is a BUY" (operating 
 - **Leads** (`/sourcing/leads`): added one by one or imported from a CSV list (up to 500
   rows; blank = UNKNOWN; invalid rows listed by line; the same property can't enter twice —
   normalized address + ZIP). Each lead is screened against its target's buy box (the
-  avatar's own ranges; a missing fact is "unknown", never pass/fail) and gets an
-  **indicative check**: the Deal Analyzer engine on its estimates + ValeForge defaults
-  (All-in, equity, Max Offer vs asking, DSCR, flip profit) — triage only, never written to a
-  deal, no BUY / PASS.
+  avatar's own ranges on physical facts; a missing fact is "unknown", never pass/fail). The
+  **asking price is informational**: outside the avatar's price range it never rejects a
+  lead (Guy/Ben, Oct 15 2026). Four separate answers per lead:
+  - **Lead quality**: physical buy-box fit, facts known, and how ARV / rent / rehab are
+    supported (a lead's own figures are "estimate, not verified").
+  - **Feasibility at asking** and **at target** (our latest offer, else the base Max Offer):
+    the Deal Analyzer engine on the estimates + ValeForge defaults, with the gap to Max Offer
+    in $ and % (the discount the seller would need to accept) and the strategies that work at
+    that price — triage only, never written to a deal, no BUY / PASS.
+  - **Negotiation**: a log of our offers, seller counters / acceptances / rejections / no
+    response, price cuts and outcomes (under contract, closed, lost). The stage and signals
+    are shown; the **likelihood of progress is not scored** (UNKNOWN) until a rule calibrated
+    on these records is approved.
+  Open leads are listed by the discount needed off the current asking price, smallest first
+  (an ordering, not a threshold).
 - **Send to Deal Analyzer**: one transaction creates the deal (property facts + asking price;
   estimates in the notes, not applied), links lead ↔ deal and snapshots the analysis. A lead
-  outside the buy box needs a written reason, recorded on the lead and in the deal notes.
+  outside the buy box on its physical facts needs a written reason, recorded on the lead and in
+  the deal notes.
 - **Pipeline** (`/sourcing`): the layer map and a funnel per market — active targets, leads
   (fits / incomplete / outside, rejected), deals in the Deal Analyzer (BUY / INVESTIGATE /
   PASS), closed, with actual results.
 - Code: `src/sourcing/engine` (pure: layers, gates, screen, leads/CSV, funnel, hand-off
   contract) · `src/sourcing/lib` (repo, service) · `src/app/sourcing-actions.ts` ·
   `src/app/(app)/sourcing/*`. Tables (migration 0005): `sourcing_targets`, plus
-  `candidates.target_id`, `address_key`, `screening`, `screened_at`, `override_reason`.
-- Decisions to confirm: S1–S3 in [docs/LAYERS.md](docs/LAYERS.md).
+  `candidates.target_id`, `address_key`, `screening`, `screened_at`, `override_reason`;
+  migration 0006: `negotiation_events`.
+- Decisions to confirm: S1–S3, S5 in [docs/LAYERS.md](docs/LAYERS.md) (S4 decided).
 
 ## Known limitations
 

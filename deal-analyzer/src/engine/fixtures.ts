@@ -48,6 +48,7 @@ export function sampleInputs(overrides: Partial<DealInputs> = {}): DealInputs {
     refiOtherCosts: 0,
     refiSeasoningMonths: 6,
     refiMinDscr: 1.0,
+    refiSizingDscr: null,
     arvConservative: 185_000,
     arvBase: 200_000,
     arvUpside: 215_000,

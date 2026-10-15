@@ -41,13 +41,13 @@ request, kept verbatim). Every rule's provenance is also listed in-app on
 | 11 | All-in formula | ✅ | Inspection / attorney / title / other go into "Other project costs" (INTERPRETATION) |
 | 12–13 | Equity and All-in / ARV for all three ARVs | ✅ | |
 | 14 | Rental underwriting / NOI | ✅ | |
-| 15 | BRRRR: refi loan, payoff, cash available, cash invested, cash left (floored at $0), cash released beyond equity | ✅ | |
+| 15 | BRRRR: refi loan, payoff, cash available, cash invested, cash left (floored at $0), cash released beyond equity | ✅ 🟦 | **Approved Oct 15 2026:** refi loan = lower of LTV × ARV and the DSCR-capped loan when the lender's sizing DSCR is entered (`ENGINE_VERSION` 1.1.0) |
 | 16 | Capital recycled % (incl. the $60K / $54K = 90% example) | ✅ | Tested |
 | 17 | DSCR on the modeled refi loan and terms | ✅ | |
 | 18 | Cash flow, monthly | ✅ | |
 | 19 | CoC; Cash Left $0 → N/A / Infinite, no ÷0 | ✅ | Shown as "∞ (no cash left)" |
 | 20 | Flip: base ARV sale, selling costs, profit, ROI, margin | ✅ | Selling cost % is an input |
-| 21 | Max Offer, default 70%, three ARVs | ✅ | Price-linked costs are evaluated at the offer price (INTERPRETATION, exact to the cent) |
+| 21 | Max Offer, default 70%, three ARVs | ✅ 🟦 | Price-linked costs are evaluated at the offer price (INTERPRETATION, exact to the cent). **Oct 15 2026:** Max Offer is an economic metric, never a rejection; feasibility at asking and at target shows the gap in $ and % (`feasibility.ts`) |
 | 22 | Five stress scenarios recalculating all-in, equity, refi, cash left, DSCR, CF, flip | ✅ | |
 | 23 | Score: equity 25 (20% = full, linear) | ✅ | Spec also lists "Discount" and "ARV spread" with no rule → **not scored** (see gap G1) |
 | 23 | Capital efficiency 25 (90%+ = full) | ✅ 🟨 | Linear below 90% is provisional. "Cash Left" and "Capital Required" are listed but have no rule → not scored |
@@ -77,6 +77,7 @@ request, kept verbatim). Every rule's provenance is also listed in-app on
 | Hidden route on the website (`/apps`) + Railway hosting + sign-in (fail-closed) | Requested for testing before moving to its own repo |
 | VF-03 Market Intelligence module, real accounts, versioned migrations, analysis snapshots, actual-result capture | VF-03 Implementation Spec v1 (Oct 2026) — see [VF03-ALIGNMENT.md](VF03-ALIGNMENT.md) |
 | CLAUDE.md, `vf-*` skills, docs-always-current rule | Requested |
+| Feasibility by price (asking / target), negotiation log, refi DSCR cap | Guy/Ben business decisions, Oct 15 2026 |
 
 ## Gaps and open decisions (need Guy/Ben)
 
@@ -89,3 +90,5 @@ request, kept verbatim). Every rule's provenance is also listed in-app on
 | G5 | Comp-ARV weighting numbers (tiers 1×/2×/3×, recency 12 mo, distance 2 mi, sqft 30%, beds/baths 2, status 1/0.75/0.5) | Placeholders |
 | G6 | Missing acquisition-loan terms → payoff at refi = full principal | INTERPRETATION |
 | G7 | Rehab Duration vs Project Months: duration is recorded only | INTERPRETATION |
+| G8–G12 | Strategy-specific BUY evidence guardrails (decided in principle Oct 15 2026: a typed ARV / rent marked High is not enough) | Proposal awaiting approval; BUY rule unchanged |
+| G13 | Refi without a sizing DSCR: LTV-only + notice today; proposed: incomplete | Proposal |

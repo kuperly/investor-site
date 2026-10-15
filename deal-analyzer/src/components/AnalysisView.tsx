@@ -276,6 +276,9 @@ export function AnalysisView({ a, inputs, defaulted = [] }: { a: DealAnalysis; i
         ]} />
         <DetailCard title="Refinance (Base ARV)" rows={[
           ['Refi loan', money(b.refi.refiLoan)],
+          ['LTV × ARV', money(b.refi.ltvLoan)],
+          ['DSCR cap (lender sizing DSCR)', inputs.refiSizingDscr === null ? 'Not entered' : money(b.refi.dscrLoanCap)],
+          ['Sized by', b.refi.sizedBy ?? 'UNKNOWN'],
           ['Existing debt payoff', money(b.refi.existingDebtPayoff)],
           ['Refi closing costs', money(b.refi.refiClosingCosts)],
           ['Other refi costs', money(b.refi.otherRefiCosts)],

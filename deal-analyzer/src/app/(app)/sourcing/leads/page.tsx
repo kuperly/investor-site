@@ -10,8 +10,11 @@ import { GEO_LEVEL_LABELS } from '@/market/engine/types'
 import { avatarsRepo, geoRepo } from '@/market/lib/repo'
 import { handoffGate } from '@/sourcing/engine/gates'
 import { LEAD_COLUMNS, MAX_IMPORT_ROWS } from '@/sourcing/engine/leads'
-import { indicativeCheck, type ScreenOverall } from '@/sourcing/engine/screen'
-import { candidatesRepo, targetsRepo } from '@/sourcing/lib/repo'
+import { FeasibilityBlock } from '@/components/FeasibilityBlock'
+import { NegotiationPanel } from '@/components/NegotiationPanel'
+import { summarizeNegotiation } from '@/sourcing/engine/negotiation'
+import { leadFeasibility, leadQuality, priorityCompare, type ScreenOverall } from '@/sourcing/engine/screen'
+import { candidatesRepo, negotiationRepo, targetsRepo } from '@/sourcing/lib/repo'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +24,7 @@ const SCREEN_STYLE: Record<ScreenOverall, string> = {
   fail: 'bg-rose-100 text-rose-900',
   no_buy_box: 'bg-slate-100 text-slate-800',
 }
-const SCREEN_LABEL: Record<ScreenOverall, string> = { pass: 'Fits buy box', incomplete: 'Incomplete', fail: 'Outside buy box', no_buy_box: 'No buy box' }
+const SCREEN_LABEL: Record<ScreenOverall, string> = { pass: 'Fits buy box', incomplete: 'Fit incomplete', fail: 'Outside buy box (physical)', no_buy_box: 'No buy box' }
 
 export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ targetId?: string; status?: string }> }) {
   await requireUser()
@@ -29,7 +32,17 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   const db = await getDb()
   const [targets, geos, avatars, defaults] = await Promise.all([targetsRepo(db).list(), geoRepo(db).list(), avatarsRepo(db).list(), settingsRepo(db).getDefaults()])
   const target = targetId ? targets.find((t) => t.id === targetId) : undefined
-  const leads = await candidatesRepo(db).list({ targetId: target?.id, status: status || undefined })
+  const listed = await candidatesRepo(db).list({ targetId: target?.id, status: status || undefined })
+  const eventsByLead = await negotiationRepo(db).forCandidates(listed.map((c) => c.id))
+  const rows = listed.map((c) => {
+    const events = eventsByLead.get(c.id) ?? []
+    const nego = summarizeNegotiation(events, c.askingPrice)
+    // Feasibility at the CURRENT asking (after recorded price cuts) and at our latest offer / Max Offer.
+    const feas = c.status === 'new' ? leadFeasibility({ ...c, askingPrice: nego.priceCuts.currentAsking }, defaults, nego.latestOffer) : null
+    return { c, events, nego, feas }
+  })
+  // Open leads first, in priority order (an ordering by required discount — not a threshold).
+  const leads = [...rows.filter((r) => r.c.status === 'new').sort((a, b) => priorityCompare(a.feas, b.feas)), ...rows.filter((r) => r.c.status !== 'new')]
   const geo = new Map(geos.map((g) => [g.id, g]))
   const avatarName = new Map(avatars.map((a) => [a.id, a.name]))
   const tLabel = (t: (typeof targets)[number]) => `${geo.get(t.geoId)?.name ?? t.geoId} × ${t.avatarId ? (avatarName.get(t.avatarId) ?? 'buy box') : 'no buy box'}`
@@ -40,10 +53,12 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
       <div>
         <h1 className="text-xl font-semibold">Leads <span className="text-sm font-normal text-ink-muted">· layer 4</span></h1>
         <p className="max-w-3xl text-sm text-ink-soft">
-          Specific properties found under a sourcing target. Each lead is screened against its target&apos;s buy box (the
-          avatar&apos;s own ranges) and given an <strong>indicative</strong> check: the Deal Analyzer engine on the lead&apos;s
-          estimates plus ValeForge defaults. That is a triage aid, not underwriting — BUY / INVESTIGATE / PASS happens only
-          after <strong>Send to Deal Analyzer</strong> (layer 5).
+          Specific properties found under a sourcing target. Four separate answers per lead: <strong>lead quality</strong>{' '}
+          (fit with the buy box on physical facts, and how its numbers are supported), <strong>feasibility at asking</strong>{' '}
+          and <strong>at target</strong> (the Deal Analyzer engine on the lead&apos;s estimates plus ValeForge defaults, with
+          the gap to Max Offer in $ and %), and the <strong>negotiation</strong> record. An asking price outside the buy box
+          never rejects a lead. Open leads are ordered by the discount needed off asking (smallest first). All of this is
+          triage, not underwriting — BUY / INVESTIGATE / PASS happens only after <strong>Send to Deal Analyzer</strong> (layer 5).
         </p>
       </div>
 
@@ -101,18 +116,19 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                 <th>Type</th>
                 <th>Asking</th>
                 <th>Est. ARV / rehab / rent</th>
-                <th>Buy-box screen</th>
-                <th title="Deal Analyzer engine on the lead's estimates + ValeForge defaults">Indicative check</th>
+                <th>Lead quality</th>
+                <th title="Deal Analyzer engine on the lead's estimates + ValeForge defaults">Feasibility (asking / target)</th>
+                <th>Negotiation</th>
                 <th>Source</th>
                 <th>Status</th>
                 <th />
               </tr>
             </thead>
             <tbody>
-              {leads.map((c) => {
+              {leads.map(({ c, events, nego, feas }) => {
                 const sc = c.screening
                 const gate = handoffGate(sc?.overall ?? null)
-                const ind = c.status === 'new' ? indicativeCheck(c, defaults) : null
+                const quality = sc ? leadQuality(c, sc) : null
                 return (
                   <tr key={c.id} className="align-top">
                     <td className="font-medium">{c.address}</td>
@@ -123,7 +139,10 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                       {c.propertyType ?? 'UNKNOWN'}
                       {c.beds !== null && ` · ${c.beds} BR`}
                     </td>
-                    <td>{money(c.askingPrice)}</td>
+                    <td>
+                      {money(c.askingPrice)}
+                      {nego.priceCuts.count > 0 && <div className="text-xs text-ink-muted">now {money(nego.priceCuts.currentAsking)}</div>}
+                    </td>
                     <td className="text-xs">
                       {money(c.estArv)} / {money(c.estRehab)} / {c.estRent === null ? 'UNKNOWN' : `${money(c.estRent)}/mo`}
                     </td>
@@ -133,8 +152,8 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                           <summary className={`inline-block cursor-pointer rounded px-1.5 py-0.5 font-semibold ${SCREEN_STYLE[sc.overall]}`}>{SCREEN_LABEL[sc.overall]}</summary>
                           <ul className="mt-1 space-y-0.5">
                             {sc.criteria.map((k) => (
-                              <li key={k.label} className={k.result === 'fail' ? 'text-rose-800' : k.result === 'unknown' ? 'text-amber-800' : ''}>
-                                {k.result === 'pass' ? '✓' : k.result === 'fail' ? '✗' : '?'} {k.label}: {k.detail}
+                              <li key={k.label} className={k.result === 'fail' ? 'text-rose-800' : k.result === 'unknown' ? 'text-amber-800' : k.result === 'info' ? 'text-ink-muted' : ''}>
+                                {k.result === 'pass' ? '✓' : k.result === 'fail' ? '✗' : k.result === 'info' ? 'ℹ' : '?'} {k.label}: {k.detail}
                               </li>
                             ))}
                           </ul>
@@ -142,25 +161,30 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                       ) : (
                         <span className={`rounded px-1.5 py-0.5 ${SCREEN_STYLE.no_buy_box}`}>Not screened</span>
                       )}
+                      {quality && (
+                        <ul className="mt-1 space-y-0.5 text-ink-soft">
+                          {quality.evidence.map((e) => (
+                            <li key={e.label} title={e.detail}>
+                              {e.label}: {e.status === 'missing' ? 'UNKNOWN' : 'estimate, not verified'}
+                            </li>
+                          ))}
+                          <li>Facts known {quality.factsKnown}/{quality.factsTotal}</li>
+                        </ul>
+                      )}
                     </td>
-                    <td className="whitespace-normal text-xs">
-                      {ind ? (
-                        <>
-                          <div>All-in {money(ind.allIn)}{ind.incomplete && '*'} · equity {money(ind.equity)}</div>
-                          <div>
-                            Max Offer {money(ind.maxOfferBase)}
-                            {ind.askingOverMaxOffer !== null && (
-                              <span className={ind.askingOverMaxOffer > 0 ? 'text-rose-800' : 'text-emerald-800'}>
-                                {' '}
-                                (asking {ind.askingOverMaxOffer > 0 ? `${money(ind.askingOverMaxOffer)} above` : `${money(-ind.askingOverMaxOffer)} below`})
-                              </span>
-                            )}
-                          </div>
-                          <div>DSCR {ind.dscr === null ? 'UNKNOWN' : ind.dscr.toFixed(2)} · flip {money(ind.flipNetProfit)}</div>
-                        </>
+                    <td className="min-w-[16rem] whitespace-normal">
+                      {feas ? (
+                        <div className="space-y-2">
+                          <FeasibilityBlock f={feas.atAsking} compact />
+                          <FeasibilityBlock f={feas.atTarget} compact />
+                          {feas.missing.length > 0 && <div className="text-xs text-amber-800">Missing: {feas.missing.join(', ')}</div>}
+                        </div>
                       ) : (
                         '—'
                       )}
+                    </td>
+                    <td className="min-w-[12rem] whitespace-normal">
+                      <NegotiationPanel events={events} summary={nego} candidateId={c.id} dealId={c.dealId} compact />
                     </td>
                     <td className="max-w-[12rem] truncate text-xs" title={c.source}>{c.source}</td>
                     <td>
@@ -200,7 +224,10 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
             </tbody>
           </table>
         )}
-        <p className="mt-2 text-xs text-ink-muted">* indicative total calculated without some line items (see the Deal Analyzer for the full list).</p>
+        <p className="mt-2 text-xs text-ink-muted">
+          * calculated without some line items (see the Deal Analyzer for the full list). Target = our latest recorded offer,
+          else the base Max Offer. ✓ / ✗ / ? = strategy works / does not / not proven at that price.
+        </p>
       </section>
 
       {active.length === 0 ? (

@@ -124,7 +124,9 @@ describe(`VF-03 data layer (${process.env.DATABASE_URL ? 'PostgreSQL' : 'PGlite'
     expect(row.latest!.decision).toBe('KEEP')
     expect(row.change).not.toBeNull()
     expect(row.promoted).toBe(true)
-  })
+    // evaluateAll scores every geography in the database by design; on a persistent test DB that
+    // set grows with each run, so this test is allowed more than the 5 s default.
+  }, 30_000)
 
   it('capital efficiency comes from Deal Analyzer runs of samples', async () => {
     await samplesRepo(db).add({ geoId: msaIds[2], label: 'Typical 3/1', kind: 'assumption', dealId: null, inputs: sampleInputs(), source: 'Local agent', sourceUrl: null, confidence: 'single_secondary', asOf: '2026-09-01' }, 'Ben')
@@ -132,5 +134,5 @@ describe(`VF-03 data layer (${process.env.DATABASE_URL ? 'PostgreSQL' : 'PGlite'
     const e = run.evaluations.find((x) => x.geoId === msaIds[2])!
     expect(e.evidence['ce.capital_recycled'].source).toMatch(/Deal Analyzer on 1 sample: Typical 3\/1/)
     expect(e.evidence['ce.capital_recycled'].confidence).toBe('single_secondary')
-  })
+  }, 30_000)
 })

@@ -2,6 +2,7 @@
 import type { Db } from '@/lib/db'
 import { audit, isUuid, VersionConflictError } from '@/market/lib/repo'
 import type { Candidate } from '../engine/handoff'
+import type { NegotiationEvent, NewNegotiationEvent } from '../engine/negotiation'
 import type { BuyBoxScreen } from '../engine/screen'
 
 type Row = Record<string, unknown>
@@ -145,6 +146,12 @@ export function candidatesRepo(db: Db) {
       const [r] = await db.query<Row>('select * from candidates where id = $1', [id])
       return r ? toCandidate(r) : null
     },
+    /** The lead a deal was created from (hand-off sets candidates.deal_id), if any. */
+    async byDeal(dealId: string): Promise<CandidateRow | null> {
+      if (!isUuid(dealId)) return null
+      const [r] = await db.query<Row>('select * from candidates where deal_id = $1 order by updated_at desc limit 1', [dealId])
+      return r ? toCandidate(r) : null
+    },
     /** An open (not rejected) lead with the same normalized address, if any. */
     async findOpenByKey(key: string): Promise<CandidateRow | null> {
       const [r] = await db.query<Row>(`select * from candidates where address_key = $1 and status <> 'rejected' limit 1`, [key])
@@ -183,6 +190,56 @@ export function candidatesRepo(db: Db) {
       )
       if (!rows.length) throw new VersionConflictError('lead')
       await audit(db, 'candidate', id, `status:${status}`, null, extra, by)
+    },
+  }
+}
+
+// ---------------------------------------------------------------- negotiation log (append-only)
+
+const toEvent = (r: Row): NegotiationEvent & { candidateId: string | null; dealId: string | null } => ({
+  id: r.id as string,
+  candidateId: (r.candidate_id as string) ?? null,
+  dealId: (r.deal_id as string) ?? null,
+  kind: r.kind as NegotiationEvent['kind'],
+  amount: num(r.amount),
+  eventDate: r.event_date as string,
+  note: (r.note as string) ?? null,
+  createdBy: r.created_by as string,
+})
+
+export type StoredNegotiationEvent = ReturnType<typeof toEvent>
+
+export function negotiationRepo(db: Db) {
+  const select = `select id, candidate_id, deal_id, kind, amount, to_char(event_date, 'YYYY-MM-DD') as event_date, note, created_by from negotiation_events`
+  return {
+    /** Events of a lead, of a deal, or of both (a deal shows its source lead's history too). */
+    async list(f: { candidateId?: string | null; dealId?: string | null }): Promise<StoredNegotiationEvent[]> {
+      const where: string[] = []
+      const params: unknown[] = []
+      if (f.candidateId && isUuid(f.candidateId)) where.push(`candidate_id = $${params.push(f.candidateId)}`)
+      if (f.dealId && isUuid(f.dealId)) where.push(`deal_id = $${params.push(f.dealId)}`)
+      if (!where.length) return []
+      const rows = await db.query<Row>(`${select} where ${where.join(' or ')} order by event_date, created_at`, params)
+      return rows.map(toEvent)
+    },
+    async forCandidates(ids: string[]): Promise<Map<string, StoredNegotiationEvent[]>> {
+      const out = new Map<string, StoredNegotiationEvent[]>()
+      const valid = ids.filter(isUuid)
+      if (!valid.length) return out
+      const rows = await db.query<Row>(`${select} where candidate_id = any($1::uuid[]) order by event_date, created_at`, [valid])
+      for (const e of rows.map(toEvent)) out.set(e.candidateId!, [...(out.get(e.candidateId!) ?? []), e])
+      return out
+    },
+    async add(e: NewNegotiationEvent & { candidateId: string | null; dealId: string | null }, by: string): Promise<string> {
+      return db.transaction(async (tx) => {
+        const [r] = await tx.query<{ id: string }>(
+          `insert into negotiation_events (candidate_id, deal_id, kind, amount, event_date, note, created_by)
+           values ($1,$2,$3,$4,$5::date,$6,$7) returning id`,
+          [e.candidateId, e.dealId, e.kind, e.amount, e.eventDate, e.note, by],
+        )
+        await audit(tx, 'negotiation', r.id, e.kind, null, e, by)
+        return r.id
+      })
     },
   }
 }

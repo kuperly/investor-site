@@ -134,6 +134,12 @@ export const FIELD_SECTIONS: FieldSection[] = [
         help: 'Hard-gate threshold (§25). Lender term — not assumed.',
         missingMessage: 'lender minimum DSCR required to evaluate the DSCR hard gate',
       },
+      {
+        key: 'refiSizingDscr',
+        label: 'Lender sizing DSCR',
+        kind: 'number',
+        help: 'DSCR the lender uses to size the loan. When entered, the refi loan is the lower of LTV × ARV and the loan whose debt service this NOI covers at this DSCR. Blank = LTV-only sizing (shown as a notice).',
+      },
     ],
   },
   {
@@ -253,6 +259,7 @@ export const DEFAULTABLE_KEYS = [
   'refiPrepaymentPenalty',
   'refiSeasoningMonths',
   'refiMinDscr',
+  'refiSizingDscr',
   'vacancyPct',
   'managementPct',
   'maintenancePct',

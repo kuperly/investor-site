@@ -3,6 +3,7 @@
  * Every function takes known numbers; UNKNOWN handling happens in underwrite.ts.
  * Division is always guarded (AC17): a zero denominator yields `null` (N/A).
  */
+import { principalForPayment } from './finance'
 import { INFINITE, type Ratio } from './types'
 
 /** Division that never divides by zero. */
@@ -104,6 +105,12 @@ export function rentalUnderwriting(i: RentalInputs): RentalResult {
 
 // §15 BRRRR
 export const refiLoan = (arv: number, refiLtv: number) => arv * refiLtv
+/**
+ * DSCR cap: the largest amortizing loan whose annual debt service NOI covers at the lender's
+ * sizing DSCR. Max debt service = NOI / DSCR; NOI ≤ 0 supports no loan.
+ */
+export const dscrCapLoan = (noi: number, sizingDscr: number, annualRate: number, termMonths: number) =>
+  principalForPayment(noi / sizingDscr / 12, annualRate, termMonths)
 export const refiClosingCosts = (loan: number, closingPct: number) => loan * closingPct
 export const cashAvailableFromRefi = (loan: number, existingDebt: number, refiClosing: number, otherRefiCosts: number) =>
   loan - existingDebt - refiClosing - otherRefiCosts

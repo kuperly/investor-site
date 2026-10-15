@@ -17,6 +17,11 @@ import { compArv, compStats } from '@/engine/comps'
 import { CompArvPanel } from '@/components/CompArvPanel'
 import { compsRepo } from '@/lib/comps-repo'
 import { getDb } from '@/lib/db'
+import { FeasibilityBlock } from '@/components/FeasibilityBlock'
+import { NegotiationPanel } from '@/components/NegotiationPanel'
+import { feasibilityAt, targetPrice } from '@/engine/feasibility'
+import { summarizeNegotiation } from '@/sourcing/engine/negotiation'
+import { candidatesRepo, negotiationRepo } from '@/sourcing/lib/repo'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,6 +38,16 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
   const arvResult = compArv(comps, { sqft: deal.inputs.sqft, beds: deal.inputs.beds, baths: deal.inputs.baths }, now)
   const a = analyzeDeal(deal.inputs, { compArv: arvResult.arv })
   const i = deal.inputs
+  // Feasibility by price (Max Offer is a metric, not a gate) and the negotiation record,
+  // including the history of the lead this deal came from.
+  const lead = await candidatesRepo(db).byDeal(deal.id)
+  const events = await negotiationRepo(db).list({ candidateId: lead?.id ?? null, dealId: deal.id })
+  const nego = summarizeNegotiation(events, i.askingPrice ?? lead?.askingPrice ?? null)
+  const asking = nego.priceCuts.currentAsking
+  const baseMaxOffer = a.arvScenarios.find((s) => s.key === 'arvBase')?.maxOffer.maxPurchasePrice ?? null
+  const target = targetPrice(nego.latestOffer, i.offerPrice, baseMaxOffer)
+  const atAsking = feasibilityAt(i, asking, 'At asking')
+  const atTarget = feasibilityAt(i, target.price, target.source === 'latest offer' ? 'At our latest offer' : target.source === 'planned offer' ? 'At planned offer' : 'At target (base Max Offer)')
   const notes = NOTE_CATEGORIES.filter((n) => deal.notes[n.key])
 
   return (
@@ -67,6 +82,20 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
       </div>
 
       <AnalysisView a={a} inputs={deal.inputs} defaulted={deal.defaulted} />
+
+      <section className="card" aria-labelledby="feas-h">
+        <h2 id="feas-h" className="h2">Feasibility by price &amp; negotiation</h2>
+        <p className="mb-3 text-xs text-ink-muted">
+          Max Offer is an economic metric, not a rejection. The same underwriting at the asking price and at the target price
+          (our latest offer, else the planned offer, else the base Max Offer). The recommendation above uses the purchase price
+          entered on the deal.
+        </p>
+        <div className="grid gap-4 md:grid-cols-3">
+          <FeasibilityBlock f={atAsking} />
+          <FeasibilityBlock f={atTarget} />
+          <NegotiationPanel events={events} summary={nego} candidateId={lead?.id ?? null} dealId={deal.id} compact />
+        </div>
+      </section>
 
       <section className="card">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

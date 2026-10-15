@@ -70,3 +70,16 @@ export function annualDebtService(principal: number, annualRate: number, termMon
   if (interestOnly) return principal * annualRate
   return monthlyPayment(principal, annualRate, termMonths) * 12
 }
+
+/**
+ * Inverse of monthlyPayment: the principal a level monthly payment repays over the term
+ * (present value of an annuity). A payment ≤ 0 supports no loan.
+ */
+export function principalForPayment(payment: number, annualRate: number, termMonths: number): number {
+  assertNonNegative('annualRate', annualRate)
+  if (!Number.isInteger(termMonths) || termMonths <= 0) throw new RangeError('termMonths must be a positive integer')
+  if (!Number.isFinite(payment) || payment <= 0) return 0
+  const r = annualRate / 12
+  if (r === 0) return payment * termMonths
+  return (payment * (1 - Math.pow(1 + r, -termMonths))) / r
+}

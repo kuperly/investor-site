@@ -16,8 +16,9 @@ import { buildFunnel, type FunnelLead, type FunnelRow } from '../engine/funnel'
 import { handoffGate, leadGate, targetGate } from '../engine/gates'
 import { candidateToDeal } from '../engine/handoff'
 import { addressKey, parseLeadsCsv, type LeadInput } from '../engine/leads'
+import { validateEvent, type NewNegotiationEvent } from '../engine/negotiation'
 import { screenBuyBox } from '../engine/screen'
-import { candidatesRepo, targetsRepo, type CandidateRow, type TargetRow } from './repo'
+import { candidatesRepo, negotiationRepo, targetsRepo, type CandidateRow, type TargetRow } from './repo'
 
 export interface Result<T = object> {
   error?: string
@@ -205,3 +206,22 @@ export async function pipeline(db: Db): Promise<PipelineView> {
 }
 
 export type { CandidateRow, TargetRow }
+
+/**
+ * Records one negotiation event (offer, seller response, price cut, outcome) on a lead and/or
+ * a deal. Facts only: nothing is scored. A price cut is recorded, never written over the
+ * lead's original asking price — the current asking is derived from the events.
+ */
+export async function recordNegotiation(
+  db: Db,
+  e: NewNegotiationEvent & { candidateId: string | null; dealId: string | null },
+  by: string,
+  today: string,
+): Promise<Result<{ id: string }>> {
+  if (!e.candidateId && !e.dealId) return { error: 'Record the event on a lead or a deal.' }
+  if (e.candidateId && !(await candidatesRepo(db).get(e.candidateId))) return { error: 'Lead not found.' }
+  if (e.dealId && !(await dealsRepo(db).get(e.dealId))) return { error: 'Deal not found.' }
+  const errors = validateEvent(e, today)
+  if (errors.length) return { error: errors.join(' · ') }
+  return { ok: { id: await negotiationRepo(db).add({ ...e, note: e.note?.trim() || null }, by) } }
+}

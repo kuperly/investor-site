@@ -90,20 +90,26 @@ working as **one chain of layers** ([docs/LAYERS.md](docs/LAYERS.md)):
 1. **Work moves down only through a gate** (`src/sourcing/engine/gates.ts`):
    target only where the market's latest decision allows it (KEEP / DRILL_DOWN;
    WATCH with a reason; never DROP / blocked); leads only under an active target;
-   a lead outside its buy box needs a written reason to reach underwriting.
+   a lead outside its buy box (physical facts) needs a written reason to reach
+   underwriting. **The asking price never rejects a lead** (Guy/Ben, Oct 15 2026):
+   it is informational in the screen; the price question is the feasibility check
+   (gap to Max Offer in $ and %).
 2. **A layer reads the decision above, never recomputes it, and never decides
    for the layer below.** Sourcing reads stored market snapshots; its screen and
-   indicative check are triage — BUY / INVESTIGATE / PASS exists only in the
+   feasibility check are triage — BUY / INVESTIGATE / PASS exists only in the
    Deal Analyzer.
 3. **Dependencies point up the chain only**: `src/engine` imports neither
    `src/market` nor `src/sourcing`; `src/market` never imports `src/sourcing`;
    both use only `@/engine/types`, `@/engine/fields`, `@/engine/analyze` from the
-   Deal Analyzer. `src/boundary.test.ts` enforces it. The app layer
+   Deal Analyzer (sourcing also `@/engine/feasibility` = `analyzeDeal` at a price). `src/boundary.test.ts` enforces it. The app layer
    (`src/app`, `src/components`) may compose all three.
 4. **Every crossing is recorded** (`market_audit`, `deal_audit`), including the
-   market decision a target was opened under and any override reason.
+   market decision a target was opened under and any override reason. Offers,
+   seller responses, price cuts and outcomes go in the append-only
+   `negotiation_events` (facts only; negotiation likelihood is not scored).
 5. **The buy box is the avatar.** Screening applies only the avatar's own ranges
    (a missing fact is "unknown"); never add a screening threshold of our own.
+   Lead ordering is by required discount off asking — an order, not a threshold.
 
 ## VF-03 rules (Market Intelligence)
 
@@ -173,12 +179,14 @@ open gaps. Update it whenever behaviour changes.
 ```
 src/engine/   types · config (SPEC/PROVISIONAL, ENGINE_VERSION) · fields (input registry) · finance · formulas
               underwrite (+ Max Offer solver) · stress · strategies · gates · score
-              recommendation · comps · analyze (single entry point) · fixtures (test data)
+              recommendation · comps · analyze (single entry point) · feasibility (analyzeDeal at a
+              price: gap to Max Offer, strategies that work) · fixtures (test data)
 src/lib/      db (postgres.js | PGlite, transaction) · migrations · auth/{password,token,throttle,bootstrap,safe-next}
               session · users · users-repo · deals-repo (locking) · deal-snapshots · comps-repo
               comps/{parse-comp,provider} · settings-repo · comp-summary · parse-inputs · audit · format
 src/market/   engine/ (pure VF-03 scoring) · ingest/ (providers + pipeline) · lib/ (repo, service) · ui/
-src/sourcing/ engine/ (pure: layers, gates, screen, leads/CSV, funnel, handoff) · lib/ (repo, service)
+src/sourcing/ engine/ (pure: layers, gates, screen + lead feasibility/quality/priority, leads/CSV,
+              funnel, handoff, negotiation) · lib/ (repo incl. negotiation log, service)
 src/app/      login · (app)/ = signed-in area: / dashboard · deals/* · settings · methodology · account
               admin/users · markets/{,[geoId],avatars,ingestion,methodology} · sourcing/{,targets,leads}
               actions · comps-actions · settings-actions · auth-actions · market-actions · sourcing-actions

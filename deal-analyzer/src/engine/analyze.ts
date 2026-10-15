@@ -203,6 +203,16 @@ export function analyzeDeal(inputs: DealInputs, opts: AnalyzeOptions = {}): Deal
       `Refi modeled at month ${inputs.projectMonths}, but the lender seasoning requirement is ${inputs.refiSeasoningMonths} months.`,
     )
   }
+  if (inputs.refiLtv !== null && inputs.refiLtv !== 0) {
+    if (inputs.refiSizingDscr === null || inputs.refiSizingDscr <= 0) {
+      notices.push("Refi loan sized by LTV × ARV only — enter the lender's sizing DSCR to apply the DSCR cap.")
+    } else if (base.refi.sizedBy === 'DSCR' && base.refi.refiLoan !== null && base.refi.ltvLoan !== null) {
+      const usd = (x: number) => `$${Math.round(x).toLocaleString('en-US')}`
+      notices.push(
+        `Refi loan limited by the lender's DSCR ${inputs.refiSizingDscr.toFixed(2)}: ${usd(base.refi.refiLoan)} instead of ${usd(base.refi.ltvLoan)} at LTV.`,
+      )
+    }
+  }
   for (const s of arvScenarios) {
     if (s.maxOffer.maxPurchasePrice !== null && s.maxOffer.maxPurchasePrice <= 0) {
       notices.push(`Max Offer at ${s.label} ARV is ≤ $0 — the target All-in / ARV is unreachable with current costs.`)

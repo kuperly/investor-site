@@ -5,8 +5,8 @@ import { listSnapshots } from '@/lib/deal-snapshots'
 import { rankedGeo } from '@/market/engine/fixtures'
 import { avatarsRepo, geoRepo, observationsRepo, outcomesRepo } from '@/market/lib/repo'
 import { evaluateAll } from '@/market/lib/service'
-import { candidatesRepo, targetsRepo } from './repo'
-import { addLead, handOff, importLeads, latestDecision, openTarget, pipeline } from './service'
+import { candidatesRepo, negotiationRepo, targetsRepo } from './repo'
+import { addLead, handOff, importLeads, latestDecision, openTarget, pipeline, recordNegotiation } from './service'
 
 process.env.PGLITE_DIR = 'memory://'
 if (process.env.TEST_DATABASE_URL) process.env.DATABASE_URL = process.env.TEST_DATABASE_URL
@@ -40,7 +40,7 @@ describe(`Deal Sourcing layer (${process.env.DATABASE_URL ? 'PostgreSQL' : 'PGli
       },
       'Guy',
     )
-  })
+  }, 30_000) // evaluateAll scores every geography in the (possibly persistent) test DB
 
   it('layer 2 → 3: targets follow the market decision', async () => {
     const decisions = await Promise.all(msa.map((id) => latestDecision(db, id)))
@@ -61,7 +61,10 @@ describe(`Deal Sourcing layer (${process.env.DATABASE_URL ? 'PostgreSQL' : 'PGli
     const [t] = await targetsRepo(db).list({ status: 'active' })
     const a = await addLead(db, t.id, lead(`${base} Fit St`), 'Ben')
     expect((await candidatesRepo(db).get(a.ok!.id))!.screening!.overall).toBe('pass')
-    const b = await addLead(db, t.id, lead(`${base} Pricey St`, { askingPrice: 175_000 }), 'Ben')
+    // Asking price outside the buy box is informational: the lead is not rejected.
+    const p = await addLead(db, t.id, lead(`${base} Pricey St`, { askingPrice: 175_000 }), 'Ben')
+    expect((await candidatesRepo(db).get(p.ok!.id))!.screening!.overall).toBe('pass')
+    const b = await addLead(db, t.id, lead(`${base} Big St`, { askingPrice: 175_000, beds: 5 }), 'Ben')
     expect((await candidatesRepo(db).get(b.ok!.id))!.screening!.overall).toBe('fail')
     expect((await addLead(db, t.id, lead(`${base} FIT STREET`), 'Ben')).error).toMatch(/Already in the pipeline/)
     await targetsRepo(db).setStatus(t.id, 'paused', t.version, 'Guy')
@@ -97,5 +100,34 @@ describe(`Deal Sourcing layer (${process.env.DATABASE_URL ? 'PostgreSQL' : 'PGli
     expect(row).toMatchObject({ handedOff: 1, outcomes: 1, screenFail: 1 })
     expect(row.leads).toBeGreaterThanOrEqual(3)
     expect(p.targets.find((t) => t.id === failed.targetId)!.leads).toBe(row.leads)
+  })
+  it('negotiation log: facts on a lead, shown on its deal too, append-only, validated', async () => {
+    const [t] = await targetsRepo(db).list({ status: 'active' })
+    const l = await addLead(db, t.id, lead(`${base} Offer Ave`), 'Ben')
+    const id = l.ok!.id
+    const ev = (kind: 'our_offer' | 'seller_counter' | 'price_cut' | 'lost', amount: number | null, eventDate: string, note: string | null = null) =>
+      recordNegotiation(db, { candidateId: id, dealId: null, kind, amount, eventDate, note }, 'Ben', TODAY)
+    expect((await ev('our_offer', null, '2026-10-01')).error).toMatch(/needs an amount/)
+    expect((await ev('our_offer', 90_000, '2026-10-20')).error).toMatch(/future/)
+    expect((await recordNegotiation(db, { candidateId: null, dealId: null, kind: 'no_response', amount: null, eventDate: TODAY, note: null }, 'Ben', TODAY)).error).toMatch(/lead or a deal/)
+    expect((await ev('price_cut', 110_000, '2026-09-20')).ok).toBeDefined()
+    expect((await ev('our_offer', 90_000, '2026-10-01')).ok).toBeDefined()
+    expect((await ev('seller_counter', 104_000, '2026-10-03')).ok).toBeDefined()
+    const events = await negotiationRepo(db).list({ candidateId: id })
+    expect(events.map((e) => [e.kind, e.amount, e.eventDate])).toEqual([
+      ['price_cut', 110_000, '2026-09-20'],
+      ['our_offer', 90_000, '2026-10-01'],
+      ['seller_counter', 104_000, '2026-10-03'],
+    ])
+    // The lead's original asking is never overwritten by a price cut.
+    expect((await candidatesRepo(db).get(id))!.askingPrice).toBe(120_000)
+    // Append-only at the database level.
+    await expect(db.query(`update negotiation_events set amount = 1 where id = $1`, [events[0].id])).rejects.toThrow(/append-only/)
+    // After hand-off the deal sees the lead's history plus its own events.
+    const c = (await candidatesRepo(db).get(id))!
+    const r = await handOff(db, id, c.version, 'Ben')
+    expect((await recordNegotiation(db, { candidateId: null, dealId: r.dealId!, kind: 'lost', amount: null, eventDate: TODAY, note: 'Sold to a cash buyer' }, 'Ben', TODAY)).ok).toBeDefined()
+    const onDeal = await negotiationRepo(db).list({ candidateId: id, dealId: r.dealId! })
+    expect(onDeal.map((e) => e.kind)).toEqual(['price_cut', 'our_offer', 'seller_counter', 'lost'])
   })
 })

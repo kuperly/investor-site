@@ -14,7 +14,7 @@
  * commit as ANY change to a formula, threshold, provisional rule or interpretation, so stored
  * snapshots show which rules produced them.
  */
-export const ENGINE_VERSION = '1.0.0'
+export const ENGINE_VERSION = '1.1.0'
 
 export const SPEC = {
   maxOffer: {
@@ -206,4 +206,14 @@ export const METHODOLOGY: MethodologyRule[] = [
     source: 'INTERPRETATION',
   },
   { area: 'Refi', rule: 'Refi loan sized on Base ARV; debt service fully amortizing at the refi rate and term', source: 'INTERPRETATION' },
+  {
+    area: 'Feasibility at a price',
+    rule: 'Max Offer is an economic metric, not a rejection gate. Feasibility at any price (asking, target, an offer) re-runs analyzeDeal at that purchase price: gap = price − base Max Offer, in $ and as % of the price. "Feasible" = at or below the base Max Offer AND at least one of BRRRR / Hold / Flip viable there; "not feasible" = above Max Offer (proven even on a partial Max Offer) or no strategy works; otherwise "not proven". No new number (reuses §21 and §26)',
+    source: 'INTERPRETATION',
+  },
+  {
+    area: 'Refi · DSCR cap',
+    rule: "Refi loan = the lower of LTV × ARV and the loan whose debt service the NOI covers at the lender's sizing DSCR (entered per deal; no DSCR is assumed). Without a sizing DSCR the loan is LTV-only and a notice says so. If the cap applies but NOI, rate or term is UNKNOWN, the loan is UNKNOWN. A partial NOI marks cash recovered, cash left and CoC incomplete (approved by Guy/Ben, Oct 15 2026)",
+    source: 'APPROVED',
+  },
 ]
