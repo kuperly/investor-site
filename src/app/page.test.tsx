@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import HomePage from './page'
 import { siteConfig } from '@/lib/site-config'
 import { activeMarket } from '@/lib/market'
-import { capabilities, hero, strategies } from '@/lib/content'
+import { explore, hero } from '@/lib/content'
 
 describe('HomePage', () => {
   it('renders the positioning line as the only h1, with both hero CTAs', () => {
@@ -42,19 +42,13 @@ describe('HomePage', () => {
     expect(container.textContent).not.toMatch(/Vale Forge/)
   })
 
-  it('renders each home section', () => {
+  it('is a short overview: philosophy, market, signposts to each page, partnership', () => {
     render(<HomePage />)
-    for (const name of [
-      'The ValeForge Model',
-      strategies.title,
-      'The Numbers Come First.',
-      'Built to Compound.',
-      'Build the Next Opportunity With Us.',
-    ]) {
+    for (const name of [activeMarket.title, explore.title, 'Build the Next Opportunity With Us.']) {
       expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument()
     }
-    for (const item of [...capabilities, ...strategies.items]) {
-      expect(screen.getByRole('heading', { level: 3, name: item.title })).toBeInTheDocument()
+    for (const item of explore.items) {
+      expect(screen.getByRole('link', { name: item.cta })).toHaveAttribute('href', item.href)
     }
   })
 

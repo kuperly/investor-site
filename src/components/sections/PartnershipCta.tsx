@@ -33,3 +33,22 @@ export function PartnershipCta() {
     </section>
   )
 }
+
+/**
+ * One-line closing call to action for inner pages, so they don't repeat the
+ * home page's full partnership section.
+ */
+export function ClosingCta() {
+  return (
+    <section aria-labelledby="closing-title" className="border-t border-border">
+      <PageContainer className="flex flex-col items-start gap-6 py-16 sm:flex-row sm:items-center sm:justify-between sm:py-20">
+        <h2 id="closing-title" className="max-w-2xl text-balance font-heading text-2xl text-foreground sm:text-3xl">
+          {partnership.short}
+        </h2>
+        <ButtonLink href="/contact" className="shrink-0">
+          Get in Touch
+        </ButtonLink>
+      </PageContainer>
+    </section>
+  )
+}
