@@ -130,7 +130,7 @@ export function Header() {
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
-        className={`fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85vw] flex-col border-l border-border bg-background transition-[transform,visibility] duration-300 md:hidden ${
+        className={`fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85vw] flex-col border-l border-border bg-background transition-[transform,visibility] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] md:hidden ${
           isMenuOpen ? 'visible translate-x-0' : 'invisible translate-x-full'
         }`}
       >

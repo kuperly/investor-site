@@ -3,7 +3,6 @@ import { siteConfig } from '@/lib/site-config'
 import { hero } from '@/lib/content'
 import { activeMarket } from '@/lib/market'
 import { PageContainer } from '@/components/ui/PageContainer'
-import { Reveal } from '@/components/ui/Reveal'
 import { ButtonLink } from '@/components/ui/ButtonLink'
 
 /**
@@ -22,7 +21,7 @@ export function Hero() {
         fill
         priority
         sizes="100vw"
-        className="-z-20 object-cover object-[70%_center]"
+        className="-z-20 animate-settle object-cover object-[70%_center]"
       />
       <div
         aria-hidden="true"
@@ -31,20 +30,20 @@ export function Hero() {
       <div aria-hidden="true" className="absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-t from-[#0A0F1C]/70 to-transparent" />
 
       <PageContainer className="flex min-h-[calc(100svh-4.5rem)] flex-col justify-center py-20 sm:py-28">
-        <Reveal>
+        <div>
           <h1
             id="hero-title"
-            className="max-w-4xl text-balance font-heading text-[2.75rem] font-medium leading-[1.02] tracking-display text-foreground sm:text-7xl lg:text-8xl"
+            className="animate-rise max-w-4xl text-balance font-heading text-[2.75rem] font-medium leading-[1.02] tracking-display text-foreground sm:text-7xl lg:text-8xl"
           >
             {siteConfig.tagline}
           </h1>
-          <p className="mt-8 max-w-2xl text-pretty text-xl leading-relaxed text-foreground/95 sm:text-2xl">
+          <p className="animate-rise mt-8 max-w-2xl text-pretty text-xl [animation-delay:150ms] leading-relaxed text-foreground/95 sm:text-2xl">
             {hero.lead}
           </p>
-          <div className="mt-10">
+          <div className="animate-rise mt-10 [animation-delay:300ms]">
             <ButtonLink href="/approach">Explore Our Approach</ButtonLink>
           </div>
-        </Reveal>
+        </div>
       </PageContainer>
     </section>
   )

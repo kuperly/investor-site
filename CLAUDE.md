@@ -131,8 +131,8 @@ to `deals@`).
 
 Full visual system — palette, type scale, motion, components, and the
 reasoning behind them — lives in
-[docs/design-system.md](docs/design-system.md). Motion (spring-eased scroll
-reveals in `Reveal.tsx`, slow photo zoom on hover, quiet hovers) is intentionally restrained and always collapses to
+[docs/design-system.md](docs/design-system.md). Motion (CSS entrance on hero/mastheads,
+page fade-in via `src/app/template.tsx`, scroll reveals in `Reveal.tsx` — hidden only under `html.js`, slow photo zoom on hover, quiet hovers) is intentionally restrained and always collapses to
 its final frame under `prefers-reduced-motion`.
 
 ## Known gotchas

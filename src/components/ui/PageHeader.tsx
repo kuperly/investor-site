@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { Reveal } from '@/components/ui/Reveal'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { PageContainer } from '@/components/ui/PageContainer'
 
@@ -19,17 +18,17 @@ export function PageHeader({
 }) {
   return (
     <PageContainer className="pb-16 pt-16 sm:pb-20 sm:pt-24 lg:pt-28">
-      <Reveal>
+      <div className="animate-rise">
         <Eyebrow>{eyebrow}</Eyebrow>
         <h1 className="mt-8 max-w-4xl text-balance font-heading text-[2.6rem] font-medium leading-[1.04] tracking-display text-foreground sm:text-6xl lg:text-7xl">
           {title}
         </h1>
         {intro ? (
-          <p className="mt-8 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
+          <p className="animate-rise mt-8 max-w-2xl text-pretty text-lg [animation-delay:150ms] leading-relaxed text-muted-foreground sm:text-xl">
             {intro}
           </p>
         ) : null}
-      </Reveal>
+      </div>
     </PageContainer>
   )
 }

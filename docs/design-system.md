@@ -64,9 +64,19 @@ still clears 4.5:1 on paper.
 Expensive, not flashy. Every animation collapses to its final frame under
 `prefers-reduced-motion` (the global rule zeroes duration *and* delay).
 
+One easing curve everywhere: `--ease-out-soft` = `cubic-bezier(0.16, 1, 0.3, 1)`
+(in `globals.css`). Only `opacity` and `transform` are animated.
+
+- **Entrance** — the hero and page mastheads use the CSS `animate-rise`
+  (plays on first paint, no wait for hydration), staggered 0/150/300ms; the
+  hero photo `animate-settle`s from a 6% zoom over 2.6s.
+- **Page change** — `src/app/template.tsx` re-mounts per route, so each new
+  page fades in (`.page-enter`, 0.5s) under the fixed header/footer.
+- **Scroll reveals** — `Reveal` rises blocks 24px as they enter the viewport,
+  staggered 60–150ms. They are only hidden under `html.js` (set by the inline
+  head script), so content is never lost without JavaScript.
+- **Mobile drawer** — slides in over 0.5s on the same curve.
 - **Photo hover** — a slow 3% zoom on the in-page photos.
-- **Scroll reveals** — `Reveal` fades/rises blocks with
-  `cubic-bezier(0.16, 1, 0.3, 1)`, staggered 60–90ms.
 - **Hover** — quiet: strategy titles turn brass, CTA arrows slide 4px.
 
 ## Layout primitives
