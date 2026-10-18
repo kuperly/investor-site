@@ -36,8 +36,10 @@ change rather than a hunt through the codebase:
   declared in `layout.tsx` metadata with its alt text) are generated from the
   kit. Brand colours in the kit: navy `#1D2D3D`, gold `#B08D57`.
 - **Legal pages**: `/legal/privacy`, `/legal/terms`, `/legal/disclaimer`
-  (`src/app/legal/[slug]/page.tsx`) are honest "being prepared" placeholders
-  with `noindex`. Replace with counsel-approved text and drop the noindex.
+  (`src/app/legal/[slug]/page.tsx`) render generic texts from
+  `src/lib/legal.ts` that describe only what the site actually does (contact
+  form by email, hosting logs, theme preference in localStorage, no tracking
+  cookies). They stay `noindex` until counsel has reviewed them; then drop it.
   The footer's non-solicitation line (`nonSolicitation` in `content.ts`)
   should also get counsel review.
 - **Email delivery**: the form routes by inquiry type — Property
