@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { siteConfig } from '@/lib/site-config'
-import { activeMarket } from '@/lib/market'
 import { nonSolicitation } from '@/lib/content'
 import { Logo } from '@/components/ui/Logo'
 import { pageGutter } from '@/components/ui/PageContainer'
@@ -18,13 +17,6 @@ export function Footer() {
         <div className="grid gap-12 md:grid-cols-12">
           <div className="md:col-span-6">
             <Logo className="h-10" />
-            <p className="mt-5 font-heading text-2xl text-foreground">{siteConfig.tagline}</p>
-            <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              {siteConfig.philosophy}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Currently focused on {activeMarket.name}, {activeMarket.state}.
-            </p>
           </div>
 
           <nav aria-label="Footer" className="md:col-span-3">

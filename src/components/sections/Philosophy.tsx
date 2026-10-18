@@ -37,9 +37,6 @@ export function Philosophy() {
                 className="object-cover transition-transform duration-[1.5s] ease-out hover:scale-[1.03]"
               />
             </div>
-            <figcaption className="mt-2 text-xs text-muted-foreground">
-              Photo: {activeMarket.photos.residential.credit.name} / Unsplash
-            </figcaption>
           </figure>
           <div className="max-w-xl lg:col-span-6 lg:col-start-7">
             <p className="font-heading text-3xl leading-tight text-foreground sm:text-4xl">{philosophy.thesis}</p>

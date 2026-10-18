@@ -5,7 +5,7 @@
  * public/images/markets/<key>/, then change `activeMarket`.
  *
  * Photos are from Unsplash under the free Unsplash License (commercial use
- * allowed, attribution appreciated but not required). They are illustrative
+ * allowed, attribution not required; credits kept here for reference). They are illustrative
  * of the market only — never present them as ValeForge properties or deals.
  */
 
@@ -30,7 +30,7 @@ const markets = {
     short: 'DFW',
     state: 'Texas',
     title: 'Focused on Dallas–Fort Worth.',
-    body: 'One of the largest and most active housing markets in the U.S. — a growing population, a diverse economy, and a wide mix of established neighborhoods and newer suburbs. That depth creates a steady supply of the misaligned assets we look for.',
+    body: 'One of the largest, most active housing markets in the country — and a steady source of the misaligned assets we look for.',
     photos: {
       hero: {
         src: '/images/markets/dfw/dallas-skyline.jpg',

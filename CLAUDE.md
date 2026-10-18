@@ -74,13 +74,13 @@ npm run lint     # eslint
   (route handler); plus `apple-icon.png`, `icon.svg`,
   `robots.ts`, `sitemap.ts`
 - `src/components/sections/` — `Hero`, `Philosophy`, `Strategies`,
-  `Market`, `Explore`, `PartnershipCta` (+ `ClosingCta`). Other content
+  `Market`, `PartnershipCta` (+ `ClosingCta`). Other content
   (model, underwriting, capital efficiency, exit paths) uses the plain
   `TextSection` primitive.
 - **Each topic lives on exactly one page** (owner feedback: inner pages
-  must not repeat Home). Home = hero, philosophy + misalignment, market,
-  `Explore` (one-line signposts to the inner pages), full partnership
-  section. Approach = model, four steps, underwriting, capital efficiency,
+  must not repeat Home). Home = hero (one CTA), philosophy + misalignment,
+  market, full partnership section — kept deliberately short, and no line
+  (tagline, philosophy, market) repeats between Home and the footer. Approach = model, four steps, underwriting, capital efficiency,
   exit paths. Strategies = the toolkit list. About = Built to Compound +
   How We Invest. Inner pages end with the one-line `ClosingCta`.
   `src/app/no-duplicate-sections.test.tsx` fails if an h1/h2 repeats
