@@ -74,7 +74,7 @@ npm run lint     # eslint
   (route handler); plus `apple-icon.png`, `icon.svg`,
   `robots.ts`, `sitemap.ts`
 - `src/components/sections/` — `Hero`, `Philosophy`, `Strategies`,
-  `AboutIntro`, `PartnershipCta`. Other content (model, underwriting,
+  `Market`, `AboutIntro`, `PartnershipCta`. Other content (model, underwriting,
   capital efficiency, exit paths) uses the plain `TextSection` primitive.
   **Keep the site simple and inviting: explain ideas in text, don't turn
   them into diagrams/flow charts/widgets** (tried and rejected by the owner).
@@ -87,9 +87,9 @@ npm run lint     # eslint
   `SectionHeading`), `TextSection.tsx`, `PageHeader.tsx`, `PageContainer.tsx`, `ButtonLink.tsx`
   (CTA styles + `TextLink`), `Eyebrow.tsx`, `Logo.tsx` (`Logo` — official
   image logo, theme-aware via `.logo-for-dark/.logo-for-light` in
-  globals.css — + `BrandIcon`, the pillar icon as SVG), `HeroBackground.tsx` (quiet skyline outline,
-  client component for parallax/draw-in), `Reveal.tsx`, `ThemeToggle.tsx`
+  globals.css — + `BrandIcon`, the pillar icon as SVG), `Reveal.tsx`, `ThemeToggle.tsx`
 - `src/lib/content.ts` — all marketing copy (single-sourced, tested)
+- `src/lib/market.ts` — active market (DFW) copy + Unsplash photos
 - `src/lib/site-config.ts` — brand config (see above)
 - `src/lib/contact-schema.ts` — Zod schema shared by the form and the API
   route (includes an empty-only `honeypot` field for spam deterrence)
@@ -101,16 +101,29 @@ Institutional **champagne-brass-on-deep-ink-navy** dark theme by default
 and overridable via the header `ThemeToggle` (see `src/app/globals.css`
 CSS custom properties, mapped into Tailwind via `tailwind.config.ts`).
 Every foreground/background pair meets ≥4.5:1 in both modes. Typography:
-Fraunces (headings) + Source Sans 3 (body), loaded via `next/font/google` in `src/app/layout.tsx`. No stock
-photography — the site is **typography-led**, with a quiet skyline
-outline behind the hero. If real architectural photography (owned or properly licensed)
-becomes available, it can go in the hero behind `HeroBackground`.
+Fraunces (headings) + Source Sans 3 (body), loaded via `next/font/google` in `src/app/layout.tsx`.
+
+**Photography (owner-approved):** a few Unsplash photos of the active market
+(free Unsplash License; credited on the page), configured in
+`src/lib/market.ts` — hero (full-bleed under a navy overlay, `.on-photo`
+pins the dark palette so text stays legible in both themes), Philosophy
+(residential) and the Market section. Photos illustrate the market only:
+**never** present stock or AI images as ValeForge properties, projects or
+before/after renovations.
+
+**Market focus:** currently Dallas–Fort Worth (may switch to Indianapolis).
+Everything market-specific — name, copy, photos — lives in
+`src/lib/market.ts`; switching is adding an entry + photos under
+`public/images/markets/<key>/` and changing `activeMarket`.
+
+**Submit a Deal:** header button (lg+) and mobile drawer link to
+`/contact?intent=property`, which preselects Property Opportunity (routes
+to `deals@`).
 
 Full visual system — palette, type scale, motion, components, and the
 reasoning behind them — lives in
-[docs/design-system.md](docs/design-system.md). Motion (hero skyline
-draw-in, subtle scroll parallax in `HeroBackground.tsx`, spring-eased scroll
-reveals in `Reveal.tsx`, quiet hovers) is intentionally restrained and always collapses to
+[docs/design-system.md](docs/design-system.md). Motion (spring-eased scroll
+reveals in `Reveal.tsx`, slow photo zoom on hover, quiet hovers) is intentionally restrained and always collapses to
 its final frame under `prefers-reduced-motion`.
 
 ## Known gotchas

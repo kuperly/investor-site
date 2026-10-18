@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import HomePage from './page'
 import { siteConfig } from '@/lib/site-config'
+import { activeMarket } from '@/lib/market'
 import { capabilities, hero, strategies } from '@/lib/content'
 
 describe('HomePage', () => {
@@ -26,6 +27,14 @@ describe('HomePage', () => {
     render(<HomePage />)
     expect(screen.getByText(hero.lead)).toBeInTheDocument()
     expect(screen.getByText(hero.support)).toBeInTheDocument()
+  })
+
+  it('shows the active market with its photography', () => {
+    render(<HomePage />)
+    expect(screen.getByRole('heading', { level: 2, name: activeMarket.title })).toBeInTheDocument()
+    for (const photo of Object.values(activeMarket.photos)) {
+      expect(screen.getByAltText(photo.alt)).toBeInTheDocument()
+    }
   })
 
   it('spells the brand consistently as one word', () => {

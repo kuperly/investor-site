@@ -1,8 +1,15 @@
 'use client'
 
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Suspense, useEffect, useRef, useState, type FormEvent } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { buttonClasses } from '@/components/ui/ButtonLink'
-import { contactFormSchema, contactIntentOptions, type ContactFormValues } from '@/lib/contact-schema'
+import {
+  contactFormSchema,
+  contactIntentOptions,
+  contactIntents,
+  type ContactFormValues,
+  type ContactIntent,
+} from '@/lib/contact-schema'
 
 type FieldErrors = Partial<Record<keyof ContactFormValues, string>>
 type Status = 'idle' | 'submitting' | 'success' | 'error'
@@ -15,12 +22,41 @@ const initialValues: ContactFormValues = {
   honeypot: '',
 }
 
-export function ContactForm() {
-  const [values, setValues] = useState<ContactFormValues>(initialValues)
+function isIntent(value: string | null | undefined): value is ContactIntent {
+  return Boolean(value) && (contactIntents as readonly string[]).includes(value as string)
+}
+
+/**
+ * Reads `?intent=` from the URL (e.g. the header's "Submit a Deal" link sets
+ * `intent=property`). The plain form is the Suspense fallback, so the page
+ * still prerenders statically with the full form in its HTML.
+ */
+function ContactFormFromUrl() {
+  const requested = useSearchParams()?.get('intent')
+  return <ContactForm requestedIntent={isIntent(requested) ? requested : undefined} />
+}
+
+export function ContactFormWithIntent() {
+  return (
+    <Suspense fallback={<ContactForm />}>
+      <ContactFormFromUrl />
+    </Suspense>
+  )
+}
+
+export function ContactForm({ requestedIntent }: { requestedIntent?: ContactIntent } = {}) {
+  const [values, setValues] = useState<ContactFormValues>(
+    requestedIntent ? { ...initialValues, intent: requestedIntent } : initialValues,
+  )
   const [errors, setErrors] = useState<FieldErrors>({})
   const [status, setStatus] = useState<Status>('idle')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const successHeadingRef = useRef<HTMLParagraphElement>(null)
+
+  // Follow later navigations too (e.g. clicking "Submit a Deal" while already on /contact).
+  useEffect(() => {
+    if (requestedIntent) setValues((prev) => ({ ...prev, intent: requestedIntent }))
+  }, [requestedIntent])
 
   useEffect(() => {
     if (status === 'success') {

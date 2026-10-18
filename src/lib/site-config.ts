@@ -13,7 +13,7 @@ export const siteConfig = {
   tagline: 'Building Value from Opportunity.',
   philosophy: "We don't buy properties. We buy opportunities.",
   description:
-    'ValeForge is a U.S. real estate investment company focused on acquiring and creating value from overlooked opportunities, using disciplined underwriting, active execution and thoughtful capital structures.',
+    'ValeForge is a U.S. real estate investment company focused on Dallas–Fort Worth, acquiring and creating value from overlooked opportunities through disciplined underwriting, active execution and thoughtful capital structures.',
   /**
    * Public inboxes (Zoho Mail). The contact form routes each inquiry type to
    * one of these — see `contactIntentOptions` in contact-schema.ts.

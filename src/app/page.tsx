@@ -4,6 +4,7 @@ import { capabilities, model, underwriting } from '@/lib/content'
 import { Hero } from '@/components/sections/Hero'
 import { Philosophy } from '@/components/sections/Philosophy'
 import { Strategies } from '@/components/sections/Strategies'
+import { Market } from '@/components/sections/Market'
 import { AboutIntro } from '@/components/sections/AboutIntro'
 import { PartnershipCta } from '@/components/sections/PartnershipCta'
 import { TextSection } from '@/components/ui/TextSection'
@@ -29,13 +30,13 @@ export default function HomePage() {
         tone="muted"
       />
       <Strategies />
+      <Market />
       <TextSection
         id="underwriting-title"
         eyebrow="Discipline"
         title={underwriting.title}
         lead={underwriting.lead}
         body={underwriting.body}
-        tone="muted"
       />
       <AboutIntro />
       <PartnershipCta />

@@ -9,6 +9,9 @@ import { Logo } from '@/components/ui/Logo'
 import { pageGutter } from '@/components/ui/PageContainer'
 import { buttonClasses } from '@/components/ui/ButtonLink'
 
+/** Opens the contact form with "Property Opportunity" preselected (routes to deals@). */
+const submitDealHref = '/contact?intent=property'
+
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
@@ -84,6 +87,13 @@ export function Header() {
               )
             })}
           </nav>
+
+          <Link
+            href={submitDealHref}
+            className="hidden min-h-[44px] items-center rounded-sm bg-primary px-5 text-sm font-medium tracking-wide text-primary-foreground transition-colors duration-300 hover:bg-secondary lg:inline-flex"
+          >
+            Submit a Deal
+          </Link>
 
           <ThemeToggle />
 
@@ -163,8 +173,8 @@ export function Header() {
         </nav>
 
         <div className="mt-auto border-t border-border px-6 py-6">
-          <Link href="/contact" onClick={closeMenu} className={`${buttonClasses.primary} w-full`}>
-            Partner With Us
+          <Link href={submitDealHref} onClick={closeMenu} className={`${buttonClasses.primary} w-full`}>
+            Submit a Deal
           </Link>
         </div>
       </div>
