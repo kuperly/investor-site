@@ -22,6 +22,11 @@ describe('ContactForm', () => {
     expect(screen.getByText('Enter your full name.')).toBeInTheDocument()
   })
 
+  it('preselects the inquiry category requested by the URL', () => {
+    render(<ContactForm requestedIntent="property" />)
+    expect(screen.getByRole('radio', { name: 'Property Opportunity' })).toBeChecked()
+  })
+
   it('submits the selected inquiry category', async () => {
     ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,

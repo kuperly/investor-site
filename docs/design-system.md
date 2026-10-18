@@ -12,9 +12,11 @@ navy**, editorial typography, large margins. **Simple and inviting** — the
 site tells the story in plain words. Not a realtor site, not a guru site,
 not a SaaS landing page.
 
-- **Typography-led.** No stock photography. The only imagery is a quiet
-  skyline outline behind the hero. Generic stock photos read as less serious for an investment firm;
-  owned or properly licensed architectural photography could be added later.
+- **Typography first, a few real photos.** Three Unsplash photographs of
+  the active market (`src/lib/market.ts`): the hero (full-bleed under a
+  deep-navy overlay), a residential photo beside the misalignment thesis,
+  and the Market section. Credited on the page. They illustrate the market
+  only — never stock or AI imagery dressed up as ValeForge deals.
 - **No diagrams, no fake proof.** Concepts (the model, underwriting, capital
   efficiency, exit paths) are explained in text — heading, short paragraph,
   a few short points. No flow charts, process diagrams, grids of labels,
@@ -62,12 +64,19 @@ still clears 4.5:1 on paper.
 Expensive, not flashy. Every animation collapses to its final frame under
 `prefers-reduced-motion` (the global rule zeroes duration *and* delay).
 
-- **Hero skyline draw-in** — building outlines stroke in (`.draw-line`,
-  `.draw-line-group`, `pathLength="1"`).
-- **Hero parallax** — `HeroBackground` drifts on scroll, rAF-throttled and
-  capped.
-- **Scroll reveals** — `Reveal` fades/rises blocks with
-  `cubic-bezier(0.16, 1, 0.3, 1)`, staggered 60–90ms.
+One easing curve everywhere: `--ease-out-soft` = `cubic-bezier(0.16, 1, 0.3, 1)`
+(in `globals.css`). Only `opacity` and `transform` are animated.
+
+- **Entrance** — the hero and page mastheads use the CSS `animate-rise`
+  (plays on first paint, no wait for hydration), staggered 0/150/300ms; the
+  hero photo `animate-settle`s from a 6% zoom over 2.6s.
+- **Page change** — `src/app/template.tsx` re-mounts per route, so each new
+  page fades in (`.page-enter`, 0.5s) under the fixed header/footer.
+- **Scroll reveals** — `Reveal` rises blocks 24px as they enter the viewport,
+  staggered 60–150ms. They are only hidden under `html.js` (set by the inline
+  head script), so content is never lost without JavaScript.
+- **Mobile drawer** — slides in over 0.5s on the same curve.
+- **Photo hover** — a slow 3% zoom on the in-page photos.
 - **Hover** — quiet: strategy titles turn brass, CTA arrows slide 4px.
 
 ## Layout primitives
@@ -95,7 +104,7 @@ Expensive, not flashy. Every animation collapses to its final frame under
 - `ButtonLink` / `buttonClasses` / `TextLink` — the two CTA styles (solid
   brass, outlined) with a sliding arrow; square-ish `rounded-sm` corners.
 - `ThemeToggle` — light/dark switch (sets `data-theme`, persists, no flash).
-- Sections (`src/components/sections/`): `Hero`, `Philosophy`,
+- Sections (`src/components/sections/`): `Hero`, `Philosophy`, `Market`,
   `Strategies` (`withHeading` prop), `AboutIntro`, `PartnershipCta`;
   everything else is a `TextSection`.
 
@@ -112,6 +121,6 @@ every page plus header/footer — extend it when adding pages.
 
 Build pages from `PageHeader` + sections; build sections from `Section` +
 `SectionHeading`. Put copy in `src/lib/content.ts`. Reuse the tokens; do not
-introduce hardcoded colours, emoji icons, stock photography, card-grid
+introduce hardcoded colours, emoji icons, off-market or fake-deal imagery, card-grid
 patterns, diagrams, or anything that implies a track record that doesn't
 exist.

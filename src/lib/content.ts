@@ -9,8 +9,6 @@
 
 export const hero = {
   lead: 'ValeForge is a U.S. real estate investment company focused on acquiring and creating value from overlooked opportunities.',
-  support:
-    'We use disciplined underwriting, active execution and thoughtful capital structures to create equity and durable cash flow.',
 }
 
 /** Why an opportunity exists at all: misalignment between an asset and its potential. */
@@ -141,8 +139,10 @@ export const about = {
 
 export const partnership = {
   title: 'Build the Next Opportunity With Us.',
-  body: 'ValeForge is building relationships with operators, property owners, financing partners and capital partners who share a long-term approach to U.S. real estate.',
+  body: 'ValeForge is building relationships with operators, property owners, financing partners and capital partners who take a long-term view.',
   cta: 'Partner With ValeForge',
+  /** Short closing line for inner pages (the full section lives on Home). */
+  short: 'Have an opportunity, or interested in partnering?',
 }
 
 export const contact = {

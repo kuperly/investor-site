@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { ContactForm } from '@/components/contact/ContactForm'
+import { ContactFormWithIntent } from '@/components/contact/ContactForm'
 import { siteConfig } from '@/lib/site-config'
 import { contact } from '@/lib/content'
 import { Reveal } from '@/components/ui/Reveal'
@@ -55,7 +55,7 @@ export default function ContactPage() {
         <div className="lg:col-span-6 lg:col-start-7">
           <Reveal delay={100}>
             <div className="border-t border-border pt-10 lg:border-l lg:border-t-0 lg:pl-12 lg:pt-0">
-              <ContactForm />
+              <ContactFormWithIntent />
             </div>
           </Reveal>
         </div>

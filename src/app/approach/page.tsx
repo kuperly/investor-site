@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import { capabilities, capitalEfficiency, exitPaths, model, philosophy, underwriting } from '@/lib/content'
+import { capabilities, capitalEfficiency, exitPaths, model, underwriting } from '@/lib/content'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { TextSection } from '@/components/ui/TextSection'
-import { PartnershipCta } from '@/components/sections/PartnershipCta'
+import { ClosingCta } from '@/components/sections/PartnershipCta'
 
 export const metadata: Metadata = {
   title: 'Our Approach',
@@ -11,25 +11,17 @@ export const metadata: Metadata = {
   alternates: { canonical: '/approach' },
 }
 
+/** Owns the model, the four steps, underwriting, capital efficiency and exits — none of it repeats on Home. */
 export default function ApproachPage() {
   return (
     <>
-      <PageHeader
-        eyebrow="Our Approach"
-        title={
-          <>
-            {philosophy.lines[0]} <span className="italic text-primary">{philosophy.lines[1]}</span>
-          </>
-        }
-        intro={`${philosophy.thesis} ${philosophy.body}`}
-      />
+      <PageHeader eyebrow="Our Approach" title={model.title} intro={`${model.intro} ${model.body}`} />
       <TextSection
-        id="model-title"
+        id="steps-title"
         eyebrow="How We Work"
-        title={model.title}
-        lead={model.intro}
-        body={model.body}
+        title="Four steps, one continuous cycle."
         items={capabilities}
+        tone="muted"
       />
       <TextSection
         id="underwriting-title"
@@ -37,7 +29,6 @@ export default function ApproachPage() {
         title={underwriting.title}
         lead={underwriting.lead}
         body={underwriting.body}
-        tone="muted"
       />
       <TextSection
         id="capital-title"
@@ -45,6 +36,7 @@ export default function ApproachPage() {
         title={capitalEfficiency.title}
         body={capitalEfficiency.body}
         items={capitalEfficiency.concepts}
+        tone="muted"
       />
       <TextSection
         id="exits-title"
@@ -52,9 +44,8 @@ export default function ApproachPage() {
         title={exitPaths.title}
         body={exitPaths.body}
         items={exitPaths.paths}
-        tone="muted"
       />
-      <PartnershipCta />
+      <ClosingCta />
     </>
   )
 }

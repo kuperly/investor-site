@@ -3,7 +3,7 @@ import { about } from '@/lib/content'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Section, SectionHeading } from '@/components/ui/Section'
 import { Reveal } from '@/components/ui/Reveal'
-import { PartnershipCta } from '@/components/sections/PartnershipCta'
+import { ClosingCta } from '@/components/sections/PartnershipCta'
 
 export const metadata: Metadata = {
   title: 'About',
@@ -60,7 +60,7 @@ export default function AboutPage() {
         </ul>
       </Section>
 
-      <PartnershipCta />
+      <ClosingCta />
     </>
   )
 }

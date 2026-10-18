@@ -38,8 +38,7 @@ describe('Reveal', () => {
       </Reveal>,
     )
 
-    expect(container.firstChild).toHaveClass('opacity-100')
-    expect(container.firstChild).not.toHaveClass('opacity-0')
+    expect(container.firstChild).toHaveClass('reveal', 'is-visible')
   })
 
   it('stays hidden until the intersection observer reports visibility', () => {
@@ -49,6 +48,7 @@ describe('Reveal', () => {
       </Reveal>,
     )
 
-    expect(container.firstChild).toHaveClass('opacity-0')
+    expect(container.firstChild).toHaveClass('reveal')
+    expect(container.firstChild).not.toHaveClass('is-visible')
   })
 })

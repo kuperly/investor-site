@@ -1,4 +1,6 @@
+import Image from 'next/image'
 import { philosophy } from '@/lib/content'
+import { activeMarket } from '@/lib/market'
 import { Section } from '@/components/ui/Section'
 import { Reveal } from '@/components/ui/Reveal'
 import { Eyebrow } from '@/components/ui/Eyebrow'
@@ -24,7 +26,18 @@ export function Philosophy() {
         </h2>
       </Reveal>
       <Reveal delay={150}>
-        <div className="mt-12 grid gap-8 lg:mt-16 lg:grid-cols-12">
+        <div className="mt-12 grid items-center gap-10 lg:mt-16 lg:grid-cols-12">
+          <figure className="lg:col-span-5">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-sm">
+              <Image
+                src={activeMarket.photos.residential.src}
+                alt={activeMarket.photos.residential.alt}
+                fill
+                sizes="(min-width: 1024px) 40vw, 100vw"
+                className="object-cover transition-transform duration-[1.5s] ease-out hover:scale-[1.03]"
+              />
+            </div>
+          </figure>
           <div className="max-w-xl lg:col-span-6 lg:col-start-7">
             <p className="font-heading text-3xl leading-tight text-foreground sm:text-4xl">{philosophy.thesis}</p>
             <p className="mt-5 text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">

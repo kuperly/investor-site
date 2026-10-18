@@ -14,7 +14,7 @@ const fraunces = Fraunces({
 })
 
 // Applies the visitor's saved theme choice before first paint (no flash).
-const themeInitScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`
+const themeInitScript = `(function(){document.documentElement.classList.add('js');try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`
 
 const sourceSans3 = Source_Sans_3({
   subsets: ['latin'],

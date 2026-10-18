@@ -2,16 +2,16 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import HomePage from './page'
 import { siteConfig } from '@/lib/site-config'
-import { capabilities, hero, strategies } from '@/lib/content'
+import { activeMarket } from '@/lib/market'
+import { hero, philosophy } from '@/lib/content'
 
 describe('HomePage', () => {
-  it('renders the positioning line as the only h1, with both hero CTAs', () => {
+  it('renders the positioning line as the only h1, with a single hero CTA', () => {
     render(<HomePage />)
     const h1s = screen.getAllByRole('heading', { level: 1 })
     expect(h1s).toHaveLength(1)
     expect(h1s[0]).toHaveTextContent(siteConfig.tagline)
     expect(screen.getByRole('link', { name: 'Explore Our Approach' })).toHaveAttribute('href', '/approach')
-    expect(screen.getByRole('link', { name: 'Partner With Us' })).toHaveAttribute('href', '/contact')
   })
 
   it('leads with the core philosophy and the misalignment thesis behind it', () => {
@@ -25,7 +25,14 @@ describe('HomePage', () => {
   it('introduces the company in the hero as ValeForge', () => {
     render(<HomePage />)
     expect(screen.getByText(hero.lead)).toBeInTheDocument()
-    expect(screen.getByText(hero.support)).toBeInTheDocument()
+  })
+
+  it('shows the active market with its photography', () => {
+    render(<HomePage />)
+    expect(screen.getByRole('heading', { level: 2, name: activeMarket.title })).toBeInTheDocument()
+    for (const photo of Object.values(activeMarket.photos)) {
+      expect(screen.getByAltText(photo.alt)).toBeInTheDocument()
+    }
   })
 
   it('spells the brand consistently as one word', () => {
@@ -33,20 +40,13 @@ describe('HomePage', () => {
     expect(container.textContent).not.toMatch(/Vale Forge/)
   })
 
-  it('renders each home section', () => {
+  it('is a short overview: philosophy, market, partnership — nothing else', () => {
     render(<HomePage />)
-    for (const name of [
-      'The ValeForge Model',
-      strategies.title,
-      'The Numbers Come First.',
-      'Built to Compound.',
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
+      philosophy.lines.join(''),
+      activeMarket.title,
       'Build the Next Opportunity With Us.',
-    ]) {
-      expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument()
-    }
-    for (const item of [...capabilities, ...strategies.items]) {
-      expect(screen.getByRole('heading', { level: 3, name: item.title })).toBeInTheDocument()
-    }
+    ])
   })
 
   it('makes no performance or track-record claims', () => {

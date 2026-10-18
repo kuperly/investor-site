@@ -13,6 +13,13 @@ describe('Header', () => {
     }
   })
 
+  it('offers a Submit a Deal shortcut that preselects a property inquiry', () => {
+    render(<Header />)
+    const links = screen.getAllByRole('link', { name: 'Submit a Deal' })
+    expect(links.length).toBeGreaterThan(0)
+    for (const link of links) expect(link).toHaveAttribute('href', '/contact?intent=property')
+  })
+
   it('opens the mobile drawer via the hamburger trigger and closes it via the close button', () => {
     render(<Header />)
     const trigger = screen.getByRole('button', { name: 'Open menu' })

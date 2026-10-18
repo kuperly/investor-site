@@ -4,11 +4,11 @@ import { Footer } from './Footer'
 import { siteConfig } from '@/lib/site-config'
 
 describe('Footer', () => {
-  it('renders the brand and positioning line', () => {
+  it('renders the brand without repeating the hero tagline', () => {
     render(<Footer />)
     const footer = screen.getByRole('contentinfo')
     expect(screen.getAllByAltText(siteConfig.legalName).length).toBeGreaterThan(0)
-    expect(footer).toHaveTextContent(siteConfig.tagline)
+    expect(footer).not.toHaveTextContent(siteConfig.tagline)
     expect(footer).toHaveTextContent(`© ${new Date().getFullYear()} ${siteConfig.legalName}`)
   })
 

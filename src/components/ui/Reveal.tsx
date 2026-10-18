@@ -31,7 +31,9 @@ export function Reveal({
           observer.disconnect()
         }
       },
-      { threshold: 0.15 },
+      // Start a little before the block is fully in view, so it is already
+      // settling as it arrives rather than popping in late.
+      { rootMargin: '0px 0px -8% 0px' },
     )
 
     observer.observe(node)
@@ -41,9 +43,7 @@ export function Reveal({
   return (
     <div
       ref={ref}
-      className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-      } ${className}`}
+      className={`reveal ${isVisible ? 'is-visible' : ''} ${className}`}
       style={{ transitionDelay: isVisible ? `${delay}ms` : '0ms' }}
     >
       {children}

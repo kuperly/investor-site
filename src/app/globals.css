@@ -57,6 +57,19 @@
   color-scheme: light;
 }
 
+/* Content laid over a darkened photo always uses the dark palette, in both
+   themes, so text and buttons stay legible on the image. */
+.on-photo {
+  --color-foreground: 244 242 236;
+  --color-primary: 197 162 83;
+  --color-primary-foreground: 10 15 28;
+  --color-secondary: 217 190 126;
+  --color-muted-foreground: 205 211 224; /* lighter than the page token: sits on a photo */
+  --color-border: 244 242 236;
+  --color-ring: 197 162 83;
+  color-scheme: dark;
+}
+
 /* Logo colourway follows the active theme (mirrors the token logic above). */
 .logo-for-light {
   display: none;
@@ -103,30 +116,8 @@ body {
   color: rgb(var(--color-foreground));
 }
 
-/* Hero motion: the skyline linework draws itself in (each path uses
-   pathLength="1"). Reduced-motion collapses
-   these to their final frame via the global rule below. */
-@keyframes draw-in {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
 
 @layer utilities {
-  .draw-line,
-  .draw-line-group > * {
-    stroke-dasharray: 1;
-    animation: draw-in 2.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
-  }
-  .draw-line-group > *:nth-child(2) {
-    animation-delay: 0.25s;
-  }
-  .draw-line-group > *:nth-child(3) {
-    animation-delay: 0.4s;
-  }
   .text-balance {
     text-wrap: balance;
   }
@@ -146,6 +137,74 @@ body {
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * Motion — one easing curve site-wide: a long, soft ease-out.
+ * ------------------------------------------------------------------------- */
+:root {
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Above-the-fold entrance (hero, page mastheads). Pure CSS, so it plays on
+   first paint instead of waiting for hydration. Stagger with animation-delay. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-rise {
+  /* Longhands, so a Tailwind `[animation-delay:…]` utility isn't reset. */
+  animation-name: rise;
+  animation-duration: 1.1s;
+  animation-timing-function: var(--ease-out-soft);
+  animation-fill-mode: both;
+}
+
+/* Hero photo settles from a slight zoom while the copy rises. */
+@keyframes settle {
+  from {
+    transform: scale(1.06);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.animate-settle {
+  animation-name: settle;
+  animation-duration: 2.6s;
+  animation-timing-function: var(--ease-out-soft);
+  animation-fill-mode: both;
+}
+
+/* Route change: the new page fades in under the fixed header/footer. */
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.page-enter {
+  animation: page-in 0.5s ease-out both;
+}
+
+/* Scroll reveals (`Reveal`). Content is only hidden once the inline script
+   has marked <html class="js">, so it is never lost without JavaScript. */
+.reveal {
+  transition:
+    opacity 0.9s var(--ease-out-soft),
+    transform 0.9s var(--ease-out-soft);
+}
+.js .reveal:not(.is-visible) {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -156,5 +215,9 @@ body {
     transition-duration: 0.01ms !important;
     transition-delay: 0s !important;
     scroll-behavior: auto !important;
+  }
+  .js .reveal:not(.is-visible) {
+    opacity: 1;
+    transform: none;
   }
 }
