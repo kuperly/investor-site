@@ -34,9 +34,17 @@ and fill in a Resend API key and the two email addresses.
 | `npm run build` | Production build |
 | `npm run lint` | Lint the codebase |
 
+## ValeForge Deal Analyzer
+
+`deal-analyzer/` holds a separate internal app: a real-estate underwriting
+engine with its own `package.json`, tests and docs. It isn't part of this
+site's build or deploy. See [deal-analyzer/README.md](deal-analyzer/README.md).
+
 ## Docs
 
 - [CLAUDE.md](CLAUDE.md) — project reference for AI-assisted development:
   structure, conventions, known gotchas, pre-launch checklist
 - [docs/design-system.md](docs/design-system.md) — visual system: palette,
   typography, motion, components, and the reasoning behind them
+- [deal-analyzer/CLAUDE.md](deal-analyzer/CLAUDE.md) — rules for working on the
+  Deal Analyzer, including the docs-update checklist
