@@ -8,6 +8,8 @@ it produced.
 
 The same map is shown in the app on **Sourcing → Pipeline** (`/sourcing`, from
 `src/sourcing/engine/layers.ts`).
+Each module has a one-page summary: [Market Intelligence](modules/market-intelligence.md),
+[Deal Sourcing](modules/deal-sourcing.md), [Deal Analyzer](modules/deal-analyzer.md).
 
 | # | Layer | Module | Question | Entry gate | Output |
 |---|---|---|---|---|---|

@@ -42,9 +42,13 @@ site's build or deploy. See [deal-analyzer/README.md](deal-analyzer/README.md).
 
 ## Docs
 
+- [docs/apps/README.md](docs/apps/README.md) — **start here**: registry of every
+  app in this repo, what each does, how they connect, and how to add a new one
+  ([AGENTS.md](AGENTS.md) points agents to it)
 - [CLAUDE.md](CLAUDE.md) — project reference for AI-assisted development:
   structure, conventions, known gotchas, pre-launch checklist
 - [docs/design-system.md](docs/design-system.md) — visual system: palette,
   typography, motion, components, and the reasoning behind them
 - [deal-analyzer/CLAUDE.md](deal-analyzer/CLAUDE.md) — rules for working on the
-  Deal Analyzer, including the docs-update checklist
+  internal app, including the docs-update checklist; one page per module in
+  [deal-analyzer/docs/modules/](deal-analyzer/docs/modules/)
