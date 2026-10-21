@@ -1,22 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { analyzerRewrites } from '../../next.config'
+import { ANALYZER_BASE_PATH, analyzerRewrites, DEFAULT_ANALYZER_URL } from '../../next.config'
 
 describe('hidden analyzer route (next.config rewrites)', () => {
-  it('is inert unless both env vars are set', () => {
-    expect(analyzerRewrites({})).toEqual([])
-    expect(analyzerRewrites({ ANALYZER_URL: 'https://a.vercel.app' })).toEqual([])
-    expect(analyzerRewrites({ ANALYZER_BASE_PATH: '/apps' })).toEqual([])
-  })
-  it('proxies the base path and everything under it', () => {
-    expect(analyzerRewrites({ ANALYZER_URL: 'https://a.vercel.app/', ANALYZER_BASE_PATH: '/apps' })).toEqual([
-      { source: '/apps', destination: 'https://a.vercel.app/apps' },
-      { source: '/apps/:path*', destination: 'https://a.vercel.app/apps/:path*' },
+  it('serves the analyzer at /apps (fixed in code) on its Railway deployment by default', () => {
+    expect(ANALYZER_BASE_PATH).toBe('/apps')
+    expect(analyzerRewrites({})).toEqual([
+      { source: '/apps', destination: `${DEFAULT_ANALYZER_URL}/apps` },
+      { source: '/apps/:path*', destination: `${DEFAULT_ANALYZER_URL}/apps/:path*` },
     ])
+    expect(analyzerRewrites({ ANALYZER_URL: '  ' })).toEqual(analyzerRewrites({}))
   })
-  it('rejects malformed values instead of proxying somewhere unexpected', () => {
-    expect(() => analyzerRewrites({ ANALYZER_URL: 'https://a.vercel.app/x', ANALYZER_BASE_PATH: '/vf' })).toThrow()
-    expect(() => analyzerRewrites({ ANALYZER_URL: 'a.vercel.app', ANALYZER_BASE_PATH: '/vf' })).toThrow()
-    expect(() => analyzerRewrites({ ANALYZER_URL: 'https://a.vercel.app', ANALYZER_BASE_PATH: '/' })).toThrow()
-    expect(() => analyzerRewrites({ ANALYZER_URL: 'https://a.vercel.app', ANALYZER_BASE_PATH: '/a/b' })).toThrow()
+  it('ANALYZER_URL overrides the target (trailing slash ignored) and "off" disables the route', () => {
+    expect(analyzerRewrites({ ANALYZER_URL: 'https://a.example.com/' })).toEqual([
+      { source: '/apps', destination: 'https://a.example.com/apps' },
+      { source: '/apps/:path*', destination: 'https://a.example.com/apps/:path*' },
+    ])
+    expect(analyzerRewrites({ ANALYZER_URL: 'off' })).toEqual([])
+    expect(analyzerRewrites({ ANALYZER_URL: 'OFF' })).toEqual([])
+  })
+  it('rejects a malformed ANALYZER_URL instead of proxying somewhere unexpected', () => {
+    expect(() => analyzerRewrites({ ANALYZER_URL: 'https://a.example.com/x' })).toThrow()
+    expect(() => analyzerRewrites({ ANALYZER_URL: 'a.example.com' })).toThrow()
   })
 })

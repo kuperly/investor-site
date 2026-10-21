@@ -1,5 +1,5 @@
-import type { Metadata } from 'next'
-import { Fraunces, Source_Sans_3, Space_Grotesk } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
+import { Fraunces, Source_Sans_3 } from 'next/font/google'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { siteConfig } from '@/lib/site-config'
@@ -14,7 +14,7 @@ const fraunces = Fraunces({
 })
 
 // Applies the visitor's saved theme choice before first paint (no flash).
-const themeInitScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`
+const themeInitScript = `(function(){document.documentElement.classList.add('js');try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`
 
 const sourceSans3 = Source_Sans_3({
   subsets: ['latin'],
@@ -23,20 +23,47 @@ const sourceSans3 = Source_Sans_3({
   display: 'swap',
 })
 
-// Brand font — used only for the G&B Capital logo wordmark.
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  weight: ['500', '600', '700'],
-  variable: '--font-brand',
-  display: 'swap',
-})
+const defaultTitle = `${siteConfig.name} | U.S. Real Estate Investment`
+
+// Share image from the brand kit. Declared here (not via the
+// opengraph-image file convention) so its alt text always comes from code —
+// the file convention's alt.txt is cached with the image and can go stale.
+const shareImage = {
+  url: '/og-image-1200x630.png',
+  width: 1200,
+  height: 630,
+  alt: `${siteConfig.name} — ${siteConfig.tagline}`,
+}
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: {
-    default: siteConfig.name,
-    template: `%s — ${siteConfig.name}`,
+    default: defaultTitle,
+    template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
+  applicationName: siteConfig.name,
+  openGraph: {
+    type: 'website',
+    siteName: siteConfig.name,
+    title: defaultTitle,
+    description: siteConfig.description,
+    locale: 'en_US',
+    images: [shareImage],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: defaultTitle,
+    description: siteConfig.description,
+    images: [shareImage],
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#0A0F1C' },
+    { media: '(prefers-color-scheme: light)', color: '#FAF8F3' },
+  ],
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -44,7 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${sourceSans3.variable} ${spaceGrotesk.variable}`}
+      className={`${fraunces.variable} ${sourceSans3.variable}`}
     >
       <body className="flex min-h-dvh flex-col bg-background font-body text-foreground antialiased">
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

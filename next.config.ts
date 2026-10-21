@@ -3,17 +3,26 @@ import type { NextConfig } from 'next'
 /**
  * Hidden route for the internal ValeForge Deal Analyzer (deal-analyzer/).
  * The analyzer is a separate app and deployment; this site only proxies
- * yoursite.com<ANALYZER_BASE_PATH>/* to it. Inert unless BOTH env vars are set:
- *   ANALYZER_URL        e.g. https://deal-analyzer-production.up.railway.app (no trailing slash)
- *   ANALYZER_BASE_PATH  e.g. /apps — must equal the analyzer's own ANALYZER_BASE_PATH
- * Access control (sign-in) is enforced by the analyzer itself, not here.
+ * yoursite.com/apps/* to it. Access control (sign-in) is enforced by the
+ * analyzer itself, not here.
+ *
+ * The path is fixed in code. It must equal the analyzer's own build-time
+ * ANALYZER_BASE_PATH (set to /apps on its Railway service).
+ */
+export const ANALYZER_BASE_PATH = '/apps'
+/** The analyzer's production deployment (Railway project `valeforge-deal-analyzer`). */
+export const DEFAULT_ANALYZER_URL = 'https://deal-analyzer-production.up.railway.app'
+
+/**
+ * Rewrites for the hidden route. ANALYZER_URL (optional env) points it at another origin,
+ * or "off" disables it.
  */
 export function analyzerRewrites(env: Record<string, string | undefined> = process.env) {
-  const url = env.ANALYZER_URL?.trim().replace(/\/+$/, '')
-  const base = env.ANALYZER_BASE_PATH?.trim()
-  if (!url || !base) return []
+  const raw = env.ANALYZER_URL?.trim()
+  if (raw?.toLowerCase() === 'off') return []
+  const url = (raw || DEFAULT_ANALYZER_URL).replace(/\/+$/, '')
   if (!/^https?:\/\/[^/\s]+$/.test(url)) throw new Error(`ANALYZER_URL must be an origin like https://app.example.com (got "${url}")`)
-  if (!/^\/[a-z0-9][a-z0-9-]*$/i.test(base)) throw new Error(`ANALYZER_BASE_PATH must look like "/apps" (got "${base}")`)
+  const base = ANALYZER_BASE_PATH
   return [
     { source: base, destination: `${url}${base}` },
     { source: `${base}/:path*`, destination: `${url}${base}/:path*` },

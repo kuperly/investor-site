@@ -49,8 +49,8 @@ advice.
       bump `session_version`.
 - [ ] Hidden route (website rewrite → analyzer): "hidden" is not security.
       Through the proxy, `yoursite.com/<base>` must redirect to the analyzer's
-      sign-in. `ANALYZER_URL` is a fixed env value, never derived from the
-      request (SSRF).
+      sign-in. The target is a constant in `next.config.ts` (or the fixed
+      `ANALYZER_URL` env override), never derived from the request (SSRF).
 - [ ] `robots: noindex` stays in `layout.tsx`.
 - [ ] No secrets in code or commits (`git log -p | grep -iE "password|secret|api[_-]?key|postgres://"`).
       `.env*` stays gitignored.

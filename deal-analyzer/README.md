@@ -660,14 +660,14 @@ request after each deploy.
 (fredaccount.stlouisfed.org/apikeys); `BLS_API_KEY` is optional but strongly
 recommended (data.bls.gov/registrationEngine).
 
-**Website (Vercel project `investor-site`) environment variables:**
-- `ANALYZER_URL=https://deal-analyzer-production.up.railway.app`
-- `ANALYZER_BASE_PATH=/apps`
-
-Add them for **Preview** first (scoped to this branch), then redeploy the
-preview. The rewrite is inert while either variable is missing. For the
-production site (`investor-site-wheat.vercel.app`), add the same two
-variables for **Production** after the branch is merged into `main`.
+**Website (Vercel project `investor-site`):** nothing to configure. The site's
+`next.config.ts` serves `/apps` (fixed in code) and proxies it to
+`https://deal-analyzer-production.up.railway.app` by default. It goes live on
+the production site once this branch is merged into `main`. Optional:
+`ANALYZER_URL` points the route at another deployment, `ANALYZER_URL=off`
+turns it off. If the analyzer's path ever changes, change it in both places:
+the analyzer's `ANALYZER_BASE_PATH` (Railway) and the constant in the site's
+`next.config.ts`.
 
 **After the branch merges**, switch the Railway service's branch to `main`.
 

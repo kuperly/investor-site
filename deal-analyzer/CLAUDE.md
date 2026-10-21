@@ -218,8 +218,9 @@ e2e/          run.sh + login.mjs + app/comps/markets.e2e.mjs · auth-check.sh + 
 - `next.config.ts` sets `outputFileTracingRoot` because the repo root has
   its own lockfile.
 - **Hidden route / basePath.** `ANALYZER_BASE_PATH` (build time) serves the
-  app under e.g. `/apps`; the website rewrites that path to this
-  deployment (README → "Deploying"). Use `Link` / `redirect()` for internal
+  app under e.g. `/apps`; the website rewrites `/apps` (a constant in
+  the site's `next.config.ts`) to this deployment (README → "Deploying"); the
+  two must match. Use `Link` / `redirect()` for internal
   URLs, never hand-built `/…` strings: they handle the basePath. The session
   cookie is scoped to the basePath.
 - **Sign-in fails closed.** In production (`next start`) a missing or short
