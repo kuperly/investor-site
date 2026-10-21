@@ -1,5 +1,13 @@
 # ValeForge — Marketing Site
 
+> **Repo-wide rule: docs are always kept current.** Every change updates the
+> documentation it affects **in the same commit**. Add what's new, update
+> what changed, and remove what's no longer true. This covers this file, the
+> READMEs, `docs/`, `deal-analyzer/CLAUDE.md`, and the skills in
+> `.claude/skills/`. A change with stale docs is not done. (Analyzer-specific
+> checklist: `deal-analyzer/CLAUDE.md` → "Documentation is part of every
+> change".)
+
 A 5-page Next.js marketing site for ValeForge (ValeForge Capital), an early-stage U.S. real
 estate investment company ("Building Value from Opportunity." / "We don't
 buy properties. We buy opportunities."). Built for credibility with
@@ -141,10 +149,20 @@ its final frame under `prefers-reduced-motion`.
   declares a React 18 peer dependency; the project runs React 19. Without
   this file, a clean `npm install` (e.g. on Vercel) fails with `ERESOLVE`.
   Do not remove it without also resolving the underlying peer conflict.
-- **Next.js version is security-pinned.** Currently `15.1.11`, patching
-  CVE-2025-66478 (critical RCE) and CVE-2025-55183/55184/67779. Check
-  https://nextjs.org/blog for new advisories before bumping or pinning an
-  older version in the 15.1.x line.
+- **Next.js version is security-pinned, exactly.** Currently `15.5.27`
+  (`next` and `eslint-config-next`, no `^`). The previous pin, 15.1.11, had
+  an npm audit "critical" rating, including middleware-bypass and
+  rewrite-smuggling advisories. Check https://nextjs.org/blog and
+  `npm audit --omit=dev` before bumping. Verify a bump with tests, lint,
+  build, and before/after screenshots of all four pages (desktop + mobile,
+  dark + light). The 15.5.27 upgrade was pixel-identical.
+- **Accepted audit findings** (build-time or internal input only, re-check
+  on each bump): the `postcss` bundled inside Next (processes only our CSS
+  at build time), and `brace-expansion` via `resend` → `js-beautify`
+  (formats our own email templates, never visitor input).
+- **`next lint` is deprecated** (it prints a notice, still works on 15.x).
+  Migrate to the ESLint CLI before Next 16
+  (`npx @next/codemod@canary next-lint-to-eslint-cli .`).
 - **Git remote uses a custom SSH host alias.** `origin` is
   `git@github-private:kuperly/investor-site.git` — `github-private` is a
   host alias in this machine's SSH config for the `kuperly` GitHub account,
@@ -155,6 +173,34 @@ its final frame under `prefers-reduced-motion`.
 - **Vercel project**: `guys-projects-c57d7bcd/investor-site`
   (`prj_4zjmuFVpXvpOdFjPqAaAbKu1wM69`), connected to the `kuperly/investor-site`
   GitHub repo for auto-deploy on push to `main`.
+
+## ValeForge internal app (`deal-analyzer/`)
+
+A separate internal Next.js app (own `package.json`, tests, and README) with three
+modules behind one login, working as one chain of layers
+(`deal-analyzer/docs/LAYERS.md`): Market Intelligence (VF-03, `src/market/`,
+`/markets`) → Deal Sourcing (`src/sourcing/`, `/sourcing`) → Deal Analyzer
+(`src/engine/`, `/`). It is excluded from this site's `tsconfig.json`
+and `vitest.config.ts`, so it never affects the marketing site's build or
+deploy. See [deal-analyzer/README.md](deal-analyzer/README.md) and its own
+[deal-analyzer/CLAUDE.md](deal-analyzer/CLAUDE.md). Business rules live only
+in `deal-analyzer/src/engine/` (deals), `deal-analyzer/src/market/engine/`
+(markets) and `deal-analyzer/src/sourcing/engine/` (gates, buy-box screen);
+thresholds there change only with Guy/Ben approval.
+
+**Hidden route.** `next.config.ts` (`analyzerRewrites`) forwards `/apps/*`
+to the analyzer's own deployment (Railway project `valeforge-deal-analyzer`).
+The path is a constant in code (`ANALYZER_BASE_PATH = '/apps'`, must equal the
+analyzer's own build-time `ANALYZER_BASE_PATH`) and the target defaults to the
+Railway URL, so no Vercel variable is needed. Optional env `ANALYZER_URL`
+overrides the target (`off` disables the route). Tested in
+`src/lib/analyzer-route.test.ts`. Access control is the analyzer's
+own sign-in, not this site. Setup steps: deal-analyzer/README.md →
+"Deploying". Remove the rewrite when the analyzer moves to its own repo.
+
+Project skills for the analyzer live in `.claude/skills/`: `vf-qa`,
+`vf-security`, `vf-underwriting-analyst`, `vf-real-estate-investor` and
+`vf-property-inspector`.
 
 ## Testing
 
