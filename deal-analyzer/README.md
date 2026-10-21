@@ -2,7 +2,9 @@
 
 One internal app, three modules with one login, working as **one chain of layers**
 (full operating model: [docs/LAYERS.md](docs/LAYERS.md); live map and funnel on
-**Sourcing → Pipeline**):
+**Sourcing → Pipeline**). Each module has a one-page summary in
+[docs/modules/](docs/modules/); how this app relates to the repo's other apps:
+[../docs/apps/README.md](../docs/apps/README.md).
 
 | Layers | Module | Decides |
 |---|---|---|

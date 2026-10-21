@@ -16,6 +16,10 @@ working as **one chain of layers** ([docs/LAYERS.md](docs/LAYERS.md)):
 - Spec (source of truth, § numbers used in code): [docs/SPEC.md](docs/SPEC.md);
   VF-03: [docs/VF03-SPEC.md](docs/VF03-SPEC.md), status + gaps + open decisions:
   [docs/VF03-ALIGNMENT.md](docs/VF03-ALIGNMENT.md)
+- One page per module (what it does, code, data, connections, open decisions):
+  [docs/modules/](docs/modules/) — `market-intelligence.md`, `deal-sourcing.md`,
+  `deal-analyzer.md`. Where this app sits among the repo's apps:
+  [../docs/apps/README.md](../docs/apps/README.md)
 - Overview, architecture, open decisions, limitations: [README.md](README.md)
 - Every rule + provenance: `src/engine/config.ts` → rendered at `/methodology`
 
@@ -292,6 +296,9 @@ against the change. **Add** what's new, **update** what changed, and
 | `docs/SPEC-ALIGNMENT.md` | Any change to behaviour vs the spec: status per section, approved changes, open gaps |
 | `docs/SPEC.md`, `docs/VF03-SPEC.md` | Never edited, except to add a new spec version from Guy/Ben verbatim |
 | `docs/VF03-ALIGNMENT.md` | Any VF-03 behaviour change vs its spec; open decisions M1–M10; deferred items |
+| `docs/modules/*.md` | A module's purpose, routes, entry points, tables, connections, rules or open decisions change; a new module gets a page (template `../docs/apps/_template.md`) |
+| `../docs/apps/` (registry + `valeforge-internal-app.md`) | A module is added or removed, a connection to another app changes (`/apps`, basePath, deploy target), or the app's hosting changes |
+| `.env.example` | An environment variable is added, renamed or removed (names only, never values) |
 | `docs/LAYERS.md` + `src/sourcing/engine/layers.ts` | A layer, gate or module boundary changes; open decisions S1–S3 |
 | `src/market/engine/config.ts` → `MARKET_METHODOLOGY` | Any VF-03 rule added or changed (VF03-SPEC / PROVISIONAL / INTERPRETATION) |
 | `docs/screenshots/` | UI changed visibly: `E2E_OUT=docs/screenshots npm run e2e` |

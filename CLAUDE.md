@@ -1,9 +1,17 @@
 # ValeForge — Marketing Site
 
+> **This repo holds more than one app.** Start with the app registry,
+> [docs/apps/README.md](docs/apps/README.md): every app, what it does, how the
+> apps connect, and which doc to read for your task. This file covers the
+> marketing site; the internal app has its own `deal-analyzer/CLAUDE.md`.
+> Adding, removing or reconnecting an app updates the registry and the app's
+> page in `docs/apps/` (template: `docs/apps/_template.md`).
+
 > **Repo-wide rule: docs are always kept current.** Every change updates the
 > documentation it affects **in the same commit**. Add what's new, update
 > what changed, and remove what's no longer true. This covers this file, the
-> READMEs, `docs/`, `deal-analyzer/CLAUDE.md`, and the skills in
+> READMEs, `docs/` (including the app registry `docs/apps/`), `AGENTS.md`,
+> `deal-analyzer/CLAUDE.md`, `deal-analyzer/docs/modules/`, and the skills in
 > `.claude/skills/`. A change with stale docs is not done. (Analyzer-specific
 > checklist: `deal-analyzer/CLAUDE.md` → "Documentation is part of every
 > change".)
@@ -184,7 +192,9 @@ modules behind one login, working as one chain of layers
 `/markets`) → Deal Sourcing (`src/sourcing/`, `/sourcing`) → Deal Analyzer
 (`src/engine/`, `/`). It is excluded from this site's `tsconfig.json`
 and `vitest.config.ts`, so it never affects the marketing site's build or
-deploy. See [deal-analyzer/README.md](deal-analyzer/README.md) and its own
+deploy. See [docs/apps/valeforge-internal-app.md](docs/apps/valeforge-internal-app.md)
+(overview, connections; one page per module in `deal-analyzer/docs/modules/`),
+[deal-analyzer/README.md](deal-analyzer/README.md) and its own
 [deal-analyzer/CLAUDE.md](deal-analyzer/CLAUDE.md). Business rules live only
 in `deal-analyzer/src/engine/` (deals), `deal-analyzer/src/market/engine/`
 (markets) and `deal-analyzer/src/sourcing/engine/` (gates, buy-box screen);
